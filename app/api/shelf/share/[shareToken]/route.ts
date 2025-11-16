@@ -3,7 +3,7 @@ import { getUserByShareToken, getItemsByUserId } from '@/lib/db/queries';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { shareToken: string } }
+  { params }: { params: Promise<{ shareToken: string }> }
 ) {
   try {
     const { shareToken } = await params;
