@@ -105,7 +105,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 6.7 Implement password prompt component for authentication
   - [ ] 6.8 Add "View Public Shelf" link to navigate back to public view
 
-- [ ] 7.0 Implement item add/search functionality
+- [x] 7.0 Implement item add/search functionality
   - [ ] 7.1 Create `app/api/search/books/route.ts` - GET endpoint that calls Google Books API
   - [ ] 7.2 Create `app/api/search/music/route.ts` - GET endpoint that calls Spotify API
   - [ ] 7.3 Create `components/shelf/AddItemForm.tsx` with item type selector (Book/Podcast/Music)
@@ -115,7 +115,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [ ] 7.7 Add "Add to Shelf" button for each search result
   - [ ] 7.8 Handle adding item to database and refresh shelf display
 
-- [ ] 8.0 Create item detail modal/overlay
+- [x] 8.0 Create item detail modal/overlay
   - [ ] 8.1 Create `components/ui/Modal.tsx` reusable modal component
   - [ ] 8.2 Create `components/shelf/ItemModal.tsx` for item details
   - [ ] 8.3 Display full-size cover art, title, creator in modal
