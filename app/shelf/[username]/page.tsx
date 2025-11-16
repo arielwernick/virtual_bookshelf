@@ -112,7 +112,6 @@ export default function ShelfPage() {
         <ShareModal
           isOpen={showShareModal}
           onClose={() => setShowShareModal(false)}
-          username={shelfData.username}
           shareToken={shelfData.share_token}
         />
       )}

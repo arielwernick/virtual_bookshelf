@@ -5,11 +5,10 @@ import { useState } from 'react';
 interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
-  username: string;
   shareToken: string;
 }
 
-export function ShareModal({ isOpen, onClose, username, shareToken }: ShareModalProps) {
+export function ShareModal({ isOpen, onClose, shareToken }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
 
   const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/s/${shareToken}`;
