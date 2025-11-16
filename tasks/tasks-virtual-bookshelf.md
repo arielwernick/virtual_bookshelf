@@ -85,15 +85,15 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 4.7 Implement `deleteItem(itemId)` function
   - [x] 4.8 Implement `updateItemOrder(itemId, newOrder)` function
 
-- [ ] 5.0 Implement public shelf display page
-  - [ ] 5.1 Create `app/shelf/[username]/page.tsx` as dynamic route
-  - [ ] 5.2 Fetch shelf data using username parameter in server component
-  - [ ] 5.3 Create `components/shelf/ShelfGrid.tsx` to display items in grid layout
-  - [ ] 5.4 Create `components/shelf/ItemCard.tsx` for individual item display with cover art
-  - [ ] 5.5 Add filter/tab functionality to switch between Books, Podcasts, Music
-  - [ ] 5.6 Handle empty state when shelf has no items
-  - [ ] 5.7 Add meta tags for social sharing (Open Graph, Twitter Cards)
-  - [ ] 5.8 Test responsive layout on mobile, tablet, desktop
+- [x] 5.0 Implement public shelf display page
+  - [x] 5.1 Create `app/shelf/[username]/page.tsx` as dynamic route
+  - [x] 5.2 Fetch shelf data using username parameter in server component
+  - [x] 5.3 Create `components/shelf/ShelfGrid.tsx` to display items in grid layout
+  - [x] 5.4 Create `components/shelf/ItemCard.tsx` for individual item display with cover art
+  - [x] 5.5 Add filter/tab functionality to switch between Books, Podcasts, Music
+  - [x] 5.6 Handle empty state when shelf has no items
+  - [x] 5.7 Add meta tags for social sharing (Open Graph, Twitter Cards)
+  - [x] 5.8 Test responsive layout on mobile, tablet, desktop
 
 - [ ] 6.0 Build shelf editing interface
   - [ ] 6.1 Create `app/shelf/[username]/edit/page.tsx` for edit mode
