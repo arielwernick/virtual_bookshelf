@@ -4,7 +4,8 @@ import { searchMusic } from '@/lib/api/spotify';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q') || 'Radiohead';
-  const type = searchParams.get('type') as 'album' | 'podcast' || 'album';
+  const typeParam = searchParams.get('type');
+  const type = (typeParam === 'podcast' ? 'podcast' : 'music') as 'music' | 'podcast';
 
   try {
     const results = await searchMusic(query, type);

@@ -69,21 +69,21 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 3.1 Create `lib/types/shelf.ts` with TypeScript interfaces for User, Item, ShelfData
   - [x] 3.2 Install bcrypt for password hashing: `npm install bcrypt @types/bcrypt`
   - [x] 3.3 Create `lib/utils/password.ts` with hash and verify functions
-  - [ ] 3.4 Create `app/api/shelf/create/route.ts` - POST endpoint to create new shelf with username
+  - [x] 3.4 Create `app/api/shelf/create/route.ts` - POST endpoint to create new shelf with username
   - [ ] 3.5 Create `app/api/shelf/auth/route.ts` - POST endpoint to verify shelf owner password
   - [ ] 3.6 Create `app/api/shelf/[username]/route.ts` - GET endpoint to fetch public shelf data
   - [ ] 3.7 Create `app/api/shelf/[username]/items/route.ts` - POST/PUT/DELETE endpoints for item management
   - [ ] 3.8 Test all API routes with sample data
 
-- [ ] 4.0 Create user profile and shelf data models
-  - [ ] 4.1 Create helper functions in `lib/db/queries.ts` for database operations
-  - [ ] 4.2 Implement `createUser(username, passwordHash)` function
-  - [ ] 4.3 Implement `getUserByUsername(username)` function
-  - [ ] 4.4 Implement `createItem(userId, itemData)` function
-  - [ ] 4.5 Implement `getItemsByUserId(userId)` function
-  - [ ] 4.6 Implement `updateItem(itemId, itemData)` function
-  - [ ] 4.7 Implement `deleteItem(itemId)` function
-  - [ ] 4.8 Implement `updateItemOrder(itemId, newOrder)` function
+- [x] 4.0 Create user profile and shelf data models
+  - [x] 4.1 Create helper functions in `lib/db/queries.ts` for database operations
+  - [x] 4.2 Implement `createUser(username, passwordHash)` function
+  - [x] 4.3 Implement `getUserByUsername(username)` function
+  - [x] 4.4 Implement `createItem(userId, itemData)` function
+  - [x] 4.5 Implement `getItemsByUserId(userId)` function
+  - [x] 4.6 Implement `updateItem(itemId, itemData)` function
+  - [x] 4.7 Implement `deleteItem(itemId)` function
+  - [x] 4.8 Implement `updateItemOrder(itemId, newOrder)` function
 
 - [ ] 5.0 Implement public shelf display page
   - [ ] 5.1 Create `app/shelf/[username]/page.tsx` as dynamic route
