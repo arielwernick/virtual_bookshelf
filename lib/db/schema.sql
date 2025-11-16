@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username VARCHAR(50) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
-  share_token VARCHAR(50) UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(24), 'hex'),
+  share_token VARCHAR(50) UNIQUE NOT NULL DEFAULT encode(gen_random_uuid()::text, 'hex'),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT users_username_lowercase CHECK (username = lower(username))
