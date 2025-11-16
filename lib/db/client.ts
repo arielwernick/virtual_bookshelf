@@ -1,14 +1,26 @@
-import { neon } from '@neondatabase/serverless';
+import { neon, NeonQueryFunction } from '@neondatabase/serverless';
 
-// Create a SQL client
-// In Next.js, environment variables are automatically loaded from .env.local
-const databaseUrl = process.env.DATABASE_URL;
+// Lazy initialization - only create connection when first used (runtime)
+let _sql: NeonQueryFunction<false, false> | null = null;
 
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL environment variable is not set');
+function getSql(): NeonQueryFunction<false, false> {
+  if (!_sql) {
+    const databaseUrl = process.env.DATABASE_URL;
+    
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+    
+    _sql = neon(databaseUrl);
+  }
+  
+  return _sql;
 }
 
-export const sql = neon(databaseUrl);
+// Export wrapper function that creates connection on first use
+export const sql = ((strings: TemplateStringsArray, ...values: any[]) => {
+  return getSql()(strings, ...values);
+}) as NeonQueryFunction<false, false>;
 
 // Helper function to test database connection
 export async function testConnection() {
