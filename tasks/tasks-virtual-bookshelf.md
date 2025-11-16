@@ -95,7 +95,7 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 5.7 Add meta tags for social sharing (Open Graph, Twitter Cards)
   - [x] 5.8 Test responsive layout on mobile, tablet, desktop
 
-- [ ] 6.0 Build shelf editing interface
+- [x] 6.0 Build shelf editing interface
   - [ ] 6.1 Create `app/shelf/[username]/edit/page.tsx` for edit mode
   - [ ] 6.2 Add password verification before showing edit interface
   - [ ] 6.3 Reuse `ShelfGrid` component with edit mode prop
