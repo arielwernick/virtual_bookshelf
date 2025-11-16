@@ -1,46 +1,64 @@
-import { notFound } from 'next/navigation';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { ShelfGrid } from '@/components/shelf/ShelfGrid';
+import { ItemModal } from '@/components/shelf/ItemModal';
 import { Item } from '@/lib/types/shelf';
 import Link from 'next/link';
 
-interface ShelfData {
-  username: string;
-  items: Item[];
-  created_at: string;
-}
+export default function ShelfPage() {
+  const params = useParams();
+  const username = params?.username as string;
+  
+  const [shelfData, setShelfData] = useState<{ username: string; items: Item[]; created_at: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
-async function getShelfData(username: string): Promise<ShelfData | null> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-                    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
-                    'http://localhost:3000';
-    
-    const res = await fetch(`${baseUrl}/api/shelf/${username}`, {
-      cache: 'no-store',
-    });
-
-    if (!res.ok) {
-      return null;
+  useEffect(() => {
+    async function fetchShelf() {
+      try {
+        const res = await fetch(`/api/shelf/${username}`);
+        if (res.ok) {
+          const data = await res.json();
+          setShelfData(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching shelf:', error);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    const data = await res.json();
-    return data.success ? data.data : null;
-  } catch (error) {
-    console.error('Error fetching shelf:', error);
-    return null;
-  }
-}
+    if (username) {
+      fetchShelf();
+    }
+  }, [username]);
 
-export default async function ShelfPage({
-  params,
-}: {
-  params: Promise<{ username: string }>;
-}) {
-  const { username } = await params;
-  const shelfData = await getShelfData(username);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading shelf...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!shelfData) {
-    notFound();
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="text-center">
+          <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
+          <h2 className="text-2xl font-semibold text-gray-700 mb-2">Shelf Not Found</h2>
+          <p className="text-gray-600 mb-8">This bookshelf doesn't exist.</p>
+          <Link href="/" className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
+            Go Home
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -69,8 +87,15 @@ export default async function ShelfPage({
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ShelfGrid items={shelfData.items} />
+        <ShelfGrid items={shelfData.items} onItemClick={setSelectedItem} />
       </main>
+
+      {/* Item Modal */}
+      <ItemModal
+        item={selectedItem}
+        isOpen={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+      />
 
       {/* Footer */}
       <footer className="mt-16 border-t border-gray-200 bg-white">
@@ -85,28 +110,4 @@ export default async function ShelfPage({
       </footer>
     </div>
   );
-}
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ username: string }>;
-}) {
-  const { username } = await params;
-  const shelfData = await getShelfData(username);
-
-  if (!shelfData) {
-    return {
-      title: 'Shelf Not Found',
-    };
-  }
-
-  return {
-    title: `${shelfData.username}'s Bookshelf`,
-    description: `Check out ${shelfData.username}'s collection of ${shelfData.items.length} books, podcasts, and music.`,
-    openGraph: {
-      title: `${shelfData.username}'s Bookshelf`,
-      description: `A curated collection of books, podcasts, and music`,
-    },
-  };
 }
