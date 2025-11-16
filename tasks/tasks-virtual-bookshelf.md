@@ -65,15 +65,15 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 2.5 Test Spotify search functionality (albums, podcasts)
   - [x] 2.6 Test Google Books search functionality
 
-- [ ] 3.0 Build backend API routes for shelf management
+- [x] 3.0 Build backend API routes for shelf management
   - [x] 3.1 Create `lib/types/shelf.ts` with TypeScript interfaces for User, Item, ShelfData
   - [x] 3.2 Install bcrypt for password hashing: `npm install bcrypt @types/bcrypt`
   - [x] 3.3 Create `lib/utils/password.ts` with hash and verify functions
   - [x] 3.4 Create `app/api/shelf/create/route.ts` - POST endpoint to create new shelf with username
-  - [ ] 3.5 Create `app/api/shelf/auth/route.ts` - POST endpoint to verify shelf owner password
-  - [ ] 3.6 Create `app/api/shelf/[username]/route.ts` - GET endpoint to fetch public shelf data
-  - [ ] 3.7 Create `app/api/shelf/[username]/items/route.ts` - POST/PUT/DELETE endpoints for item management
-  - [ ] 3.8 Test all API routes with sample data
+  - [x] 3.5 Create `app/api/auth/login/route.ts`, `logout/route.ts`, `me/route.ts` - Authentication endpoints
+  - [x] 3.6 Create `app/api/shelf/[username]/route.ts` - GET endpoint to fetch public shelf data
+  - [x] 3.7 Create `app/api/items/route.ts` and `app/api/items/[id]/route.ts` - POST/PATCH/DELETE endpoints for item management
+  - [x] 3.8 Create `app/api/search/books/route.ts` and `app/api/search/music/route.ts` - Search endpoints
 
 - [x] 4.0 Create user profile and shelf data models
   - [x] 4.1 Create helper functions in `lib/db/queries.ts` for database operations
