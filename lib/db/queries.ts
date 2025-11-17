@@ -41,6 +41,19 @@ export async function getUserById(userId: string): Promise<User | null> {
 }
 
 /**
+ * Get user by share token
+ */
+export async function getUserByShareToken(shareToken: string): Promise<User | null> {
+  const result = await sql`
+    SELECT * FROM users
+    WHERE share_token = ${shareToken}
+    LIMIT 1
+  `;
+  
+  return result.length > 0 ? (result[0] as User) : null;
+}
+
+/**
  * Create a new item
  */
 export async function createItem(userId: string, itemData: CreateItemData): Promise<Item> {
