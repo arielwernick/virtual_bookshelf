@@ -6,11 +6,12 @@ interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
   shareToken: string;
+  onCopy?: () => void;
 }
 
 type TabType = 'link' | 'embed';
 
-export function ShareModal({ isOpen, onClose, shareToken }: ShareModalProps) {
+export function ShareModal({ isOpen, onClose, shareToken, onCopy }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('link');
 
@@ -21,13 +22,14 @@ export function ShareModal({ isOpen, onClose, shareToken }: ShareModalProps) {
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
+    onCopy?.();
     setTimeout(() => setCopied(false), 2000);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-900">Share Your Shelf</h2>
