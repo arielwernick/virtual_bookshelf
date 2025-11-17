@@ -13,9 +13,33 @@ export function Navigation() {
   }
 
   return (
-    <nav className="bg-white border-b border-gray-200">
+    <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3 h-14">
+        <div className="flex items-center justify-between h-16">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors font-medium"
+            title="Go home"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              {/* Books with different heights */}
+              <rect x="2" y="8" width="2" height="10" />
+              <rect x="4.5" y="6" width="2" height="12" />
+              <rect x="7" y="7" width="2" height="11" />
+              <rect x="9.5" y="5" width="2" height="13" />
+              <rect x="12" y="7" width="2" height="11" />
+              <rect x="14.5" y="6" width="2" height="12" />
+              <rect x="17" y="8" width="2" height="10" />
+              <rect x="19.5" y="7" width="2" height="11" />
+              <line x1="1" y1="19" x2="23" y2="19" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            <span className="text-base hidden sm:inline">Home</span>
+          </Link>
+
           <button
             onClick={() => router.back()}
             className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -36,21 +60,6 @@ export function Navigation() {
               />
             </svg>
           </button>
-
-          <Link
-            href="/"
-            className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Go home"
-            aria-label="Go home"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a3 3 0 013 3v1h2v-1a1 1 0 011-1h6a1 1 0 011 1v1h2v-1a3 3 0 013-3v-6.586l.707.707a1 1 0 001.414-1.414l-7-7z" />
-            </svg>
-          </Link>
         </div>
       </div>
     </nav>
