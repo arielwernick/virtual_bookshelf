@@ -10,8 +10,8 @@ import Link from 'next/link';
 export default function SharedShelfPage() {
   const params = useParams();
   const shareToken = params?.shareToken as string;
-  
-  const [shelfData, setShelfData] = useState<{ username: string; items: Item[]; created_at: string } | null>(null);
+
+  const [shelfData, setShelfData] = useState<{ username: string; description: string | null; items: Item[]; created_at: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
@@ -66,8 +66,8 @@ export default function SharedShelfPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
                   Shared Shelf
@@ -87,6 +87,13 @@ export default function SharedShelfPage() {
               Create My Own Shelf
             </Link>
           </div>
+
+          {/* Description */}
+          {shelfData.description && (
+            <div className="pt-4 border-t border-gray-200">
+              <p className="text-gray-700">{shelfData.description}</p>
+            </div>
+          )}
         </div>
       </header>
 

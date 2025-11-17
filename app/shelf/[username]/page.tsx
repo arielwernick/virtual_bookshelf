@@ -12,8 +12,8 @@ import Link from 'next/link';
 export default function ShelfPage() {
   const params = useParams();
   const username = params?.username as string;
-  
-  const [shelfData, setShelfData] = useState<{ username: string; items: Item[]; created_at: string; share_token?: string } | null>(null);
+
+  const [shelfData, setShelfData] = useState<{ username: string; description: string | null; items: Item[]; created_at: string; share_token?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -70,7 +70,7 @@ export default function ShelfPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
                 {shelfData.username}'s Bookshelf
@@ -94,6 +94,13 @@ export default function ShelfPage() {
               </Link>
             </div>
           </div>
+          
+          {/* Description */}
+          {shelfData.description && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <p className="text-gray-700">{shelfData.description}</p>
+            </div>
+          )}
         </div>
       </header>
 

@@ -24,6 +24,7 @@ export async function GET(
       success: true,
       data: {
         username: user.username,
+        description: user.description,
         items,
         created_at: user.created_at,
       },

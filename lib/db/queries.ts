@@ -210,3 +210,17 @@ export async function getNextOrderIndex(userId: string): Promise<number> {
   
   return result[0].next_index as number;
 }
+
+/**
+ * Update user shelf description
+ */
+export async function updateUserDescription(userId: string, description: string | null): Promise<User> {
+  const result = await sql`
+    UPDATE users
+    SET description = ${description}
+    WHERE id = ${userId}
+    RETURNING *
+  `;
+  
+  return result[0] as User;
+}
