@@ -81,10 +81,10 @@ export default function SharedShelfPage() {
               </p>
             </div>
             <Link
-              href="/"
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+              href="/create"
+              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
             >
-              Back Home
+              Create My Own Shelf
             </Link>
           </div>
         </div>
