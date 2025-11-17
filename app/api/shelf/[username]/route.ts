@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { username } = await params;
-    
+
     // Get user
     const user = await getUserByUsername(username.toLowerCase());
     if (!user) {
@@ -24,6 +24,7 @@ export async function GET(
       success: true,
       data: {
         username: user.username,
+        description: user.description,
         items,
         created_at: user.created_at,
         share_token: user.share_token,

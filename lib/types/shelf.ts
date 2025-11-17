@@ -5,6 +5,7 @@ export interface User {
   username: string;
   password_hash: string;
   share_token: string;
+  description: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -28,6 +29,7 @@ export interface Item {
 // Public-facing shelf data (without sensitive user info)
 export interface ShelfData {
   username: string;
+  description: string | null;
   items: Item[];
   created_at: Date;
 }

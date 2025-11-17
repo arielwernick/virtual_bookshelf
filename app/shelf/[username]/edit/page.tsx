@@ -8,17 +8,22 @@ import { Modal } from '@/components/ui/Modal';
 import { Item } from '@/lib/types/shelf';
 import Link from 'next/link';
 
+const MAX_DESCRIPTION_LENGTH = 500;
+
 export default function EditShelfPage() {
   const params = useParams();
   const router = useRouter();
   const username = params?.username as string;
-  
-  const [shelfData, setShelfData] = useState<{ username: string; items: Item[] } | null>(null);
+
+  const [shelfData, setShelfData] = useState<{ username: string; description: string | null; items: Item[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [description, setDescription] = useState('');
+  const [descriptionDirty, setDescriptionDirty] = useState(false);
+  const [descriptionSaving, setDescriptionSaving] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -71,11 +76,40 @@ export default function EditShelfPage() {
       if (res.ok) {
         const data = await res.json();
         setShelfData(data.data);
+        setDescription(data.data.description || '');
       }
     } catch (error) {
       console.error('Error fetching shelf:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(e.target.value);
+    setDescriptionDirty(true);
+  };
+
+  const handleSaveDescription = async () => {
+    setDescriptionSaving(true);
+    try {
+      const res = await fetch('/api/shelf/update-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description }),
+      });
+
+      if (res.ok) {
+        setDescriptionDirty(false);
+        // Update the shelf data with new description
+        if (shelfData) {
+          setShelfData({ ...shelfData, description });
+        }
+      }
+    } catch (error) {
+      console.error('Error saving description:', error);
+    } finally {
+      setDescriptionSaving(false);
     }
   };
 
@@ -146,7 +180,7 @@ export default function EditShelfPage() {
               href={`/shelf/${username}`}
               className="block mt-4 text-center text-sm text-gray-600 hover:text-gray-900"
             >
-              ← Back to public view
+              Back to public view
             </Link>
           </div>
         </div>
@@ -159,7 +193,7 @@ export default function EditShelfPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
                 Editing {shelfData?.username}'s Bookshelf
@@ -188,6 +222,36 @@ export default function EditShelfPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Description Editor */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Shelf Description</h2>
+          <div className="space-y-3">
+            <textarea
+              value={description}
+              onChange={handleDescriptionChange}
+              placeholder="Add a description for your shelf..."
+              maxLength={MAX_DESCRIPTION_LENGTH}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent resize-none"
+              rows={3}
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">
+                {description.length}/{MAX_DESCRIPTION_LENGTH} characters
+              </span>
+              {descriptionDirty && (
+                <button
+                  onClick={handleSaveDescription}
+                  disabled={descriptionSaving}
+                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-600 transition-colors text-sm font-medium"
+                >
+                  {descriptionSaving ? 'Saving...' : 'Save Description'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Add Item Section */}
         <div className="mb-6">
           <button
             onClick={() => setShowAddModal(true)}
@@ -198,9 +262,9 @@ export default function EditShelfPage() {
         </div>
 
         {shelfData && (
-          <ShelfGrid 
-            items={shelfData.items} 
-            editMode 
+          <ShelfGrid
+            items={shelfData.items}
+            editMode
             onDeleteItem={handleDeleteItem}
           />
         )}
