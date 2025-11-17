@@ -222,9 +222,26 @@ export default function EditShelfPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Add Item Section */}
+        <div className="mb-6">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+          >
+            + Add Item
+          </button>
+        </div>
+
+        {shelfData && (
+          <ShelfGrid
+            items={shelfData.items}
+            editMode
+            onDeleteItem={handleDeleteItem}
+          />
+        )}
+
         {/* Description Editor */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Shelf Description</h2>
+        <div className="bg-white rounded-lg shadow-sm p-6 mt-8">
           <div className="space-y-3">
             <textarea
               value={description}
@@ -250,24 +267,6 @@ export default function EditShelfPage() {
             </div>
           </div>
         </div>
-
-        {/* Add Item Section */}
-        <div className="mb-6">
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
-          >
-            + Add Item
-          </button>
-        </div>
-
-        {shelfData && (
-          <ShelfGrid
-            items={shelfData.items}
-            editMode
-            onDeleteItem={handleDeleteItem}
-          />
-        )}
       </main>
 
       {/* Add Item Modal */}
