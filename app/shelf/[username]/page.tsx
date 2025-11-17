@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { ShelfGrid } from '@/components/shelf/ShelfGrid';
 import { ItemModal } from '@/components/shelf/ItemModal';
 import { ShareModal } from '@/components/shelf/ShareModal';
+import { Confetti } from '@/components/Confetti';
 import { Item } from '@/lib/types/shelf';
 import Link from 'next/link';
 
@@ -16,6 +17,7 @@ export default function ShelfPage() {
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     async function fetchShelf() {
@@ -113,8 +115,15 @@ export default function ShelfPage() {
           isOpen={showShareModal}
           onClose={() => setShowShareModal(false)}
           shareToken={shelfData.share_token}
+          onCopy={() => {
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 3500);
+          }}
         />
       )}
+
+      {/* Confetti */}
+      {showConfetti && <Confetti />}
 
       {/* Footer */}
       <footer className="mt-16 border-t border-gray-200 bg-white">
