@@ -18,8 +18,23 @@ export default function ShelfPage() {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.data.username === username) {
+            setIsOwner(true);
+          }
+        }
+      } catch (error) {
+        // Not authenticated or error, that's fine
+      }
+    }
+
     async function fetchShelf() {
       try {
         const res = await fetch(`/api/shelf/${username}`);
@@ -35,6 +50,7 @@ export default function ShelfPage() {
     }
 
     if (username) {
+      checkAuth();
       fetchShelf();
     }
   }, [username]);
@@ -86,12 +102,14 @@ export default function ShelfPage() {
               >
                 Share Shelf
               </button>
-              <Link
-                href={`/shelf/${username}/edit`}
-                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
-              >
-                Edit Shelf
-              </Link>
+              {isOwner && (
+                <Link
+                  href={`/shelf/${username}/edit`}
+                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+                >
+                  Edit Shelf
+                </Link>
+              )}
             </div>
           </div>
           
