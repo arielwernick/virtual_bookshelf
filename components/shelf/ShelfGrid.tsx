@@ -2,7 +2,133 @@
 
 import { Item, ItemType } from '@/lib/types/shelf';
 import { ItemCard } from './ItemCard';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+
+interface ShelfRowProps {
+  items: Item[];
+  onItemClick?: (item: Item) => void;
+  editMode?: boolean;
+  onDeleteItem?: (itemId: string) => void;
+}
+
+/**
+ * ShelfRow - A single shelf displaying items with a visual divider
+ */
+function ShelfRow({ items, onItemClick, editMode, onDeleteItem }: ShelfRowProps) {
+  return (
+    <div className="bg-white/50 backdrop-blur-sm rounded-lg border border-gray-100 shadow-xs overflow-hidden">
+      {/* Shelf items */}
+      <div
+        className="px-6 py-5 flex flex-wrap"
+        style={{
+          gap: '1rem',
+          alignItems: 'flex-end',
+          minHeight: '280px',
+        }}
+      >
+        {items.map((item) => (
+          <div key={item.id} style={{ width: '140px', maxHeight: '240px', flexShrink: 0 }}>
+            <ItemCard
+              item={item}
+              onClick={onItemClick ? () => onItemClick(item) : undefined}
+              editMode={editMode}
+              onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Shelf divider */}
+      <div
+        className="h-2 bg-gradient-to-r from-gray-400 via-gray-600 to-gray-400"
+        style={{
+          boxShadow: '0 12px 24px rgba(0, 0, 0, 0.45), 0 8px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(0, 0, 0, 0.1)',
+        }}
+      />
+    </div>
+  );
+}
+
+interface ShelfContainerProps {
+  items: Item[];
+  onItemClick?: (item: Item) => void;
+  editMode?: boolean;
+  onDeleteItem?: (itemId: string) => void;
+}
+
+/**
+ * ShelfContainer - Splits items into shelf rows based on actual flex layout
+ */
+function ShelfContainer({ items, onItemClick, editMode, onDeleteItem }: ShelfContainerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [shelves, setShelves] = useState<Item[][]>([]);
+
+  useEffect(() => {
+    if (!containerRef.current || items.length === 0) {
+      setShelves([items]);
+      return;
+    }
+
+    // Measure flex layout with temporary container
+    const tempContainer = document.createElement('div');
+    tempContainer.style.cssText = `
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 24px;
+      position: absolute;
+      visibility: hidden;
+      width: ${containerRef.current.clientWidth}px;
+    `;
+
+    // Create measurement items
+    items.forEach(() => {
+      const item = document.createElement('div');
+      item.style.cssText = 'width: 140px; max-height: 240px; flex-shrink: 0; height: 200px;';
+      tempContainer.appendChild(item);
+    });
+
+    document.body.appendChild(tempContainer);
+
+    // Determine which items belong to which shelf based on Y position
+    const shelfMap: Item[][] = [];
+    let currentShelf: Item[] = [];
+    let currentY = (tempContainer.children[0] as HTMLElement)?.offsetTop ?? 0;
+
+    Array.from(tempContainer.children).forEach((child, index) => {
+      const childY = (child as HTMLElement).offsetTop;
+
+      if (childY > currentY && currentShelf.length > 0) {
+        shelfMap.push([...currentShelf]);
+        currentShelf = [items[index]];
+        currentY = childY;
+      } else {
+        currentShelf.push(items[index]);
+      }
+    });
+
+    if (currentShelf.length > 0) {
+      shelfMap.push(currentShelf);
+    }
+
+    document.body.removeChild(tempContainer);
+    setShelves(shelfMap);
+  }, [items, containerRef.current?.clientWidth]);
+
+  return (
+    <div ref={containerRef} className="space-y-6">
+      {shelves.map((shelfItems, index) => (
+        <ShelfRow
+          key={`shelf-${index}`}
+          items={shelfItems}
+          onItemClick={onItemClick}
+          editMode={editMode}
+          onDeleteItem={onDeleteItem}
+        />
+      ))}
+    </div>
+  );
+}
 
 interface ShelfGridProps {
   items: Item[];
@@ -14,88 +140,64 @@ interface ShelfGridProps {
 export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem }: ShelfGridProps) {
   const [selectedType, setSelectedType] = useState<ItemType | 'all'>('all');
 
-  const filteredItems = selectedType === 'all' 
-    ? items 
-    : items.filter(item => item.type === selectedType);
+  const filteredItems =
+    selectedType === 'all' ? items : items.filter((item) => item.type === selectedType);
 
   const counts = {
     all: items.length,
-    book: items.filter(i => i.type === 'book').length,
-    podcast: items.filter(i => i.type === 'podcast').length,
-    music: items.filter(i => i.type === 'music').length,
+    book: items.filter((i) => i.type === 'book').length,
+    podcast: items.filter((i) => i.type === 'podcast').length,
+    music: items.filter((i) => i.type === 'music').length,
   };
+
+  const filterButton = (type: ItemType | 'all', label: string, count: number) => (
+    <button
+      onClick={() => setSelectedType(type)}
+      className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+        selectedType === type
+          ? `${type === 'all' ? 'border-gray-900 text-gray-900' : type === 'book' ? 'border-blue-600 text-blue-600' : type === 'podcast' ? 'border-purple-600 text-purple-600' : 'border-green-600 text-green-600'}`
+          : 'border-transparent text-gray-500 hover:text-gray-700'
+      }`}
+    >
+      {label} ({count})
+    </button>
+  );
 
   return (
     <div>
-      {/* Filter Tabs */}
+      {/* Filter tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-200">
-        <button
-          onClick={() => setSelectedType('all')}
-          className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-            selectedType === 'all'
-              ? 'border-gray-900 text-gray-900'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          All ({counts.all})
-        </button>
-        <button
-          onClick={() => setSelectedType('book')}
-          className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-            selectedType === 'book'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Books ({counts.book})
-        </button>
-        <button
-          onClick={() => setSelectedType('podcast')}
-          className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-            selectedType === 'podcast'
-              ? 'border-purple-600 text-purple-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Podcasts ({counts.podcast})
-        </button>
-        <button
-          onClick={() => setSelectedType('music')}
-          className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-            selectedType === 'music'
-              ? 'border-green-600 text-green-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Music ({counts.music})
-        </button>
+        {filterButton('all', 'All', counts.all)}
+        {filterButton('book', 'Books', counts.book)}
+        {filterButton('podcast', 'Podcasts', counts.podcast)}
+        {filterButton('music', 'Music', counts.music)}
       </div>
 
-      {/* Items Grid */}
+      {/* Shelves or empty state */}
       {filteredItems.length === 0 ? (
         <div className="text-center py-16">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+            />
           </svg>
           <h3 className="mt-2 text-sm font-medium text-gray-900">No items</h3>
           <p className="mt-1 text-sm text-gray-500">
-            {selectedType === 'all' 
-              ? 'This shelf is empty.' 
+            {selectedType === 'all'
+              ? 'This shelf is empty.'
               : `No ${selectedType}s in this shelf.`}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {filteredItems.map((item) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              onClick={onItemClick ? () => onItemClick(item) : undefined}
-              editMode={editMode}
-              onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}
-            />
-          ))}
-        </div>
+        <ShelfContainer
+          items={filteredItems}
+          onItemClick={onItemClick}
+          editMode={editMode}
+          onDeleteItem={onDeleteItem}
+        />
       )}
     </div>
   );
