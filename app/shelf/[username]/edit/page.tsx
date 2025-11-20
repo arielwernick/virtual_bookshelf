@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ShelfGrid } from '@/components/shelf/ShelfGrid';
 import { AddItemForm } from '@/components/shelf/AddItemForm';
+import { ShelfTitleEditor } from '@/components/shelf/ShelfTitleEditor';
 import { Modal } from '@/components/ui/Modal';
 import { Item } from '@/lib/types/shelf';
 import Link from 'next/link';
@@ -15,7 +16,7 @@ export default function EditShelfPage() {
   const router = useRouter();
   const username = params?.username as string;
 
-  const [shelfData, setShelfData] = useState<{ username: string; description: string | null; items: Item[] } | null>(null);
+  const [shelfData, setShelfData] = useState<{ username: string; description: string | null; title: string | null; items: Item[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -24,6 +25,7 @@ export default function EditShelfPage() {
   const [description, setDescription] = useState('');
   const [descriptionDirty, setDescriptionDirty] = useState(false);
   const [descriptionSaving, setDescriptionSaving] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -110,6 +112,30 @@ export default function EditShelfPage() {
       console.error('Error saving description:', error);
     } finally {
       setDescriptionSaving(false);
+    }
+  };
+
+  const handleTitleSave = async (newTitle: string) => {
+    try {
+      const res = await fetch('/api/shelf/update-title', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle || null }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update title');
+      }
+
+      // Update local state with new title
+      if (shelfData) {
+        setShelfData({ ...shelfData, title: newTitle || null });
+      }
+      setIsEditingTitle(false);
+    } catch (error) {
+      throw error instanceof Error ? error : new Error('Failed to update title');
     }
   };
 
@@ -222,6 +248,33 @@ export default function EditShelfPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Title Editor */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Shelf Title</h2>
+          {isEditingTitle ? (
+            <ShelfTitleEditor
+              currentTitle={shelfData?.title || null}
+              username={shelfData?.username || ''}
+              onSave={handleTitleSave}
+              onCancel={() => setIsEditingTitle(false)}
+            />
+          ) : (
+            <div className="flex items-center justify-between">
+              <p className="text-gray-700">
+                {shelfData?.title && shelfData.title.trim().length > 0
+                  ? shelfData.title
+                  : `${shelfData?.username}'s Bookshelf`}
+              </p>
+              <button
+                onClick={() => setIsEditingTitle(true)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+              >
+                Edit Title
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Add Item Section */}
         <div className="mb-6">
           <button

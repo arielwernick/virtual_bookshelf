@@ -224,3 +224,17 @@ export async function updateUserDescription(userId: string, description: string 
   
   return result[0] as User;
 }
+
+/**
+ * Update user shelf title
+ */
+export async function updateUserTitle(userId: string, title: string | null): Promise<User> {
+  const result = await sql`
+    UPDATE users
+    SET title = ${title}
+    WHERE id = ${userId}
+    RETURNING *
+  `;
+  
+  return result[0] as User;
+}

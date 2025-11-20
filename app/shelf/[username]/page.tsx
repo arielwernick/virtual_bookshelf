@@ -13,7 +13,7 @@ export default function ShelfPage() {
   const params = useParams();
   const username = params?.username as string;
 
-  const [shelfData, setShelfData] = useState<{ username: string; description: string | null; items: Item[]; created_at: string; share_token?: string } | null>(null);
+  const [shelfData, setShelfData] = useState<{ username: string; description: string | null; title: string | null; items: Item[]; created_at: string; share_token?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -81,6 +81,11 @@ export default function ShelfPage() {
     );
   }
 
+  const displayTitle =
+    shelfData.title && shelfData.title.trim().length > 0
+      ? shelfData.title
+      : `${shelfData.username}'s Bookshelf`;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -88,9 +93,7 @@ export default function ShelfPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {shelfData.username}'s Bookshelf
-              </h1>
+              <h1 className="text-3xl font-bold text-gray-900">{displayTitle}</h1>
               <p className="mt-1 text-sm text-gray-500">
                 {shelfData.items.length} {shelfData.items.length === 1 ? 'item' : 'items'}
               </p>
