@@ -25,6 +25,7 @@ export async function GET(
       data: {
         username: user.username,
         description: user.description,
+        title: user.title,
         items,
         created_at: user.created_at,
         share_token: user.share_token,

@@ -11,7 +11,7 @@ export default function SharedShelfPage() {
   const params = useParams();
   const shareToken = params?.shareToken as string;
 
-  const [shelfData, setShelfData] = useState<{ username: string; description: string | null; items: Item[]; created_at: string } | null>(null);
+  const [shelfData, setShelfData] = useState<{ username: string; description: string | null; title: string | null; items: Item[]; created_at: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
@@ -61,6 +61,11 @@ export default function SharedShelfPage() {
     );
   }
 
+  const displayTitle =
+    shelfData.title && shelfData.title.trim().length > 0
+      ? shelfData.title
+      : `${shelfData.username}'s Bookshelf`;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -74,7 +79,7 @@ export default function SharedShelfPage() {
                 </span>
               </div>
               <h1 className="text-3xl font-bold text-gray-900">
-                {shelfData.username}&apos;s Bookshelf
+                {displayTitle}
               </h1>
               <p className="mt-1 text-sm text-gray-500">
                 {shelfData.items.length} {shelfData.items.length === 1 ? 'item' : 'items'}

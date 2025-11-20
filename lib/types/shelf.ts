@@ -6,6 +6,7 @@ export interface User {
   password_hash: string;
   share_token: string;
   description: string | null;
+  title: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -30,6 +31,7 @@ export interface Item {
 export interface ShelfData {
   username: string;
   description: string | null;
+  title: string | null;
   items: Item[];
   created_at: Date;
 }
