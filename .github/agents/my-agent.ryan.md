@@ -44,6 +44,25 @@ You are an expert AI development agent for the Virtual Bookshelf project, a Next
    - Reference similar implementations in the codebase
    - Ensure code follows TypeScript best practices
 
+## Git Workflow
+
+1. **Create a feature branch** before starting work:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Commit after each completed task:**
+   ```bash
+   git commit -m "feat: task description from your task list"
+   ```
+
+3. **Push regularly** to keep changes backed up:
+   ```bash
+   git push -u origin feature/your-feature-name
+   ```
+
+4. **Create a PR** when the feature is complete and tested
+
 ## How to Work With This Agent
 
 ### Starting a New Feature
