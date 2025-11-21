@@ -234,39 +234,28 @@ export async function getItemById(itemId: string): Promise<Item | null> {
  * Update an item
  */
 export async function updateItem(itemId: string, itemData: UpdateItemData): Promise<Item> {
-    // Simple approach: update fields individually
+    // Simple approach: update fields individually (last wins)
     let result: Item | undefined;
 
     if (itemData.title !== undefined) {
-        setClauses.push('title = ' + sql`${itemData.title}`);
+        const res = await sql`UPDATE items SET title = ${itemData.title} WHERE id = ${itemId} RETURNING *`;
+        result = res[0] as Item;
     }
     if (itemData.creator !== undefined) {
-        setClauses.push('creator = ' + sql`${itemData.creator}`);
+        const res = await sql`UPDATE items SET creator = ${itemData.creator} WHERE id = ${itemId} RETURNING *`;
+        result = res[0] as Item;
     }
     if (itemData.image_url !== undefined) {
-        setClauses.push('image_url = ' + sql`${itemData.image_url}`);
+        const res = await sql`UPDATE items SET image_url = ${itemData.image_url} WHERE id = ${itemId} RETURNING *`;
+        result = res[0] as Item;
     }
     if (itemData.external_url !== undefined) {
-        setClauses.push('external_url = ' + sql`${itemData.external_url}`);
+        const res = await sql`UPDATE items SET external_url = ${itemData.external_url} WHERE id = ${itemId} RETURNING *`;
+        result = res[0] as Item;
     }
     if (itemData.notes !== undefined) {
-        setClauses.push('notes = ' + sql`${itemData.notes}`);
-    }
-    if (itemData.order_index !== undefined) {
-        setClauses.push('order_index = ' + sql`${itemData.order_index}`);
-    }
-
-    if (itemData.creator !== undefined) {
-        result = await sql`UPDATE items SET creator = ${itemData.creator} WHERE id = ${itemId} RETURNING *`;
-    }
-    if (itemData.image_url !== undefined) {
-        result = await sql`UPDATE items SET image_url = ${itemData.image_url} WHERE id = ${itemId} RETURNING *`;
-    }
-    if (itemData.external_url !== undefined) {
-        result = await sql`UPDATE items SET external_url = ${itemData.external_url} WHERE id = ${itemId} RETURNING *`;
-    }
-    if (itemData.notes !== undefined) {
-        result = await sql`UPDATE items SET notes = ${itemData.notes} WHERE id = ${itemId} RETURNING *`;
+        const res = await sql`UPDATE items SET notes = ${itemData.notes} WHERE id = ${itemId} RETURNING *`;
+        result = res[0] as Item;
     }
     if (itemData.order_index !== undefined) {
         const res = await sql`UPDATE items SET order_index = ${itemData.order_index} WHERE id = ${itemId} RETURNING *`;
