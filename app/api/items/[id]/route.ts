@@ -30,8 +30,9 @@ export async function PATCH(
       );
     }
 
-    // Check ownership
-    if (existingItem.user_id !== session.userId) {
+    // Check ownership via shelf
+    const shelf = await getShelfById(existingItem.shelf_id);
+    if (!shelf || shelf.user_id !== session.userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }

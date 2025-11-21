@@ -44,7 +44,6 @@ export async function POST(request: Request) {
     // Create a default shelf for the user
     const defaultShelf = await createShelf(user.id, {
       name: 'My Shelf',
-      description: null,
       is_default: true,
     });
 
