@@ -82,7 +82,7 @@ export default function EditShelfPage() {
                 const shelves = shelvesData.data;
                 
                 // Get the default shelf
-                const defaultShelf = shelves.find((s: any) => s.is_default) || shelves[0];
+                const defaultShelf = shelves.find((s: { is_default: boolean }) => s.is_default) || shelves[0];
                 
                 if (defaultShelf) {
                     // Get items for this shelf

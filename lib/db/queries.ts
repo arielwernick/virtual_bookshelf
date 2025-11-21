@@ -128,9 +128,6 @@ export async function getShelfByUserAndName(userId: string, name: string): Promi
  * Update a shelf
  */
 export async function updateShelf(shelfId: string, shelfData: UpdateShelfData): Promise<Shelf> {
-    const updates: string[] = [];
-    const values: any[] = [];
-
     if (shelfData.name !== undefined) {
         const result = await sql`
       UPDATE shelves 
@@ -237,9 +234,8 @@ export async function getItemById(itemId: string): Promise<Item | null> {
  * Update an item
  */
 export async function updateItem(itemId: string, itemData: UpdateItemData): Promise<Item> {
-    // Build SET clause dynamically
-    const setClauses: string[] = [];
-    const setValues: any = {};
+    // Simple approach: update fields individually
+    let result: Item | undefined;
 
     if (itemData.title !== undefined) {
         setClauses.push('title = ' + sql`${itemData.title}`);
@@ -260,16 +256,6 @@ export async function updateItem(itemId: string, itemData: UpdateItemData): Prom
         setClauses.push('order_index = ' + sql`${itemData.order_index}`);
     }
 
-    if (setClauses.length === 0) {
-        throw new Error('No fields to update');
-    }
-
-    // Simple approach: update fields individually
-    let result: any;
-
-    if (itemData.title !== undefined) {
-        result = await sql`UPDATE items SET title = ${itemData.title} WHERE id = ${itemId} RETURNING *`;
-    }
     if (itemData.creator !== undefined) {
         result = await sql`UPDATE items SET creator = ${itemData.creator} WHERE id = ${itemId} RETURNING *`;
     }
@@ -283,10 +269,15 @@ export async function updateItem(itemId: string, itemData: UpdateItemData): Prom
         result = await sql`UPDATE items SET notes = ${itemData.notes} WHERE id = ${itemId} RETURNING *`;
     }
     if (itemData.order_index !== undefined) {
-        result = await sql`UPDATE items SET order_index = ${itemData.order_index} WHERE id = ${itemId} RETURNING *`;
+        const res = await sql`UPDATE items SET order_index = ${itemData.order_index} WHERE id = ${itemId} RETURNING *`;
+        result = res[0] as Item;
     }
 
-    return result[0] as Item;
+    if (!result) {
+        throw new Error('No fields to update');
+    }
+
+    return result;
 }
 
 /**

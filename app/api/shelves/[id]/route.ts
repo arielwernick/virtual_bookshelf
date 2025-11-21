@@ -111,11 +111,12 @@ export async function PATCH(
       success: true,
       data: updatedShelf,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating shelf:', error);
 
     // Handle unique constraint violation (duplicate name)
-    if (error?.message?.includes('shelves_user_name_unique')) {
+    const errorMessage = error instanceof Error ? error.message : '';
+    if (errorMessage.includes('shelves_user_name_unique')) {
       return NextResponse.json(
         { success: false, error: 'You already have a shelf with this name' },
         { status: 409 }
