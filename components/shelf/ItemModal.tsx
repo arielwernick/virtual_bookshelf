@@ -25,7 +25,9 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <span className="text-sm font-medium text-gray-900 truncate">{item.title}</span>
+        <span className="text-sm font-medium text-gray-900 truncate" aria-label={item.title}>
+          {item.title}
+        </span>
       </div>
 
       <div className="p-4 sm:p-6">
