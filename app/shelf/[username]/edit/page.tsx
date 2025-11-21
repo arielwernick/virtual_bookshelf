@@ -16,7 +16,7 @@ export default function EditShelfPage() {
     const router = useRouter();
     const username = params?.username as string;
 
-    const [shelfData, setShelfData] = useState<{ username: string; description: string | null; title: string | null; items: Item[] } | null>(null);
+    const [shelfData, setShelfData] = useState<{ username: string; shelfName: string; description: string | null; items: Item[]; shelfId: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [authenticated, setAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
@@ -75,11 +75,27 @@ export default function EditShelfPage() {
 
     const fetchShelf = async () => {
         try {
-            const res = await fetch(`/api/shelf/${username}`);
-            if (res.ok) {
-                const data = await res.json();
-                setShelfData(data.data);
-                setDescription(data.data.description || '');
+            // First get user's shelves
+            const shelvesRes = await fetch('/api/shelves');
+            if (shelvesRes.ok) {
+                const shelvesData = await shelvesRes.json();
+                const shelves = shelvesData.data;
+                
+                // Get the default shelf
+                const defaultShelf = shelves.find((s: any) => s.is_default) || shelves[0];
+                
+                if (defaultShelf) {
+                    // Get items for this shelf
+                    const res = await fetch(`/api/shelf/${username}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setShelfData({
+                            ...data.data,
+                            shelfId: defaultShelf.id,
+                        });
+                        setDescription(data.data.description || '');
+                    }
+                }
             }
         } catch (error) {
             console.error('Error fetching shelf:', error);
@@ -94,12 +110,17 @@ export default function EditShelfPage() {
     };
 
     const handleSaveDescription = async () => {
+        if (!shelfData?.shelfId) return;
+        
         setDescriptionSaving(true);
         try {
             const res = await fetch('/api/shelf/update-description', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ description }),
+                body: JSON.stringify({ 
+                    shelf_id: shelfData.shelfId,
+                    description 
+                }),
             });
 
             if (res.ok) {
@@ -117,11 +138,16 @@ export default function EditShelfPage() {
     };
 
     const handleTitleSave = async (newTitle: string) => {
+        if (!shelfData?.shelfId) return;
+        
         try {
             const res = await fetch('/api/shelf/update-title', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: newTitle || null }),
+                body: JSON.stringify({ 
+                    shelf_id: shelfData.shelfId,
+                    title: newTitle || null 
+                }),
             });
 
             const data = await res.json();
@@ -130,9 +156,9 @@ export default function EditShelfPage() {
                 throw new Error(data.error || 'Failed to update title');
             }
 
-            // Update local state with new title
+            // Update local state with new title (name)
             if (shelfData) {
-                setShelfData({ ...shelfData, title: newTitle || null });
+                setShelfData({ ...shelfData, shelfName: newTitle || 'My Shelf' });
             }
             setIsEditingTitle(false);
         } catch (error) {
@@ -252,7 +278,7 @@ export default function EditShelfPage() {
                     <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Edit Shelf Title</h2>
                         <ShelfTitleEditor
-                            currentTitle={shelfData?.title || null}
+                            currentTitle={shelfData?.shelfName || null}
                             username={shelfData?.username || ''}
                             onSave={handleTitleSave}
                             onCancel={() => setIsEditingTitle(false)}
@@ -261,9 +287,7 @@ export default function EditShelfPage() {
                 ) : (
                     <div className="mb-8 flex items-center gap-3">
                         <h1 className="text-3xl font-bold text-gray-900">
-                            {shelfData?.title && shelfData.title.trim().length > 0
-                                ? shelfData.title
-                                : `${shelfData?.username}'s Bookshelf`}
+                            {shelfData?.shelfName || `${shelfData?.username}'s Bookshelf`}
                         </h1>
                         <button
                             onClick={() => setIsEditingTitle(true)}
@@ -360,13 +384,16 @@ export default function EditShelfPage() {
 
             {/* Add Item Modal */}
             <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)}>
-                <AddItemForm
-                    onItemAdded={() => {
-                        setShowAddModal(false);
-                        fetchShelf();
-                    }}
-                    onClose={() => setShowAddModal(false)}
-                />
+                {shelfData?.shelfId && (
+                    <AddItemForm
+                        shelfId={shelfData.shelfId}
+                        onItemAdded={() => {
+                            setShowAddModal(false);
+                            fetchShelf();
+                        }}
+                        onClose={() => setShowAddModal(false)}
+                    />
+                )}
             </Modal>
         </div>
     );

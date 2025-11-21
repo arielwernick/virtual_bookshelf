@@ -13,11 +13,12 @@ interface SearchResult {
 }
 
 interface AddItemFormProps {
+  shelfId: string;
   onItemAdded: () => void;
   onClose: () => void;
 }
 
-export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
+export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps) {
   const [itemType, setItemType] = useState<ItemType>('book');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -63,6 +64,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          shelf_id: shelfId,
           type: itemType,
           title: result.title,
           creator: result.creator,
@@ -93,6 +95,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          shelf_id: shelfId,
           type: itemType,
           ...manualData,
         }),

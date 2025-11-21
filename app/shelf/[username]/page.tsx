@@ -13,7 +13,7 @@ export default function ShelfPage() {
     const params = useParams();
     const username = params?.username as string;
 
-    const [shelfData, setShelfData] = useState<{ username: string; description: string | null; title: string | null; items: Item[]; created_at: string; share_token?: string } | null>(null);
+    const [shelfData, setShelfData] = useState<{ username: string; shelfName: string; description: string | null; items: Item[]; created_at: string; share_token?: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedItem, setSelectedItem] = useState<Item | null>(null);
     const [showShareModal, setShowShareModal] = useState(false);
@@ -81,10 +81,7 @@ export default function ShelfPage() {
         );
     }
 
-    const displayTitle =
-        shelfData.title && shelfData.title.trim().length > 0
-            ? shelfData.title
-            : `${shelfData.username}'s Bookshelf`;
+    const displayTitle = shelfData.shelfName || `${shelfData.username}'s Bookshelf`;
 
     return (
         <div className="min-h-screen bg-gray-50">
