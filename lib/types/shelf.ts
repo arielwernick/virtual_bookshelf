@@ -1,12 +1,22 @@
 // TypeScript types for Virtual Bookshelf
 
+// User account (can own multiple shelves)
 export interface User {
   id: string;
   username: string;
   password_hash: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Shelf (owned by a user, contains items)
+export interface Shelf {
+  id: string;
+  user_id: string;
+  name: string;
   share_token: string;
   description: string | null;
-  title: string | null;
+  is_default: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -15,7 +25,7 @@ export type ItemType = 'book' | 'podcast' | 'music';
 
 export interface Item {
   id: string;
-  user_id: string;
+  shelf_id: string;
   type: ItemType;
   title: string;
   creator: string;
@@ -30,10 +40,24 @@ export interface Item {
 // Public-facing shelf data (without sensitive user info)
 export interface ShelfData {
   username: string;
+  shelfName: string;
   description: string | null;
-  title: string | null;
   items: Item[];
+  share_token?: string;
   created_at: Date;
+}
+
+// For creating new shelves
+export interface CreateShelfData {
+  name: string;
+  description?: string;
+  is_default?: boolean;
+}
+
+// For updating existing shelves
+export interface UpdateShelfData {
+  name?: string;
+  description?: string;
 }
 
 // For creating new items
