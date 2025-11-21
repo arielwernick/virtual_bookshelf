@@ -41,27 +41,9 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-      {/* Backdrop - hidden on mobile for full-screen effect */}
-      <div
-        className="hidden sm:block fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Modal */}
-      <div className="flex min-h-full items-center justify-center sm:p-4">
-        <div className="relative bg-white sm:rounded-lg shadow-xl w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto">
-          {/* Close button - hidden on mobile (back button used instead) */}
-          <button
-            onClick={onClose}
-            className="hidden sm:block absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors z-10"
-            aria-label="Close"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
+      {/* Modal - Full screen on all devices */}
+      <div className="flex min-h-full">
+        <div className="relative bg-white w-full h-full overflow-y-auto">
           {children}
         </div>
       </div>

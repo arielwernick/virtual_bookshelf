@@ -14,8 +14,8 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      {/* Mobile: Back button header */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 sm:hidden flex items-center gap-3 z-10">
+      {/* Back button header */}
+      <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 z-10">
         <button
           onClick={onClose}
           className="p-1.5 -ml-1.5 text-gray-600 hover:text-gray-900 transition-colors"
@@ -30,7 +30,7 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
         </span>
       </div>
 
-      <div className="p-4 sm:p-6">
+      <div className="p-4 sm:p-6 max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
           {/* Cover Image */}
           <div className="w-32 sm:w-48 md:w-64 flex-shrink-0 mx-auto md:mx-0">
