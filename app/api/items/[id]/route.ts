@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
-import { getItemById, updateItem, deleteItem } from '@/lib/db/queries';
+import { getItemById, updateItem, deleteItem, getShelfById } from '@/lib/db/queries';
 import { validateText, validateUrl, validateNotes } from '@/lib/utils/validation';
 import { UpdateItemData } from '@/lib/types/shelf';
 
@@ -147,8 +147,9 @@ export async function DELETE(
       );
     }
 
-    // Check ownership
-    if (existingItem.user_id !== session.userId) {
+    // Check ownership via shelf
+    const shelf = await getShelfById(existingItem.shelf_id);
+    if (!shelf || shelf.user_id !== session.userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }

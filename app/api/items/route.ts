@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
-import { createItem, getNextOrderIndex } from '@/lib/db/queries';
+import { createItem, getNextOrderIndex, getShelfById } from '@/lib/db/queries';
 import { validateItemType, validateText, validateUrl, validateNotes } from '@/lib/utils/validation';
 import { CreateItemData } from '@/lib/types/shelf';
 
@@ -16,7 +16,31 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { type, title, creator, image_url, external_url, notes } = body;
+    const { shelf_id, type, title, creator, image_url, external_url, notes } = body;
+
+    // Validate shelf_id
+    if (!shelf_id) {
+      return NextResponse.json(
+        { success: false, error: 'Shelf ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Verify shelf exists and belongs to user
+    const shelf = await getShelfById(shelf_id);
+    if (!shelf) {
+      return NextResponse.json(
+        { success: false, error: 'Shelf not found' },
+        { status: 404 }
+      );
+    }
+
+    if (shelf.user_id !== session.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
 
     // Validate type
     const typeValidation = validateItemType(type);
@@ -78,8 +102,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Get next order index
-    const orderIndex = await getNextOrderIndex(session.userId);
+    // Get next order index for this shelf
+    const orderIndex = await getNextOrderIndex(shelf_id);
 
     // Create item
     const itemData: CreateItemData = {
@@ -92,7 +116,7 @@ export async function POST(request: Request) {
       order_index: orderIndex,
     };
 
-    const item = await createItem(session.userId, itemData);
+    const item = await createItem(shelf_id, itemData);
 
     return NextResponse.json({
       success: true,

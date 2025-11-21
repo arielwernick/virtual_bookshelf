@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getUserByUsername, getItemsByUserId } from '@/lib/db/queries';
+import { getUserByUsername, getDefaultShelf, getItemsByShelfId } from '@/lib/db/queries';
 
 export async function GET(
   request: Request,
@@ -17,18 +17,27 @@ export async function GET(
       );
     }
 
-    // Get user's items
-    const items = await getItemsByUserId(user.id);
+    // Get user's default shelf
+    const defaultShelf = await getDefaultShelf(user.id);
+    if (!defaultShelf) {
+      return NextResponse.json(
+        { success: false, error: 'Default shelf not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get shelf's items
+    const items = await getItemsByShelfId(defaultShelf.id);
 
     return NextResponse.json({
       success: true,
       data: {
         username: user.username,
-        description: user.description,
-        title: user.title,
+        shelfName: defaultShelf.name,
+        description: defaultShelf.description,
         items,
-        created_at: user.created_at,
-        share_token: user.share_token,
+        created_at: defaultShelf.created_at,
+        share_token: defaultShelf.share_token,
       },
     });
   } catch (error) {

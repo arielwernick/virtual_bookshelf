@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createUser, getUserByUsername } from '@/lib/db/queries';
+import { createUser, getUserByUsername, createShelf } from '@/lib/db/queries';
 import { hashPassword } from '@/lib/utils/password';
 import { validateUsername, validatePassword } from '@/lib/utils/validation';
 
@@ -37,22 +37,30 @@ export async function POST(request: Request) {
       );
     }
 
-    // Hash password and create user
+    // Hash password and create user account
     const passwordHash = await hashPassword(password);
     const user = await createUser(normalizedUsername, passwordHash);
+
+    // Create a default shelf for the user
+    const defaultShelf = await createShelf(user.id, {
+      name: 'My Shelf',
+      description: null,
+      is_default: true,
+    });
 
     return NextResponse.json({
       success: true,
       data: {
         id: user.id,
         username: user.username,
+        defaultShelfId: defaultShelf.id,
         created_at: user.created_at,
       },
     });
   } catch (error) {
-    console.error('Error creating shelf:', error);
+    console.error('Error creating user account:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create shelf' },
+      { success: false, error: 'Failed to create account' },
       { status: 500 }
     );
   }

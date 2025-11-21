@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
-import { updateItemOrder } from '@/lib/db/queries';
+import { updateItemOrder, getShelfById } from '@/lib/db/queries';
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +14,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { itemIds } = body;
+    const { shelf_id, itemIds } = body;
+
+    if (!shelf_id) {
+      return NextResponse.json(
+        { success: false, error: 'Shelf ID is required' },
+        { status: 400 }
+      );
+    }
 
     if (!Array.isArray(itemIds)) {
       return NextResponse.json(
@@ -23,8 +30,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verify shelf ownership
+    const shelf = await getShelfById(shelf_id);
+    if (!shelf || shelf.user_id !== session.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
+
     // Update item order
-    await updateItemOrder(session.userId, itemIds);
+    await updateItemOrder(shelf_id, itemIds);
 
     return NextResponse.json({
       success: true,
