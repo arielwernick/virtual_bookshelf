@@ -19,15 +19,14 @@ function ShelfRow({ items, onItemClick, editMode, onDeleteItem }: ShelfRowProps)
     <div className="bg-white/50 backdrop-blur-sm rounded-lg border border-gray-100 shadow-xs overflow-hidden">
       {/* Shelf items */}
       <div
-        className="px-6 py-5 flex flex-wrap"
+        className="px-3 py-3 sm:px-6 sm:py-5 flex flex-wrap"
         style={{
-          gap: '1rem',
+          gap: '0.5rem',
           alignItems: 'flex-end',
-          minHeight: '280px',
         }}
       >
         {items.map((item) => (
-          <div key={item.id} style={{ width: '140px', maxHeight: '240px', flexShrink: 0 }}>
+          <div key={item.id} className="w-[100px] max-h-[180px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
             <ItemCard
               item={item}
               onClick={onItemClick ? () => onItemClick(item) : undefined}
@@ -40,7 +39,7 @@ function ShelfRow({ items, onItemClick, editMode, onDeleteItem }: ShelfRowProps)
 
       {/* Shelf divider */}
       <div
-        className="h-2 bg-gradient-to-r from-gray-400 via-gray-600 to-gray-400"
+        className="h-1.5 sm:h-2 bg-gradient-to-r from-gray-400 via-gray-600 to-gray-400"
         style={{
           boxShadow: '0 12px 24px rgba(0, 0, 0, 0.45), 0 8px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(0, 0, 0, 0.1)',
         }}
@@ -69,13 +68,19 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem }: ShelfCon
       return;
     }
 
+    // Determine if we're on mobile (small screen)
+    const isMobile = window.innerWidth < 640; // sm breakpoint
+    const itemWidth = isMobile ? 100 : 140;
+    const gap = isMobile ? 8 : 16; // 0.5rem = 8px, 1rem = 16px
+    const padding = isMobile ? 12 : 24; // px-3 = 12px, px-6 = 24px
+
     // Measure flex layout with temporary container
     const tempContainer = document.createElement('div');
     tempContainer.style.cssText = `
       display: flex;
       flex-wrap: wrap;
-      gap: 1rem;
-      padding: 24px;
+      gap: ${gap}px;
+      padding: ${padding}px;
       position: absolute;
       visibility: hidden;
       width: ${containerRef.current.clientWidth}px;
@@ -84,7 +89,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem }: ShelfCon
     // Create measurement items
     items.forEach(() => {
       const item = document.createElement('div');
-      item.style.cssText = 'width: 140px; max-height: 240px; flex-shrink: 0; height: 200px;';
+      item.style.cssText = `width: ${itemWidth}px; flex-shrink: 0; height: ${isMobile ? 150 : 200}px;`;
       tempContainer.appendChild(item);
     });
 
@@ -116,7 +121,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem }: ShelfCon
   }, [items, containerRef.current?.clientWidth]);
 
   return (
-    <div ref={containerRef} className="space-y-6">
+    <div ref={containerRef} className="space-y-4 sm:space-y-6">
       {shelves.map((shelfItems, index) => (
         <ShelfRow
           key={`shelf-${index}`}
