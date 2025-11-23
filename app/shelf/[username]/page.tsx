@@ -57,10 +57,10 @@ export default function ShelfPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background-secondary)' }}>
                 <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading shelf...</p>
+                    <div className="w-16 h-16 rounded-full animate-spin mx-auto" style={{ border: '4px solid var(--gray-200)', borderTopColor: 'var(--primary-orange)' }}></div>
+                    <p className="mt-4" style={{ color: 'var(--gray-600)' }}>Loading shelf...</p>
                 </div>
             </div>
         );
@@ -68,12 +68,21 @@ export default function ShelfPage() {
 
     if (!shelfData) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+            <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--background-secondary)' }}>
                 <div className="text-center">
-                    <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
-                    <h2 className="text-2xl font-semibold text-gray-700 mb-2">Shelf Not Found</h2>
-                    <p className="text-gray-600 mb-8">This bookshelf doesn't exist.</p>
-                    <Link href="/" className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
+                    <h1 className="text-6xl font-bold mb-4" style={{ color: 'var(--gray-900)' }}>404</h1>
+                    <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--gray-700)' }}>Shelf Not Found</h2>
+                    <p className="mb-8" style={{ color: 'var(--gray-600)' }}>This bookshelf doesn't exist.</p>
+                    <Link 
+                        href="/" 
+                        className="inline-block px-6 py-3 rounded-full font-semibold transition-all"
+                        style={{ 
+                            backgroundColor: 'var(--primary-orange)',
+                            color: 'white'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-orange-dark)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-orange)'}
+                    >
                         Go Home
                     </Link>
                 </div>
@@ -87,28 +96,41 @@ export default function ShelfPage() {
             : `${shelfData.username}'s Bookshelf`;
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen" style={{ backgroundColor: 'var(--background-secondary)' }}>
             {/* Header */}
-            <header className="bg-white border-b border-gray-200">
+            <header className="bg-white shadow-sm" style={{ borderBottom: '1px solid var(--border-color)' }}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="flex justify-between items-center mb-4">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">{displayTitle}</h1>
-                            <p className="mt-1 text-sm text-gray-500">
+                            <h1 className="text-3xl font-bold" style={{ color: 'var(--gray-900)', letterSpacing: '-0.02em' }}>{displayTitle}</h1>
+                            <p className="mt-1 text-sm" style={{ color: 'var(--gray-500)' }}>
                                 {shelfData.items.length} {shelfData.items.length === 1 ? 'item' : 'items'}
                             </p>
                         </div>
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowShareModal(true)}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                                className="px-5 py-2 rounded-full text-sm font-semibold transition-all"
+                                style={{ 
+                                    border: '1px solid var(--border-color)',
+                                    color: 'var(--gray-700)',
+                                    backgroundColor: 'transparent'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--gray-100)'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                             >
                                 Share Shelf
                             </button>
                             {isOwner && (
                                 <Link
                                     href={`/shelf/${username}/edit`}
-                                    className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+                                    className="px-5 py-2 rounded-full text-sm font-semibold transition-all"
+                                    style={{ 
+                                        backgroundColor: 'var(--primary-orange)',
+                                        color: 'white'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-orange-dark)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-orange)'}
                                 >
                                     Edit Shelf
                                 </Link>
@@ -118,8 +140,8 @@ export default function ShelfPage() {
 
                     {/* Description */}
                     {shelfData.description && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                            <p className="text-gray-700">{shelfData.description}</p>
+                        <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-color)' }}>
+                            <p style={{ color: 'var(--gray-700)', lineHeight: '1.6' }}>{shelfData.description}</p>
                         </div>
                     )}
                 </div>
@@ -154,9 +176,9 @@ export default function ShelfPage() {
             {showConfetti && <Confetti />}
 
             {/* Footer */}
-            <footer className="mt-16 border-t border-gray-200 bg-white">
+            <footer className="mt-16 bg-white" style={{ borderTop: '1px solid var(--border-color)' }}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <p className="text-center text-sm text-gray-500">
+                    <p className="text-center text-sm" style={{ color: 'var(--gray-500)' }}>
                         Powered by{' '}
                         <a href="/" className="font-medium text-gray-900 hover:underline">
                             Virtual Bookshelf
