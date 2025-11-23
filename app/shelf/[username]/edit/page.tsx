@@ -177,7 +177,7 @@ export default function EditShelfPage() {
             <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
                 <div className="max-w-md w-full">
                     <div className="bg-white rounded-lg shadow-sm p-8">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Enter Password</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6" style={{ fontWeight: 700 }}>Enter Password</h2>
                         <form onSubmit={handleLogin} className="space-y-4">
                             {authError && (
                                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
@@ -185,7 +185,7 @@ export default function EditShelfPage() {
                                 </div>
                             )}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontWeight: 500 }}>
                                     Password for {username}
                                 </label>
                                 <input
@@ -198,7 +198,7 @@ export default function EditShelfPage() {
                             </div>
                             <button
                                 type="submit"
-                                className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                                className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-300 font-semibold"
                             >
                                 Unlock Shelf
                             </button>
@@ -227,13 +227,15 @@ export default function EditShelfPage() {
                         <div className="flex gap-3">
                             <Link
                                 href={`/shelf/${username}`}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 text-sm font-semibold"
+                                style={{ fontWeight: 600 }}
                             >
                                 View Public Shelf
                             </Link>
                             <button
                                 onClick={handleLogout}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 text-sm font-semibold"
+                                style={{ fontWeight: 600 }}
                             >
                                 Logout
                             </button>
@@ -246,11 +248,11 @@ export default function EditShelfPage() {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Title Editor */}
                 <div className="mb-2">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Title</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide" style={{ fontWeight: 600 }}>Title</label>
                 </div>
                 {isEditingTitle ? (
                     <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Edit Shelf Title</h2>
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4" style={{ fontWeight: 600 }}>Edit Shelf Title</h2>
                         <ShelfTitleEditor
                             currentTitle={shelfData?.title || null}
                             username={shelfData?.username || ''}
@@ -260,7 +262,7 @@ export default function EditShelfPage() {
                     </div>
                 ) : (
                     <div className="mb-8 flex items-center gap-3">
-                        <h1 className="text-3xl font-bold text-gray-900">
+                        <h1 className="text-3xl font-bold text-gray-900" style={{ fontWeight: 700 }}>
                             {shelfData?.title && shelfData.title.trim().length > 0
                                 ? shelfData.title
                                 : `${shelfData?.username}'s Bookshelf`}
@@ -279,11 +281,11 @@ export default function EditShelfPage() {
 
                 {/* Description Editor */}
                 <div className="mb-2">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Description</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide" style={{ fontWeight: 600 }}>Description</label>
                 </div>
                 {isEditingDescription ? (
                     <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Edit Description</h2>
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4" style={{ fontWeight: 600 }}>Edit Description</h2>
                         <div className="space-y-3">
                             <textarea
                                 value={description}
@@ -301,7 +303,7 @@ export default function EditShelfPage() {
                                     <button
                                         onClick={handleSaveDescription}
                                         disabled={descriptionSaving}
-                                        className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-600 transition-colors text-sm font-medium"
+                                        className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow disabled:bg-gray-600 transition-all duration-300 text-sm font-semibold"
                                     >
                                         {descriptionSaving ? 'Saving...' : 'Save'}
                                     </button>
@@ -310,7 +312,8 @@ export default function EditShelfPage() {
                                             setIsEditingDescription(false);
                                             setDescriptionDirty(false);
                                         }}
-                                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                                        className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 text-sm font-semibold"
+                                        style={{ fontWeight: 600 }}
                                     >
                                         Cancel
                                     </button>
@@ -343,7 +346,7 @@ export default function EditShelfPage() {
                 <div className="mb-6">
                     <button
                         onClick={() => setShowAddModal(true)}
-                        className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                        className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-300 font-semibold"
                     >
                         + Add Item
                     </button>

@@ -18,8 +18,9 @@ export function Navigation() {
         <div className="flex items-center justify-between h-16">
           <Link
             href="/"
-            className="flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors font-medium"
+            className="flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-all duration-300 font-semibold"
             title="Go home"
+            style={{ fontWeight: 600 }}
           >
             <svg
               className="w-6 h-6"
@@ -42,7 +43,7 @@ export function Navigation() {
 
           <button
             onClick={() => router.back()}
-            className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-300"
             title="Go back"
             aria-label="Go back"
           >

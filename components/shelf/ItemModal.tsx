@@ -47,17 +47,17 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
               </span>
             </div>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontWeight: 700 }}>
               {item.title}
             </h2>
 
-            <p className="text-lg text-gray-600 mb-6">
+            <p className="text-lg text-gray-600 mb-6" style={{ fontWeight: 500 }}>
               by {item.creator}
             </p>
 
             {item.notes && (
               <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">Notes</h3>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2" style={{ fontWeight: 600 }}>Notes</h3>
                 <p className="text-gray-700 whitespace-pre-wrap">{item.notes}</p>
               </div>
             )}
@@ -67,7 +67,7 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
                 href={item.external_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-300 font-semibold"
               >
                 <span>View on {
                   item.external_url.includes('spotify') ? 'Spotify' :

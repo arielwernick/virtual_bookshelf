@@ -55,10 +55,10 @@ export default function CreatePage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-gray-900">
+          <Link href="/" className="text-2xl font-bold text-gray-900" style={{ fontWeight: 700 }}>
             Virtual Bookshelf
           </Link>
-          <p className="mt-2 text-gray-600">Create your bookshelf</p>
+          <p className="mt-2 text-gray-600" style={{ fontWeight: 500 }}>Create your bookshelf</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-8">
@@ -70,7 +70,7 @@ export default function CreatePage() {
             )}
 
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2" style={{ fontWeight: 500 }}>
                 Username
               </label>
               <input
@@ -92,7 +92,7 @@ export default function CreatePage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2" style={{ fontWeight: 500 }}>
                 Password
               </label>
               <input
@@ -113,7 +113,7 @@ export default function CreatePage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Create My Shelf'}
             </button>
@@ -127,7 +127,8 @@ export default function CreatePage() {
               const username = prompt('Enter your username:');
               if (username) router.push(`/shelf/${username}/edit`);
             }}
-            className="text-gray-900 font-medium hover:underline"
+            className="text-gray-900 font-semibold hover:underline transition-all duration-300"
+            style={{ fontWeight: 600 }}
           >
             Sign in
           </button>

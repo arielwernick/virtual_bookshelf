@@ -32,7 +32,7 @@ export function ShareModal({ isOpen, onClose, shareToken, onCopy }: ShareModalPr
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Share Your Shelf</h2>
+          <h2 className="text-xl font-bold text-gray-900" style={{ fontWeight: 700 }}>Share Your Shelf</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 p-1"
@@ -48,21 +48,23 @@ export function ShareModal({ isOpen, onClose, shareToken, onCopy }: ShareModalPr
         <div className="flex gap-0 mb-4 border-b border-gray-200">
           <button
             onClick={() => setActiveTab('link')}
-            className={`flex-1 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`flex-1 py-2 text-sm font-medium border-b-2 transition-all duration-300 ${
               activeTab === 'link'
                 ? 'border-gray-900 text-gray-900'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
+            style={{ fontWeight: activeTab === 'link' ? 600 : 500 }}
           >
             Share Link
           </button>
           <button
             onClick={() => setActiveTab('embed')}
-            className={`flex-1 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`flex-1 py-2 text-sm font-medium border-b-2 transition-all duration-300 ${
               activeTab === 'embed'
                 ? 'border-gray-900 text-gray-900'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
+            style={{ fontWeight: activeTab === 'embed' ? 600 : 500 }}
           >
             Embed
           </button>
@@ -76,7 +78,7 @@ export function ShareModal({ isOpen, onClose, shareToken, onCopy }: ShareModalPr
             </p>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontWeight: 500 }}>
                 Share Link
               </label>
               <div className="flex gap-2">
@@ -88,10 +90,10 @@ export function ShareModal({ isOpen, onClose, shareToken, onCopy }: ShareModalPr
                 />
                 <button
                   onClick={() => handleCopy(shareUrl)}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                  className={`px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-300 whitespace-nowrap ${
                     copied
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-900 text-white hover:bg-gray-800'
+                      ? 'bg-green-600 text-white shadow-sm'
+                      : 'bg-gray-900 text-white hover:bg-gray-700 shadow-sm hover:shadow'
                   }`}
                 >
                   {copied ? 'Copied!' : 'Copy'}
@@ -115,7 +117,7 @@ export function ShareModal({ isOpen, onClose, shareToken, onCopy }: ShareModalPr
             </p>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontWeight: 500 }}>
                 Embed Code
               </label>
               <textarea
@@ -126,10 +128,10 @@ export function ShareModal({ isOpen, onClose, shareToken, onCopy }: ShareModalPr
               />
               <button
                 onClick={() => handleCopy(embedCode)}
-                className={`w-full mt-2 py-2 rounded-lg font-medium text-sm transition-colors ${
+                className={`w-full mt-2 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
                   copied
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-900 text-white hover:bg-gray-800'
+                    ? 'bg-green-600 text-white shadow-sm'
+                    : 'bg-gray-900 text-white hover:bg-gray-700 shadow-sm hover:shadow'
                 }`}
               >
                 {copied ? 'Copied!' : 'Copy Code'}
@@ -147,7 +149,8 @@ export function ShareModal({ isOpen, onClose, shareToken, onCopy }: ShareModalPr
         {/* Close button */}
         <button
           onClick={onClose}
-          className="w-full py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm mt-4"
+          className="w-full py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-semibold text-sm mt-4"
+          style={{ fontWeight: 600 }}
         >
           Close
         </button>

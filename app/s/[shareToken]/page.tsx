@@ -50,10 +50,10 @@ export default function SharedShelfPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center">
-          <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
-          <h2 className="text-2xl font-semibold text-gray-700 mb-2">Shelf Not Found</h2>
+          <h1 className="text-6xl font-bold text-gray-900 mb-4" style={{ fontWeight: 700 }}>404</h1>
+          <h2 className="text-2xl font-semibold text-gray-700 mb-2" style={{ fontWeight: 600 }}>Shelf Not Found</h2>
           <p className="text-gray-600 mb-8">This shared bookshelf doesn&apos;t exist or the link has expired.</p>
-          <Link href="/" className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
+          <Link href="/" className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-300 font-semibold">
             Go Home
           </Link>
         </div>
@@ -74,11 +74,11 @@ export default function SharedShelfPage() {
           <div className="flex justify-between items-center mb-4">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
+                <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded" style={{ fontWeight: 600 }}>
                   Shared Shelf
                 </span>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900" style={{ fontWeight: 700 }}>
                 {displayTitle}
               </h1>
               <p className="mt-1 text-sm text-gray-500">
@@ -87,7 +87,7 @@ export default function SharedShelfPage() {
             </div>
             <Link
               href="/create"
-              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+              className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-300 text-sm font-semibold"
             >
               Create My Own Shelf
             </Link>

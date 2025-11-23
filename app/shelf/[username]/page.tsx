@@ -70,10 +70,10 @@ export default function ShelfPage() {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
                 <div className="text-center">
-                    <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
-                    <h2 className="text-2xl font-semibold text-gray-700 mb-2">Shelf Not Found</h2>
+                    <h1 className="text-6xl font-bold text-gray-900 mb-4" style={{ fontWeight: 700 }}>404</h1>
+                    <h2 className="text-2xl font-semibold text-gray-700 mb-2" style={{ fontWeight: 600 }}>Shelf Not Found</h2>
                     <p className="text-gray-600 mb-8">This bookshelf doesn't exist.</p>
-                    <Link href="/" className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
+                    <Link href="/" className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-300 font-semibold">
                         Go Home
                     </Link>
                 </div>
@@ -93,7 +93,7 @@ export default function ShelfPage() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="flex justify-between items-center mb-4">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">{displayTitle}</h1>
+                            <h1 className="text-3xl font-bold text-gray-900" style={{ fontWeight: 700 }}>{displayTitle}</h1>
                             <p className="mt-1 text-sm text-gray-500">
                                 {shelfData.items.length} {shelfData.items.length === 1 ? 'item' : 'items'}
                             </p>
@@ -101,14 +101,15 @@ export default function ShelfPage() {
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowShareModal(true)}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 text-sm font-semibold"
+                                style={{ fontWeight: 600 }}
                             >
                                 Share Shelf
                             </button>
                             {isOwner && (
                                 <Link
                                     href={`/shelf/${username}/edit`}
-                                    className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+                                    className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-300 text-sm font-semibold"
                                 >
                                     Edit Shelf
                                 </Link>

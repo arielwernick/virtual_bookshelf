@@ -3,13 +3,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --button-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,5 +27,35 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-weight: 400;
+}
+
+/* Font hierarchy */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+}
+
+h1 {
+  font-weight: 700;
+}
+
+/* Button base styles with LinkedIn-inspired aesthetics */
+button,
+a.button,
+[role="button"] {
+  transition: all 0.3s linear;
+}
+
+/* Primary button styling */
+.btn-primary {
+  padding: 12px 24px;
+  background: linear-gradient(to bottom, #1a1a1a 0%, #0a0a0a 100%);
+  box-shadow: var(--button-shadow);
+  transition: all 0.3s linear;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(to bottom, #2a2a2a 0%, #1a1a1a 100%);
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
 }

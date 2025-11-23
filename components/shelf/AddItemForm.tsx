@@ -110,37 +110,40 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Add Item</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6" style={{ fontWeight: 700 }}>Add Item</h2>
 
       {/* Type Selector */}
       <div className="flex gap-2 mb-6">
         <button
           onClick={() => setItemType('book')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+          className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
             itemType === 'book'
-              ? 'bg-blue-100 text-blue-700'
+              ? 'bg-blue-100 text-blue-700 shadow-sm'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
+          style={{ fontWeight: itemType === 'book' ? 600 : 500 }}
         >
           Book
         </button>
         <button
           onClick={() => setItemType('podcast')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+          className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
             itemType === 'podcast'
-              ? 'bg-purple-100 text-purple-700'
+              ? 'bg-purple-100 text-purple-700 shadow-sm'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
+          style={{ fontWeight: itemType === 'podcast' ? 600 : 500 }}
         >
           Podcast
         </button>
         <button
           onClick={() => setItemType('music')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+          className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
             itemType === 'music'
-              ? 'bg-green-100 text-green-700'
+              ? 'bg-green-100 text-green-700 shadow-sm'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
+          style={{ fontWeight: itemType === 'music' ? 600 : 500 }}
         >
           Music
         </button>
@@ -172,7 +175,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
               <button
                 onClick={handleSearch}
                 disabled={loading}
-                className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
+                className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-300 font-semibold disabled:opacity-50"
               >
                 {loading ? 'Searching...' : 'Search'}
               </button>
@@ -197,7 +200,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
                 <button
                   onClick={() => handleAddFromSearch(result)}
                   disabled={adding}
-                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm disabled:opacity-50"
+                  className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-300 font-semibold text-sm disabled:opacity-50"
                 >
                   Add
                 </button>
@@ -210,7 +213,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
           {/* Manual Entry */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontWeight: 500 }}>Title *</label>
               <input
                 type="text"
                 value={manualData.title}
@@ -221,7 +224,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontWeight: 500 }}>
                 {itemType === 'book' ? 'Author' : itemType === 'podcast' ? 'Host' : 'Artist'} *
               </label>
               <input
@@ -234,7 +237,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontWeight: 500 }}>Image URL</label>
               <input
                 type="url"
                 value={manualData.image_url}
@@ -245,7 +248,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">External URL</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontWeight: 500 }}>External URL</label>
               <input
                 type="url"
                 value={manualData.external_url}
@@ -256,7 +259,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontWeight: 500 }}>Notes</label>
               <textarea
                 value={manualData.notes}
                 onChange={(e) => setManualData({ ...manualData, notes: e.target.value })}
@@ -269,7 +272,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
             <button
               onClick={handleManualAdd}
               disabled={adding}
-              className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
+              className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-300 font-semibold disabled:opacity-50"
             >
               {adding ? 'Adding...' : 'Add to Shelf'}
             </button>

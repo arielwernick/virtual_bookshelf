@@ -53,7 +53,7 @@ export function ShelfTitleEditor({ currentTitle, username, onSave, onCancel }: S
     return (
         <div className="space-y-4">
             <div className="space-y-2">
-                <label htmlFor="title-input" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="title-input" className="block text-sm font-medium text-gray-700" style={{ fontWeight: 500 }}>
                     Shelf Title
                 </label>
                 <input
@@ -81,14 +81,15 @@ export function ShelfTitleEditor({ currentTitle, username, onSave, onCancel }: S
                 <button
                     onClick={handleSave}
                     disabled={loading}
-                    className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 shadow-sm hover:shadow transition-all duration-300 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {loading ? 'Saving...' : 'Save'}
                 </button>
                 <button
                     onClick={onCancel}
                     disabled={loading}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ fontWeight: 600 }}
                 >
                     Cancel
                 </button>
