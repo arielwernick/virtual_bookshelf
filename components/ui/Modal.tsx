@@ -49,11 +49,23 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div 
+          className="relative bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}
+        >
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute top-4 right-4 p-2 rounded-full transition-all z-10"
+            style={{ color: 'var(--gray-400)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--gray-100)';
+              e.currentTarget.style.color = 'var(--gray-700)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = 'var(--gray-400)';
+            }}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

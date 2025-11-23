@@ -20,18 +20,30 @@ export function ItemCard({ item, onClick, editMode, onDelete }: ItemCardProps) {
   const aspectRatio = getAspectRatio(item.type);
   const isClickable = onClick && !editMode;
 
-  const badgeColor = {
-    book: 'bg-blue-100 text-blue-800',
-    podcast: 'bg-purple-100 text-purple-800',
-    music: 'bg-green-100 text-green-800',
+  const badgeStyles = {
+    book: { backgroundColor: 'var(--primary-orange-100)', color: 'var(--primary-orange)' },
+    podcast: { backgroundColor: 'var(--primary-orange-100)', color: 'var(--primary-orange)' },
+    music: { backgroundColor: 'var(--primary-orange-100)', color: 'var(--primary-orange)' },
   };
 
   return (
     <div
-      className={`group relative bg-white rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 ${
+      className={`group relative bg-white rounded-xl overflow-hidden transition-all ${
         isClickable ? 'cursor-pointer' : ''
       }`}
+      style={{ 
+        border: '1px solid var(--border-color)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+      }}
       onClick={handleClick}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
+        e.currentTarget.style.transform = 'translateY(0)';
+      }}
     >
       {/* Image Container */}
       <div
@@ -67,7 +79,10 @@ export function ItemCard({ item, onClick, editMode, onDelete }: ItemCardProps) {
 
         {/* Type Badge */}
         <div className="absolute top-2 right-2">
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${badgeColor[item.type]}`}>
+          <span 
+            className="px-2.5 py-1 text-xs font-semibold rounded-full"
+            style={badgeStyles[item.type]}
+          >
             {item.type}
           </span>
         </div>
@@ -79,8 +94,9 @@ export function ItemCard({ item, onClick, editMode, onDelete }: ItemCardProps) {
               e.stopPropagation();
               onDelete();
             }}
-            className="absolute top-2 left-2 p-2 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+            className="absolute top-2 left-2 p-2 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-700"
             title="Delete item"
+            style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -95,11 +111,11 @@ export function ItemCard({ item, onClick, editMode, onDelete }: ItemCardProps) {
       </div>
 
       {/* Item Metadata */}
-      <div className="p-3">
-        <h3 className="font-semibold text-sm text-gray-900 line-clamp-2 mb-1">
+      <div className="p-4">
+        <h3 className="font-semibold text-sm line-clamp-2 mb-1" style={{ color: 'var(--gray-900)' }}>
           {item.title}
         </h3>
-        <p className="text-xs text-gray-600 line-clamp-1">{item.creator}</p>
+        <p className="text-xs line-clamp-1" style={{ color: 'var(--gray-600)' }}>{item.creator}</p>
       </div>
     </div>
   );

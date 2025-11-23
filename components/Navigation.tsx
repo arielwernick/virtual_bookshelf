@@ -13,13 +13,16 @@ export function Navigation() {
   }
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <nav className="bg-white border-b shadow-sm sticky top-0 z-40" style={{ borderColor: 'var(--border-color)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-14">
           <Link
             href="/"
-            className="flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors font-medium"
+            className="flex items-center gap-2 transition-colors font-semibold text-base"
+            style={{ color: 'var(--gray-900)' }}
             title="Go home"
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-orange)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--gray-900)'}
           >
             <svg
               className="w-6 h-6"
@@ -42,9 +45,18 @@ export function Navigation() {
 
           <button
             onClick={() => router.back()}
-            className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 rounded-md transition-all"
+            style={{ color: 'var(--gray-700)' }}
             title="Go back"
             aria-label="Go back"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--gray-100)';
+              e.currentTarget.style.color = 'var(--gray-900)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = 'var(--gray-700)';
+            }}
           >
             <svg
               className="w-5 h-5"

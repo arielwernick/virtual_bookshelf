@@ -52,25 +52,25 @@ export default function CreatePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--background-secondary)' }}>
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-gray-900">
+          <Link href="/" className="text-3xl font-bold" style={{ color: 'var(--gray-900)', letterSpacing: '-0.02em' }}>
             Virtual Bookshelf
           </Link>
-          <p className="mt-2 text-gray-600">Create your bookshelf</p>
+          <p className="mt-3 text-lg" style={{ color: 'var(--gray-600)' }}>Create your bookshelf</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-8">
+        <div className="bg-white rounded-xl p-8" style={{ border: '1px solid var(--border-color)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              <div className="px-4 py-3 rounded-lg text-sm" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}>
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="username" className="block text-sm font-semibold mb-2" style={{ color: 'var(--gray-900)' }}>
                 Username
               </label>
               <input
@@ -78,7 +78,20 @@ export default function CreatePage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full px-4 py-3 rounded-lg transition-all"
+                style={{ 
+                  border: '1px solid var(--border-color)',
+                  backgroundColor: 'var(--background)',
+                  color: 'var(--gray-900)'
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary-orange)';
+                  e.currentTarget.style.boxShadow = '0 0 0 3px var(--primary-orange-50)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
                 placeholder="yourname"
                 required
                 minLength={3}
@@ -86,13 +99,13 @@ export default function CreatePage() {
                 pattern="[a-zA-Z0-9_-]+"
                 title="Only letters, numbers, hyphens, and underscores"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-2 text-xs" style={{ color: 'var(--gray-500)' }}>
                 Your shelf will be at: bookshelf.app/shelf/{username || 'yourname'}
               </p>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold mb-2" style={{ color: 'var(--gray-900)' }}>
                 Password
               </label>
               <input
@@ -100,12 +113,25 @@ export default function CreatePage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full px-4 py-3 rounded-lg transition-all"
+                style={{ 
+                  border: '1px solid var(--border-color)',
+                  backgroundColor: 'var(--background)',
+                  color: 'var(--gray-900)'
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary-orange)';
+                  e.currentTarget.style.boxShadow = '0 0 0 3px var(--primary-orange-50)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
                 placeholder="Choose a password"
                 required
                 minLength={6}
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-2 text-xs" style={{ color: 'var(--gray-500)' }}>
                 You'll need this to edit your shelf
               </p>
             </div>
@@ -113,21 +139,32 @@ export default function CreatePage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 rounded-full font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ 
+                backgroundColor: loading ? 'var(--gray-400)' : 'var(--primary-orange)',
+                color: 'white'
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) e.currentTarget.style.backgroundColor = 'var(--primary-orange-dark)';
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) e.currentTarget.style.backgroundColor = 'var(--primary-orange)';
+              }}
             >
               {loading ? 'Creating...' : 'Create My Shelf'}
             </button>
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-sm" style={{ color: 'var(--gray-600)' }}>
           Already have a shelf?{' '}
           <button
             onClick={() => {
               const username = prompt('Enter your username:');
               if (username) router.push(`/shelf/${username}/edit`);
             }}
-            className="text-gray-900 font-medium hover:underline"
+            className="font-semibold hover:underline"
+            style={{ color: 'var(--primary-orange)' }}
           >
             Sign in
           </button>

@@ -163,10 +163,10 @@ export default function EditShelfPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background-secondary)' }}>
                 <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading...</p>
+                    <div className="w-16 h-16 rounded-full animate-spin mx-auto" style={{ border: '4px solid var(--gray-200)', borderTopColor: 'var(--primary-orange)' }}></div>
+                    <p className="mt-4" style={{ color: 'var(--gray-600)' }}>Loading...</p>
                 </div>
             </div>
         );
@@ -174,38 +174,58 @@ export default function EditShelfPage() {
 
     if (!authenticated) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+            <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: 'var(--background-secondary)' }}>
                 <div className="max-w-md w-full">
-                    <div className="bg-white rounded-lg shadow-sm p-8">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Enter Password</h2>
+                    <div className="bg-white rounded-xl p-8" style={{ border: '1px solid var(--border-color)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                        <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--gray-900)' }}>Enter Password</h2>
                         <form onSubmit={handleLogin} className="space-y-4">
                             {authError && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                                <div className="px-4 py-3 rounded-lg text-sm" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}>
                                     {authError}
                                 </div>
                             )}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--gray-900)' }}>
                                     Password for {username}
                                 </label>
                                 <input
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                                    className="w-full px-4 py-3 rounded-lg transition-all"
+                                    style={{ 
+                                        border: '1px solid var(--border-color)',
+                                        backgroundColor: 'var(--background)',
+                                        color: 'var(--gray-900)'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.borderColor = 'var(--primary-orange)';
+                                        e.currentTarget.style.boxShadow = '0 0 0 3px var(--primary-orange-50)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.borderColor = 'var(--border-color)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
                                     required
                                 />
                             </div>
                             <button
                                 type="submit"
-                                className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                                className="w-full py-3 rounded-full font-semibold transition-all"
+                                style={{ 
+                                    backgroundColor: 'var(--primary-orange)',
+                                    color: 'white'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-orange-dark)'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-orange)'}
                             >
                                 Unlock Shelf
                             </button>
                         </form>
                         <Link
                             href={`/shelf/${username}`}
-                            className="block mt-4 text-center text-sm text-gray-600 hover:text-gray-900"
+                            className="block mt-4 text-center text-sm font-medium"
+                            style={{ color: 'var(--primary-orange)' }}
                         >
                             Back to public view
                         </Link>
@@ -216,24 +236,38 @@ export default function EditShelfPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen" style={{ backgroundColor: 'var(--background-secondary)' }}>
             {/* Header */}
-            <header className="bg-white border-b border-gray-200">
+            <header className="bg-white shadow-sm" style={{ borderBottom: '1px solid var(--border-color)' }}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="flex justify-between items-center">
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm font-medium" style={{ color: 'var(--gray-500)' }}>
                             Editing • {shelfData?.items.length || 0} items
                         </p>
                         <div className="flex gap-3">
                             <Link
                                 href={`/shelf/${username}`}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                                className="px-5 py-2 rounded-full text-sm font-semibold transition-all"
+                                style={{ 
+                                    border: '2px solid var(--primary-orange)',
+                                    color: 'var(--primary-orange)',
+                                    backgroundColor: 'transparent'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-orange-50)'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                             >
                                 View Public Shelf
                             </Link>
                             <button
                                 onClick={handleLogout}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                                className="px-5 py-2 rounded-full text-sm font-semibold transition-all"
+                                style={{ 
+                                    border: '1px solid var(--border-color)',
+                                    color: 'var(--gray-700)',
+                                    backgroundColor: 'transparent'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--gray-100)'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                             >
                                 Logout
                             </button>
@@ -343,7 +377,19 @@ export default function EditShelfPage() {
                 <div className="mb-6">
                     <button
                         onClick={() => setShowAddModal(true)}
-                        className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                        className="px-6 py-3 rounded-full font-semibold transition-all shadow-md hover:shadow-lg"
+                        style={{ 
+                            backgroundColor: 'var(--primary-orange)',
+                            color: 'white'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--primary-orange-dark)';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--primary-orange)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                        }}
                     >
                         + Add Item
                     </button>
