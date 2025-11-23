@@ -64,7 +64,7 @@ export default function CreatePage() {
         <div className="bg-white rounded-xl p-8" style={{ border: '1px solid var(--border-color)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="px-4 py-3 rounded-lg text-sm" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}>
+              <div className="px-4 py-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--error-bg)', border: '1px solid var(--error-border)', color: 'var(--error-text)' }}>
                 {error}
               </div>
             )}

@@ -51,7 +51,7 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
       <div className="flex min-h-full items-center justify-center p-4">
         <div 
           className="relative bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-          style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}
+          style={{ boxShadow: 'var(--shadow-modal)' }}
         >
           {/* Close button */}
           <button

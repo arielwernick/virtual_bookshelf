@@ -180,7 +180,7 @@ export default function EditShelfPage() {
                         <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--gray-900)' }}>Enter Password</h2>
                         <form onSubmit={handleLogin} className="space-y-4">
                             {authError && (
-                                <div className="px-4 py-3 rounded-lg text-sm" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}>
+                                <div className="px-4 py-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--error-bg)', border: '1px solid var(--error-border)', color: 'var(--error-text)' }}>
                                     {authError}
                                 </div>
                             )}

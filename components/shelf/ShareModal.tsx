@@ -126,7 +126,7 @@ export function ShareModal({ isOpen, onClose, shareToken, onCopy }: ShareModalPr
                   onClick={() => handleCopy(shareUrl)}
                   className="px-4 py-2 rounded-full font-semibold text-sm transition-all whitespace-nowrap"
                   style={{ 
-                    backgroundColor: copied ? '#10b981' : 'var(--primary-orange)',
+                    backgroundColor: copied ? 'var(--success-green)' : 'var(--primary-orange)',
                     color: 'white'
                   }}
                   onMouseEnter={(e) => {
@@ -175,7 +175,7 @@ export function ShareModal({ isOpen, onClose, shareToken, onCopy }: ShareModalPr
                 onClick={() => handleCopy(embedCode)}
                 className="w-full mt-2 py-2 rounded-full font-semibold text-sm transition-all"
                 style={{ 
-                  backgroundColor: copied ? '#10b981' : 'var(--primary-orange)',
+                  backgroundColor: copied ? 'var(--success-green)' : 'var(--primary-orange)',
                   color: 'white'
                 }}
                 onMouseEnter={(e) => {
