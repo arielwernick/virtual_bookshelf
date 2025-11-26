@@ -14,10 +14,10 @@ export default function Home() {
           </p>
           <div className="flex gap-4 justify-center">
             <Link
-              href="/create"
+              href="/login"
               className="px-8 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-lg"
             >
-              Create Your Shelf
+              Get Started
             </Link>
             <Link
               href="#how-it-works"
@@ -104,7 +104,7 @@ export default function Home() {
         {/* CTA */}
         <div className="text-center">
           <Link
-            href="/create"
+            href="/login"
             className="inline-block px-12 py-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-lg"
           >
             Get Started - It's Free
