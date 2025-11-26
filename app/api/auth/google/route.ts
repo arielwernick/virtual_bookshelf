@@ -23,25 +23,31 @@ export async function GET(request: Request) {
     googleAuthUrl.searchParams.append('state', state);
     googleAuthUrl.searchParams.append('prompt', 'consent'); // Force consent screen
 
+    console.log('OAuth flow initiated:', {
+      clientId: process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...',
+      redirectUri: process.env.GOOGLE_REDIRECT_URI,
+      state: state.substring(0, 8) + '...',
+    });
+
     // Create response with redirect
     const response = NextResponse.redirect(googleAuthUrl.toString());
 
     // Set state in secure httpOnly cookie (short-lived)
-    // Use 'lax' for localhost (more permissive than 'strict', works with Google redirect)
+    // Using explicit cookie configuration for localhost
     response.cookies.set('oauth_state', state, {
       httpOnly: true,
-      secure: false, // Must be false for localhost http://
+      secure: false, // http:// for localhost
       sameSite: 'lax',
       maxAge: 60 * 10, // 10 minutes
       path: '/',
     });
     
-    console.log('OAuth state token set:', { state: state.substring(0, 8) + '...', maxAge: 600 });
+    console.log('State cookie set in response');
 
     // Optional: Store code verifier for PKCE (if implementing)
     response.cookies.set('code_verifier', codeVerifier, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false,
       sameSite: 'lax',
       maxAge: 60 * 10, // 10 minutes
       path: '/',

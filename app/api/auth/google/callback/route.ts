@@ -14,9 +14,30 @@ import { setSessionCookie } from '@/lib/utils/session';
  */
 export async function GET(request: Request) {
   try {
+    console.log('\n=== Google OAuth Callback ===');
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
+    const error = url.searchParams.get('error');
+    const errorDescription = url.searchParams.get('error_description');
+
+    console.log('Full URL:', url.toString());
+    console.log('All search params:', Array.from(url.searchParams.entries()));
+    console.log('Callback params:', {
+      code: code ? code.substring(0, 10) + '...' : 'MISSING',
+      state: state ? state.substring(0, 8) + '...' : 'MISSING',
+      error: error,
+      errorDescription: errorDescription,
+    });
+
+    // If Google returned an error
+    if (error) {
+      console.error('Google OAuth error:', error, errorDescription);
+      return NextResponse.json(
+        { success: false, error: `Google error: ${error}` },
+        { status: 400 }
+      );
+    }
 
     // Validate parameters
     if (!code || !state) {
@@ -29,19 +50,26 @@ export async function GET(request: Request) {
     // Verify state token (CSRF protection)
     const cookieStore = await cookies();
     const storedState = cookieStore.get('oauth_state')?.value;
-    console.log('State verification:', {
-     incomingState: state,
-     storedState: storedState,
-     match: state === storedState,
-     allCookies: Array.from(cookieStore.getAll()).map(c => c.name),
+    const allCookies = cookieStore.getAll();
+    
+    console.log('Cookie verification:', {
+      incomingState: state.substring(0, 8) + '...',
+      storedState: storedState ? storedState.substring(0, 8) + '...' : 'NOT_FOUND',
+      match: state === storedState,
+      cookieCount: allCookies.length,
+      cookieNames: allCookies.map(c => c.name),
+      rawCookieHeader: request.headers.get('cookie')?.substring(0, 100) || 'NO_COOKIE_HEADER',
     });
     
     if (state !== storedState) {
-     return NextResponse.json(
-       { success: false, error: 'Invalid state token' },
-       { status: 403 }
-     );
+      console.error('STATE MISMATCH - CSRF token validation failed');
+      return NextResponse.json(
+        { success: false, error: 'Invalid state token' },
+        { status: 403 }
+      );
     }
+    
+    console.log('✓ State token verified');
 
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {

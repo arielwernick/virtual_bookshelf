@@ -27,6 +27,28 @@ export function validateUsername(username: string): { valid: boolean; normalized
 }
 
 /**
+ * Validate email
+ */
+export function validateEmail(email: string): { valid: boolean; normalized?: string; error?: string } {
+  const trimmed = email.trim().toLowerCase();
+  
+  if (trimmed.length === 0) {
+    return { valid: false, error: 'Email cannot be empty' };
+  }
+  
+  if (trimmed.length > 255) {
+    return { valid: false, error: 'Email must be 255 characters or less' };
+  }
+  
+  // Basic email regex validation
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    return { valid: false, error: 'Invalid email format' };
+  }
+  
+  return { valid: true, normalized: trimmed };
+}
+
+/**
  * Validate password
  */
 export function validatePassword(password: string): { valid: boolean; error?: string } {

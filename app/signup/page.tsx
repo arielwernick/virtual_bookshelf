@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     username: '',
+    email: '',
     password: '',
+    confirmPassword: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,18 +29,49 @@ export default function LoginPage() {
     setLoading(true);
 
     // Validation
-    if (!formData.username.trim() || !formData.password) {
-      setError('Username and password are required');
+    if (!formData.username.trim()) {
+      setError('Username is required');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.username.length < 3) {
+      setError('Username must be at least 3 characters');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      setError('Email is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setError('Valid email is required');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
       setLoading(false);
       return;
     }
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: formData.username.toLowerCase().trim(),
+          email: formData.email.toLowerCase().trim(),
           password: formData.password,
         }),
       });
@@ -46,7 +79,7 @@ export default function LoginPage() {
       const json = await res.json();
 
       if (!res.ok || !json.success) {
-        setError(json.error || 'Invalid credentials');
+        setError(json.error || 'Failed to create account');
         setLoading(false);
         return;
       }
@@ -54,7 +87,7 @@ export default function LoginPage() {
       // Success - redirect to dashboard
       router.push('/dashboard');
     } catch (err) {
-      console.error('Login error:', err);
+      console.error('Signup error:', err);
       setError('Something went wrong. Please try again.');
       setLoading(false);
     }
@@ -67,7 +100,7 @@ export default function LoginPage() {
           <Link href="/" className="text-2xl font-bold text-gray-900">
             Virtual Bookshelf
           </Link>
-          <p className="mt-2 text-gray-600">Sign in to your account</p>
+          <p className="mt-2 text-gray-600">Create your account</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-8">
@@ -89,7 +122,24 @@ export default function LoginPage() {
                 value={formData.username}
                 onChange={handleChange}
                 disabled={loading}
-                placeholder="Enter your username"
+                placeholder="Choose a username"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                disabled={loading}
+                placeholder="your@email.com"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 required
               />
@@ -106,7 +156,24 @@ export default function LoginPage() {
                 value={formData.password}
                 onChange={handleChange}
                 disabled={loading}
-                placeholder="Enter your password"
+                placeholder="At least 6 characters"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                disabled={loading}
+                placeholder="Confirm your password"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 required
               />
@@ -117,15 +184,15 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full py-3 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
         </div>
 
         <p className="mt-8 text-center text-sm text-gray-600">
-          Don't have an account?{' '}
-          <Link href="/signup" className="text-gray-900 font-medium hover:underline">
-            Create one
+          Already have an account?{' '}
+          <Link href="/login" className="text-gray-900 font-medium hover:underline">
+            Sign in
           </Link>
         </p>
       </div>
