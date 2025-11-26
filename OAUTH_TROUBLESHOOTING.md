@@ -101,7 +101,7 @@ Should return:
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| `Invalid state token` | CSRF token mismatch | Clear cookies, try again |
+| `Invalid state token` | CSRF cookie not sent back from Google | Check terminal logs for "State verification" output. Cookie might not be set or returned. Clear browser cookies and try again. |
 | `Missing authorization code` | OAuth params not passed | Check Google callback URL |
 | `DATABASE_URL not set` | Missing env variable | Add to `.env.local` |
 | `SESSION_SECRET not set` | Missing env variable | Add a random string to `.env.local` |
@@ -150,6 +150,31 @@ Should return:
     SELECT id, email, google_id, username FROM users 
     ORDER BY created_at DESC LIMIT 1;
     ```
+
+## If Getting "Invalid state token"
+
+1. **Check terminal logs** - Run `npm run dev` and look for:
+   ```
+   OAuth state token set: { state: '...' }
+   ```
+   This shows the state was created.
+   
+   Then look for:
+   ```
+   State verification: { incomingState: '...', storedState: '...', match: false }
+   ```
+   If `storedState` is null/undefined, the cookie wasn't sent back by Google.
+
+2. **Clear browser cookies**:
+   - DevTools → Application → Cookies → localhost:3000 → Delete all
+   - Try sign-in again
+
+3. **Check redirect URI** - Must match exactly:
+   - `.env.local`: `GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback`
+   - Google Console: Same URL exactly
+   - No trailing slash, correct port number
+
+4. **Try different browser** - Some browsers have strict cookie policies
 
 ## If Still Getting 404
 

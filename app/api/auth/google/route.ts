@@ -27,13 +27,16 @@ export async function GET(request: Request) {
     const response = NextResponse.redirect(googleAuthUrl.toString());
 
     // Set state in secure httpOnly cookie (short-lived)
+    // Use 'lax' for localhost (more permissive than 'strict', works with Google redirect)
     response.cookies.set('oauth_state', state, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Must be false for localhost http://
       sameSite: 'lax',
       maxAge: 60 * 10, // 10 minutes
       path: '/',
     });
+    
+    console.log('OAuth state token set:', { state: state.substring(0, 8) + '...', maxAge: 600 });
 
     // Optional: Store code verifier for PKCE (if implementing)
     response.cookies.set('code_verifier', codeVerifier, {
