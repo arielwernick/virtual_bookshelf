@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
-import { getItemById, updateItem, deleteItem } from '@/lib/db/queries';
+import { getItemById, updateItem, deleteItem, getShelfById } from '@/lib/db/queries';
 import { validateText, validateUrl, validateNotes } from '@/lib/utils/validation';
 import { UpdateItemData } from '@/lib/types/shelf';
 
+/**
+ * PATCH: Update an item
+ * Requires: user must own the shelf containing the item
+ */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -11,7 +15,7 @@ export async function PATCH(
   try {
     // Check authentication
     const session = await getSession();
-    if (!session) {
+    if (!session || !session.userId) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },
         { status: 401 }
@@ -30,8 +34,9 @@ export async function PATCH(
       );
     }
 
-    // Check ownership
-    if (existingItem.user_id !== session.userId) {
+    // Check ownership via shelf
+    const shelf = await getShelfById(existingItem.shelf_id);
+    if (!shelf || shelf.user_id !== session.userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
@@ -122,6 +127,10 @@ export async function PATCH(
   }
 }
 
+/**
+ * DELETE: Delete an item
+ * Requires: user must own the shelf containing the item
+ */
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -129,7 +138,7 @@ export async function DELETE(
   try {
     // Check authentication
     const session = await getSession();
-    if (!session) {
+    if (!session || !session.userId) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },
         { status: 401 }
@@ -147,8 +156,9 @@ export async function DELETE(
       );
     }
 
-    // Check ownership
-    if (existingItem.user_id !== session.userId) {
+    // Check ownership via shelf
+    const shelf = await getShelfById(existingItem.shelf_id);
+    if (!shelf || shelf.user_id !== session.userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
