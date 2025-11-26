@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserByShareToken, getItemsByUserId } from '@/lib/db/queries';
+import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
 
+/**
+ * GET: Fetch a public shelf by share token
+ * No authentication required - these are public shelves
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ shareToken: string }> }
@@ -8,26 +12,26 @@ export async function GET(
   try {
     const { shareToken } = await params;
 
-    // Get user by share token
-    const user = await getUserByShareToken(shareToken);
-    if (!user) {
+    // Get shelf by share token
+    const shelf = await getShelfByShareToken(shareToken);
+    if (!shelf) {
       return NextResponse.json(
         { success: false, error: 'Shelf not found' },
         { status: 404 }
       );
     }
 
-    // Get user's items
-    const items = await getItemsByUserId(user.id);
+    // Get shelf's items
+    const items = await getItemsByShelfId(shelf.id);
 
     return NextResponse.json({
       success: true,
       data: {
-        username: user.username,
-        description: user.description,
-        title: user.title,
+        id: shelf.id,
+        name: shelf.name,
+        description: shelf.description,
         items,
-        created_at: user.created_at,
+        created_at: shelf.created_at,
       },
     });
   } catch (error) {

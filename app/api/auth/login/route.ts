@@ -37,6 +37,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if user has password (not Google-only)
+    if (!user.password_hash) {
+      return NextResponse.json(
+        { success: false, error: 'This account uses Google authentication. Please sign in with Google.' },
+        { status: 401 }
+      );
+    }
+
     // Verify password
     const isValid = await verifyPassword(password, user.password_hash);
     if (!isValid) {
@@ -50,6 +58,7 @@ export async function POST(request: Request) {
     await setSessionCookie({
       userId: user.id,
       username: user.username,
+      email: user.email,
     });
 
     return NextResponse.json({

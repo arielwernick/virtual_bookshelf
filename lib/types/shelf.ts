@@ -2,11 +2,24 @@
 
 export interface User {
   id: string;
-  username: string;
-  password_hash: string;
+  username: string | null;
+  email: string;
+  password_hash: string | null;
+  google_id: string | null;
   share_token: string;
   description: string | null;
   title: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Shelf {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  share_token: string;
+  is_public: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -15,7 +28,8 @@ export type ItemType = 'book' | 'podcast' | 'music';
 
 export interface Item {
   id: string;
-  user_id: string;
+  shelf_id: string;
+  user_id: string | null;
   type: ItemType;
   title: string;
   creator: string;
@@ -29,7 +43,7 @@ export interface Item {
 
 // Public-facing shelf data (without sensitive user info)
 export interface ShelfData {
-  username: string;
+  username: string | null;
   description: string | null;
   title: string | null;
   items: Item[];

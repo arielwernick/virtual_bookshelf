@@ -7,11 +7,19 @@ import { ItemModal } from '@/components/shelf/ItemModal';
 import { Item } from '@/lib/types/shelf';
 import Link from 'next/link';
 
+interface SharedShelfData {
+  id: string;
+  name: string;
+  description: string | null;
+  items: Item[];
+  created_at: string;
+}
+
 export default function SharedShelfPage() {
   const params = useParams();
   const shareToken = params?.shareToken as string;
 
-  const [shelfData, setShelfData] = useState<{ username: string; description: string | null; title: string | null; items: Item[]; created_at: string } | null>(null);
+  const [shelfData, setShelfData] = useState<SharedShelfData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
@@ -61,11 +69,6 @@ export default function SharedShelfPage() {
     );
   }
 
-  const displayTitle =
-    shelfData.title && shelfData.title.trim().length > 0
-      ? shelfData.title
-      : `${shelfData.username}'s Bookshelf`;
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -78,15 +81,13 @@ export default function SharedShelfPage() {
                   Shared Shelf
                 </span>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {displayTitle}
-              </h1>
+              <h1 className="text-3xl font-bold text-gray-900">{shelfData.name}</h1>
               <p className="mt-1 text-sm text-gray-500">
                 {shelfData.items.length} {shelfData.items.length === 1 ? 'item' : 'items'}
               </p>
             </div>
             <Link
-              href="/create"
+              href="/login"
               className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
             >
               Create My Own Shelf
