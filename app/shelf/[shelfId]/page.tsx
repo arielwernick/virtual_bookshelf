@@ -39,7 +39,7 @@ export default function ShelfPage() {
     useEffect(() => {
         if (!shelfId) return;
 
-        const fetchShelfData = async () => {
+        const loadShelf = async () => {
             try {
                 const res = await fetch(`/api/shelf/${shelfId}`);
                 if (!res.ok) {
@@ -48,6 +48,7 @@ export default function ShelfPage() {
                             res.status === 403 ? 'You do not have permission to view this shelf' :
                                 'Failed to load shelf';
                     setError(errorMessage);
+                    setLoading(false);
                     return;
                 }
 
@@ -55,6 +56,17 @@ export default function ShelfPage() {
                 setShelfData(data);
                 setEditName(data.name);
                 setEditDescription(data.description || '');
+
+                // Check if user is the owner
+                try {
+                    const authRes = await fetch('/api/auth/me');
+                    if (authRes.ok) {
+                        const { data: authData } = await authRes.json();
+                        setIsOwner(authData.userId === data.user_id);
+                    }
+                } catch (error) {
+                    // Not authenticated is fine - user can still view public shelves
+                }
             } catch (error) {
                 console.error('Error fetching shelf:', error);
                 setError('Failed to load shelf');
@@ -63,22 +75,7 @@ export default function ShelfPage() {
             }
         };
 
-        const checkOwnership = async (shelf: ShelfPageData) => {
-            try {
-                const res = await fetch('/api/auth/me');
-                if (res.ok) {
-                    const { data } = await res.json();
-                    setIsOwner(data.userId === shelf.user_id);
-                }
-            } catch (error) {
-                // Not authenticated is fine - user can still view public shelves
-            }
-        };
-
-        fetchShelfData().then(() => {
-            // Check ownership after fetching shelf
-            if (shelfData) checkOwnership(shelfData);
-        });
+        loadShelf();
     }, [shelfId]);
 
     const handleItemClick = (item: Item) => {
