@@ -16,8 +16,9 @@ const COOKIE_OPTIONS = {
 
 export interface SessionData {
   userId: string;
-  username: string;
-  [key: string]: string; // Index signature for JWT compatibility
+  username: string | null;
+  email?: string;
+  [key: string]: string | null | undefined; // Index signature for JWT compatibility
 }
 
 /**
