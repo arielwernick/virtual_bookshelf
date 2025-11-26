@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import {
   getUserByEmail,
   getUserByUsername,
@@ -26,7 +27,8 @@ export async function GET(request: Request) {
     }
 
     // Verify state token (CSRF protection)
-    const storedState = request.cookies.get('oauth_state')?.value;
+    const cookieStore = await cookies();
+    const storedState = cookieStore.get('oauth_state')?.value;
     if (state !== storedState) {
       return NextResponse.json(
         { success: false, error: 'Invalid state token' },
@@ -82,6 +84,7 @@ export async function GET(request: Request) {
 
     // Check if user exists
     let user = await getUserByEmail(email);
+    console.log('Email lookup result:', { email, userFound: !!user });
 
     if (!user) {
       // Create new user
@@ -96,16 +99,21 @@ export async function GET(request: Request) {
         counter++;
       }
 
+      console.log('Creating new user:', { email, username });
       user = await createUser({
         email,
         username,
         googleId,
         name,
       });
+      console.log('User created:', { userId: user.id, email: user.email });
     } else if (!user.google_id) {
       // Update existing user with google_id if not already linked
       // This allows linking Google to existing accounts
+      console.log('Linking Google ID to existing user:', { userId: user.id });
       user = await updateUserGoogleId(user.id, googleId);
+    } else {
+      console.log('User already has Google ID linked:', { userId: user.id });
     }
 
     // Set session cookie
@@ -115,8 +123,9 @@ export async function GET(request: Request) {
       email: user.email,
     });
 
-    // Clear CSRF state cookie
-    const response = NextResponse.redirect(new URL('/dashboard', request.url));
+    // Clear CSRF state cookie and redirect
+    const dashboardUrl = new URL('/dashboard', request.url);
+    const response = NextResponse.redirect(dashboardUrl);
     response.cookies.delete('oauth_state');
 
     return response;

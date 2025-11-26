@@ -39,6 +39,7 @@ export default function DashboardPage() {
         const json = await res.json();
 
         if (!json.success) {
+          console.error('Dashboard API error:', json.error);
           // Not authenticated, redirect to login
           router.push('/login');
           return;
@@ -46,6 +47,7 @@ export default function DashboardPage() {
 
         setData(json.data);
       } catch (err) {
+        console.error('Failed to fetch dashboard:', err);
         setError('Failed to load dashboard');
       } finally {
         setLoading(false);

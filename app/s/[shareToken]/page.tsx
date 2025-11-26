@@ -109,7 +109,11 @@ export default function SharedShelfPage() {
       </main>
 
       {/* Item Modal */}
-      <ItemModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+      <ItemModal
+        item={selectedItem}
+        isOpen={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+      />
 
       {/* Footer */}
       <footer className="mt-16 border-t border-gray-200 bg-white">

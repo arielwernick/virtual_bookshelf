@@ -15,8 +15,8 @@ interface ShelfPageData {
   description: string | null;
   items: Item[];
   created_at: string;
-  share_token?: string;
-  is_public?: boolean;
+  share_token: string;
+  is_public: boolean;
 }
 
 export default function ShelfPage() {
@@ -250,19 +250,17 @@ export default function ShelfPage() {
             )}
           </div>
         ) : (
-          <ShelfGrid items={shelfData.items} onItemClick={handleItemClick} isOwner={isOwner} />
+          <ShelfGrid items={shelfData.items} onItemClick={handleItemClick} />
         )}
       </div>
 
       {/* Modals */}
-      {selectedItem && <ItemModal item={selectedItem} onClose={() => setSelectedItem(null)} />}
-      {showShareModal && shelfData && (
-        <ShareModal
-          shareToken={shelfData.share_token}
-          shelfName={shelfData.name}
-          onClose={() => setShowShareModal(false)}
-        />
-      )}
+      <ItemModal item={selectedItem} isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} />
+      <ShareModal
+        isOpen={showShareModal}
+        shareToken={shelfData.share_token}
+        onClose={() => setShowShareModal(false)}
+      />
     </div>
   );
 }
