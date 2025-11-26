@@ -1,6 +1,9 @@
 -- Migration 001: Add Google OAuth support and multi-shelf architecture
 -- Run this if you have an EXISTING database with the users table
 
+-- Step 0: First, increase share_token column size if it exists
+ALTER TABLE users ALTER COLUMN share_token TYPE VARCHAR(128);
+
 -- Step 1: Alter users table to add new columns and constraints
 ALTER TABLE users
 ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE,
@@ -34,7 +37,7 @@ CREATE TABLE IF NOT EXISTS shelves (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR(100) NOT NULL,
   description TEXT,
-  share_token VARCHAR(50) UNIQUE NOT NULL DEFAULT encode(gen_random_uuid()::text::bytea, 'hex'),
+  share_token VARCHAR(128) UNIQUE NOT NULL DEFAULT encode(gen_random_uuid()::text::bytea, 'hex'),
   is_public BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
