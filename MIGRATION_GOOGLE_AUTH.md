@@ -38,56 +38,47 @@ CREATE TABLE shelves (
 
 ## Migration Steps for Existing Database
 
-If you have existing users and items, follow these steps to migrate:
+### Important: Fresh Install vs. Existing Database
+
+**Fresh Install** (new Neon database):
+1. Use `lib/db/schema.sql` - runs all CREATE TABLE statements
+
+**Existing Database** (already has users/items):
+1. Use `lib/db/MIGRATION_001_google_oauth.sql` - uses ALTER TABLE to add columns
+2. Do NOT use schema.sql as it won't update existing tables
+
+### Steps for Existing Database
 
 ### 1. Backup Database
 ```bash
 # In your Neon console, export/backup your data first
 ```
 
-### 2. Run Schema Updates
-Execute the updated schema.sql in Neon SQL Editor. Since it uses `CREATE TABLE IF NOT EXISTS`, it's safe to run multiple times.
+### 2. Run Migration SQL
+Copy the contents of `lib/db/MIGRATION_001_google_oauth.sql` and execute it in your Neon SQL Editor.
 
-### 3. Add Email to Existing Users (if upgrading)
+This migration:
+- Adds `email` and `google_id` columns to users
+- Makes `username` and `password_hash` optional
+- Creates shelves table
+- Updates items table with shelf_id
+- Generates default shelves for existing users
+- Migrates items to their respective shelves
+
+### 3. Verify Migration Success
+After running the migration, verify in Neon SQL Editor:
 ```sql
--- Generate email from username if not present
-UPDATE users 
-SET email = username || '@localhost'
-WHERE email IS NULL
-AND username IS NOT NULL;
+-- Check users have email
+SELECT id, username, email, google_id FROM users LIMIT 1;
+
+-- Check shelves were created
+SELECT id, user_id, name FROM shelves LIMIT 1;
+
+-- Check items have shelf_id
+SELECT id, shelf_id, user_id, title FROM items LIMIT 1;
 ```
 
-### 4. Create Default Shelves for Existing Users
-```sql
--- Create one default shelf per user, preserving their existing share_token
-INSERT INTO shelves (id, user_id, name, share_token, created_at, updated_at)
-SELECT 
-  gen_random_uuid(),
-  users.id,
-  COALESCE(users.title, users.username || '''s Shelf'),
-  users.share_token,
-  users.created_at,
-  users.updated_at
-FROM users
-WHERE NOT EXISTS (SELECT 1 FROM shelves WHERE shelves.user_id = users.id);
-```
-
-### 5. Migrate Items to Shelves
-```sql
--- For each user, associate their items with their default shelf
-UPDATE items
-SET shelf_id = shelves.id
-FROM shelves
-WHERE items.user_id = shelves.user_id
-AND items.shelf_id IS NULL;
-```
-
-### 6. Update Order Constraints
-```sql
--- The items table constraint has been updated from user_id to shelf_id
--- If you have duplicate order_index values per user, you may need to fix them:
--- Contact support if you encounter constraint violations
-```
+All three queries should return results with the new columns populated.
 
 ## Backward Compatibility
 
