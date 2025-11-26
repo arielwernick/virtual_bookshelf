@@ -172,46 +172,111 @@
 
 ---
 
-## Next Steps (Phase 3: Frontend Components)
+## Completed (Phase 3: Frontend Components)
 
-### Task 3.1: Update Login Page
-**Work Needed**:
-- Remove username/password form
-- Add "Sign in with Google" button
-- Link to `/api/auth/google`
+### ✅ Task 3.1: Update Login Page
+**What Created** (`app/login/page.tsx`):
+- Single "Sign in with Google" button
+- Clean, simple layout
+- Links to `/api/auth/google`
+- Google OAuth icon and branding
 
-### Task 3.2: Create Shelf Creation Form
-**Work Needed**:
-- Form component: name + description
-- POST to `/api/shelf/create`
-- Redirect to shelf page
+**What Changed** (`app/page.tsx`):
+- Updated CTA buttons to link to `/login` instead of `/create`
+- "Get Started" flow now uses Google OAuth
 
-### Task 3.3: Create Dashboard
-**Work Needed**:
-- Fetch `/api/shelf/dashboard`
-- Display list of shelves
-- Button to create new shelf
-- Edit/delete/share options per shelf
-- Navigation to individual shelves
+**Status**: Complete.
+
+---
+
+### ✅ Task 3.2: Create Dashboard
+**What Created** (`app/dashboard/page.tsx`):
+- Fetch authenticated user's shelves from `/api/shelf/dashboard`
+- Display all user's shelves in grid layout
+- Show shelf name, description, item count, visibility
+- Create new shelf form (name + description)
+- Sign out button
+- Click shelf to view details
+- Responsive grid layout
+
+**Features**:
+- Inline shelf creation form
+- Error handling and loading states
+- Item count per shelf
+- Public/Private indicator
+
+**Status**: Complete.
+
+---
+
+### ✅ Task 3.3: Individual Shelf Page
+**What Created** (`app/shelf/[shelfId]/page.tsx`):
+- Display single shelf with items
+- Show shelf name + description
+- Edit shelf metadata (name/description)
+- Delete shelf (with confirmation)
+- Share shelf (opens share modal)
+- Item grid display
+- Owner verification
+- Responsive design
+
+**Features**:
+- Edit mode for shelf owner
+- Permission checks (public vs. private)
+- Back to dashboard link
+- Confetti on item addition
+- Empty state with CTA
+
+**Status**: Complete.
 
 ---
 
 ## Testing Checklist
 
-### Pre-Production
-- [ ] Schema applied to Neon
-- [ ] Can sign in with Google
-- [ ] User created in database
-- [ ] JWT session set
-- [ ] Redirects to dashboard
-- [ ] Can create shelf without password
-- [ ] Items work with new shelf_id
-- [ ] Old share tokens still work
+### Setup (Required Before Testing)
+- [ ] Google OAuth credentials in `.env.local`
+- [ ] Database migration run (use `MIGRATION_001_google_oauth.sql`)
+- [ ] Neon database updated with new schema
+- [ ] All dependencies installed (`npm install`)
 
-### Data Safety
-- [ ] Existing users preserved (email generated or mapped)
-- [ ] Existing items associated with default shelf
-- [ ] Existing passwords still functional
+### Google OAuth Flow
+- [ ] Click "Get Started" on home page
+- [ ] Redirected to Google login
+- [ ] Google consent screen appears
+- [ ] Approved, redirected to `/api/auth/google/callback`
+- [ ] User created in database with google_id
+- [ ] Redirected to `/dashboard`
+- [ ] Session cookie set (bookshelf_session)
+
+### Dashboard
+- [ ] Dashboard loads with authenticated user
+- [ ] User email displayed in header
+- [ ] "Create Shelf" form visible
+- [ ] Create shelf with name + description
+- [ ] Shelf appears in grid after creation
+- [ ] Item count shows 0 for new shelf
+- [ ] Click shelf navigates to shelf page
+- [ ] Sign out button logs user out
+
+### Shelf Management
+- [ ] Shelf page loads with correct data
+- [ ] Edit button appears for owner
+- [ ] Edit name/description and save
+- [ ] Changes persist
+- [ ] Delete shelf removes from database
+- [ ] Can add items to shelf (scope for next phase)
+
+### Public Sharing
+- [ ] Share button generates share URL
+- [ ] Can access shelf via share_token (no auth)
+- [ ] Share token link is unique per shelf
+
+### Data Safety (Existing Users)
+- [ ] Migration preserves existing users
+- [ ] Email generated from username
+- [ ] Default shelf created with existing items
+- [ ] Old share tokens still work
+- [ ] Password-based accounts still login
 
 ---
 
