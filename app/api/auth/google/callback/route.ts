@@ -29,11 +29,18 @@ export async function GET(request: Request) {
     // Verify state token (CSRF protection)
     const cookieStore = await cookies();
     const storedState = cookieStore.get('oauth_state')?.value;
+    console.log('State verification:', {
+     incomingState: state,
+     storedState: storedState,
+     match: state === storedState,
+     allCookies: Array.from(cookieStore.getAll()).map(c => c.name),
+    });
+    
     if (state !== storedState) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid state token' },
-        { status: 403 }
-      );
+     return NextResponse.json(
+       { success: false, error: 'Invalid state token' },
+       { status: 403 }
+     );
     }
 
     // Exchange code for tokens
