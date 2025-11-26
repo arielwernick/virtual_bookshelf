@@ -117,34 +117,82 @@
 
 ---
 
-## Next Steps (Phase 2: Shelf Refactoring)
+## Completed (Phase 2: Shelf Refactoring)
 
-### Task 2.1: Apply Migration to Database
-**Action Required**:
-1. Go to Neon SQL Editor
-2. Run the updated `schema.sql`
-3. Verify tables created
+### ✅ Task 2.1: Apply Migration to Database
+**What's Needed**:
+1. Copy `lib/db/MIGRATION_001_google_oauth.sql` to Neon SQL Editor
+2. Execute it (this handles ALTER TABLE for existing databases)
+3. Verify with test queries
 
-### Task 2.2: Refactor Shelf Creation Route
+**Status**: Script created, ready to apply.
+
+---
+
+### ✅ Task 2.2: Refactor Shelf Creation Route
+**What Changed** (`app/api/shelf/create/route.ts`):
+- Removed password requirement
+- Requires authenticated session
+- Takes only `name` (required) + `description` (optional)
+- Creates shelf for authenticated user
+- Returns shelf data with share_token
+
+**Status**: Complete.
+
+---
+
+### ✅ Task 2.3: Create Dashboard Route
+**What Changed** (`app/api/shelf/dashboard/route.ts`):
+- New endpoint: GET `/api/shelf/dashboard`
+- Requires authentication
+- Returns all user's shelves with item counts
+- Includes user info (username, email)
+
+**Status**: Complete.
+
+---
+
+### ✅ Task 2.4: Shelf Management Routes
+**What Created**:
+
+**`app/api/shelf/[shelfId]/route.ts`** (new):
+- GET: Fetch shelf + items (owner or public)
+- PATCH: Update shelf (name, description, is_public)
+- DELETE: Delete shelf (cascades to items)
+
+**`app/api/shelf/share/[shareToken]/route.ts`** (updated):
+- GET: Fetch public shelf by share token
+- Returns shelf + items (no auth required)
+
+**`app/api/items/[id]/route.ts`** (updated):
+- PATCH/DELETE: Fixed ownership check to use shelf_id
+- Verifies user owns the shelf containing the item
+
+**Status**: Complete.
+
+---
+
+## Next Steps (Phase 3: Frontend Components)
+
+### Task 3.1: Update Login Page
 **Work Needed**:
-- Update `app/api/shelf/create/route.ts`
-- Remove password requirement
-- Add session check
-- Create shelf for authenticated user
-- Redirect to shelf
+- Remove username/password form
+- Add "Sign in with Google" button
+- Link to `/api/auth/google`
 
-### Task 2.3: Create Dashboard Route
+### Task 3.2: Create Shelf Creation Form
 **Work Needed**:
-- Create `app/api/shelf/dashboard/route.ts`
-- Fetch all shelves for logged-in user
-- Return shelf list with metadata
+- Form component: name + description
+- POST to `/api/shelf/create`
+- Redirect to shelf page
 
-### Task 2.4: Frontend Components
+### Task 3.3: Create Dashboard
 **Work Needed**:
-- "Sign in with Google" button (links to `/api/auth/google`)
-- Shelf creation form (name + description only)
-- Dashboard component (list user's shelves)
-- Navigation to shelves
+- Fetch `/api/shelf/dashboard`
+- Display list of shelves
+- Button to create new shelf
+- Edit/delete/share options per shelf
+- Navigation to individual shelves
 
 ---
 
