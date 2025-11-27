@@ -191,4 +191,140 @@ describe('ItemCard', () => {
       expect(badge.className).toContain('text-green-800');
     });
   });
+
+  describe('Note Indicator', () => {
+    it('renders note indicator when item has notes in non-edit mode', () => {
+      render(<ItemCard item={createMockItem({ notes: 'Some notes here' })} />);
+
+      const noteIndicator = screen.getByTestId('note-indicator');
+      expect(noteIndicator).toBeInTheDocument();
+    });
+
+    it('does not show note indicator when item has no notes', () => {
+      render(<ItemCard item={createMockItem({ notes: null })} />);
+
+      expect(screen.queryByTestId('note-indicator')).not.toBeInTheDocument();
+    });
+
+    it('does not show note indicator when notes is empty string', () => {
+      render(<ItemCard item={createMockItem({ notes: '' })} />);
+
+      expect(screen.queryByTestId('note-indicator')).not.toBeInTheDocument();
+    });
+
+    it('does not show note indicator in edit mode even when item has notes', () => {
+      render(
+        <ItemCard 
+          item={createMockItem({ notes: 'Some notes' })} 
+          editMode={true} 
+          onEditNote={() => {}} 
+        />
+      );
+
+      expect(screen.queryByTestId('note-indicator')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Note Edit Button (Edit Mode)', () => {
+    it('shows edit note button in edit mode when item has notes', () => {
+      const onEditNote = vi.fn();
+      render(
+        <ItemCard 
+          item={createMockItem({ notes: 'Some notes' })} 
+          editMode={true} 
+          onEditNote={onEditNote} 
+        />
+      );
+
+      const editNoteButton = screen.getByTestId('edit-note-button');
+      expect(editNoteButton).toBeInTheDocument();
+      expect(editNoteButton).toHaveAttribute('title', 'Edit note');
+    });
+
+    it('shows add note button in edit mode when item has no notes', () => {
+      const onEditNote = vi.fn();
+      render(
+        <ItemCard 
+          item={createMockItem({ notes: null })} 
+          editMode={true} 
+          onEditNote={onEditNote} 
+        />
+      );
+
+      const addNoteButton = screen.getByTestId('add-note-button');
+      expect(addNoteButton).toBeInTheDocument();
+      expect(addNoteButton).toHaveAttribute('title', 'Add note');
+    });
+
+    it('calls onEditNote when edit note button is clicked', () => {
+      const onEditNote = vi.fn();
+      render(
+        <ItemCard 
+          item={createMockItem({ notes: 'Some notes' })} 
+          editMode={true} 
+          onEditNote={onEditNote} 
+        />
+      );
+
+      fireEvent.click(screen.getByTestId('edit-note-button'));
+      expect(onEditNote).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls onEditNote when add note button is clicked', () => {
+      const onEditNote = vi.fn();
+      render(
+        <ItemCard 
+          item={createMockItem({ notes: null })} 
+          editMode={true} 
+          onEditNote={onEditNote} 
+        />
+      );
+
+      fireEvent.click(screen.getByTestId('add-note-button'));
+      expect(onEditNote).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not show note edit button when not in edit mode', () => {
+      const onEditNote = vi.fn();
+      render(
+        <ItemCard 
+          item={createMockItem({ notes: 'Some notes' })} 
+          onEditNote={onEditNote} 
+        />
+      );
+
+      expect(screen.queryByTestId('edit-note-button')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('add-note-button')).not.toBeInTheDocument();
+    });
+
+    it('does not show note edit button when onEditNote is not provided', () => {
+      render(
+        <ItemCard 
+          item={createMockItem({ notes: 'Some notes' })} 
+          editMode={true} 
+        />
+      );
+
+      expect(screen.queryByTestId('edit-note-button')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('add-note-button')).not.toBeInTheDocument();
+    });
+
+    it('stops propagation when note edit button is clicked', () => {
+      const onClick = vi.fn();
+      const onEditNote = vi.fn();
+      render(
+        <ItemCard
+          item={createMockItem({ notes: 'Some notes' })}
+          onClick={onClick}
+          editMode={true}
+          onEditNote={onEditNote}
+        />
+      );
+
+      fireEvent.click(screen.getByTestId('edit-note-button'));
+
+      expect(onEditNote).toHaveBeenCalled();
+      expect(onClick).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -8,9 +8,10 @@ interface ItemCardProps {
   onClick?: () => void;
   editMode?: boolean;
   onDelete?: () => void;
+  onEditNote?: () => void;
 }
 
-export function ItemCard({ item, onClick, editMode, onDelete }: ItemCardProps) {
+export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: ItemCardProps) {
   const handleClick = () => {
     if (onClick && !editMode) {
       onClick();
@@ -19,6 +20,7 @@ export function ItemCard({ item, onClick, editMode, onDelete }: ItemCardProps) {
 
   const aspectRatio = getAspectRatio(item.type);
   const isClickable = onClick && !editMode;
+  const hasNotes = Boolean(item.notes);
 
   const badgeColor = {
     book: 'bg-blue-100 text-blue-800',
@@ -72,6 +74,24 @@ export function ItemCard({ item, onClick, editMode, onDelete }: ItemCardProps) {
           </span>
         </div>
 
+        {/* Note Indicator (non-edit mode) */}
+        {!editMode && hasNotes && (
+          <div 
+            className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 p-1 bg-white/80 rounded-full"
+            title="Has notes"
+            data-testid="note-indicator"
+          >
+            <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+        )}
+
         {/* Delete Button */}
         {editMode && onDelete && (
           <button
@@ -88,6 +108,28 @@ export function ItemCard({ item, onClick, editMode, onDelete }: ItemCardProps) {
                 strokeLinejoin="round"
                 strokeWidth={2}
                 d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        )}
+
+        {/* Edit Note Button (edit mode) */}
+        {editMode && onEditNote && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditNote();
+            }}
+            className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 p-1.5 sm:p-2 bg-gray-700 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-800"
+            title={hasNotes ? 'Edit note' : 'Add note'}
+            data-testid={hasNotes ? 'edit-note-button' : 'add-note-button'}
+          >
+            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
           </button>
