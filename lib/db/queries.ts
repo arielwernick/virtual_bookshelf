@@ -256,7 +256,7 @@ export async function deleteShelf(shelfId: string): Promise<boolean> {
 /**
  * Create a new item
  */
-export async function createItem(shelfId: string, itemData: CreateItemData): Promise<Item> {
+export async function createItem(shelfId: string, itemData: CreateItemData, userId?: string): Promise<Item> {
   const {
     type,
     title,
@@ -268,8 +268,8 @@ export async function createItem(shelfId: string, itemData: CreateItemData): Pro
   } = itemData;
 
   const result = await sql`
-    INSERT INTO items (shelf_id, type, title, creator, image_url, external_url, notes, order_index)
-    VALUES (${shelfId}, ${type}, ${title}, ${creator}, ${image_url}, ${external_url}, ${notes}, ${order_index})
+    INSERT INTO items (shelf_id, user_id, type, title, creator, image_url, external_url, notes, order_index)
+    VALUES (${shelfId}, ${userId || null}, ${type}, ${title}, ${creator}, ${image_url}, ${external_url}, ${notes}, ${order_index})
     RETURNING *
   `;
 
