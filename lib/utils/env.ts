@@ -31,3 +31,11 @@ export function validateEnv() {
     console.warn('WARNING: Using default SESSION_SECRET in production. Please set a secure random value.');
   }
 }
+
+/**
+ * Get the demo shelf share token for the home page
+ * Returns undefined if not configured (home page will skip the demo)
+ */
+export function getDemoShelfToken(): string | undefined {
+  return process.env.DEMO_SHELF_TOKEN;
+}
