@@ -134,6 +134,16 @@ describe('Top5ShelfGrid', () => {
       const addItemTexts = screen.getAllByText('Add an item');
       expect(addItemTexts).toHaveLength(5);
     });
+
+    it('shows drag hint in edit mode with multiple items', () => {
+      const items = [
+        createMockItem({ id: 'item-1', order_index: 0 }),
+        createMockItem({ id: 'item-2', order_index: 1 }),
+      ];
+      render(<Top5ShelfGrid items={items} editMode onReorder={vi.fn()} />);
+
+      expect(screen.getByText(/Drag and drop items to reorder/)).toBeInTheDocument();
+    });
   });
 
   describe('Click Behavior', () => {
@@ -170,62 +180,54 @@ describe('Top5ShelfGrid', () => {
     });
   });
 
-  describe('Reorder Functionality', () => {
-    it('calls onReorder with correct order when moving item up', () => {
+  describe('Drag and Drop Functionality', () => {
+    it('makes items draggable in edit mode with onReorder', () => {
+      const items = [
+        createMockItem({ id: 'item-1', order_index: 0 }),
+      ];
+      render(<Top5ShelfGrid items={items} editMode onReorder={vi.fn()} />);
+
+      const card = screen.getByText('The Great Gatsby').closest('div[class*="group"]');
+      expect(card).toHaveAttribute('draggable', 'true');
+    });
+
+    it('items are not draggable in view mode', () => {
+      const items = [
+        createMockItem({ id: 'item-1', order_index: 0 }),
+      ];
+      render(<Top5ShelfGrid items={items} />);
+
+      const card = screen.getByText('The Great Gatsby').closest('div[class*="group"]');
+      expect(card).not.toHaveAttribute('draggable', 'true');
+    });
+
+    it('items are not draggable without onReorder handler', () => {
+      const items = [
+        createMockItem({ id: 'item-1', order_index: 0 }),
+      ];
+      render(<Top5ShelfGrid items={items} editMode />);
+
+      const card = screen.getByText('The Great Gatsby').closest('div[class*="group"]');
+      expect(card).not.toHaveAttribute('draggable', 'true');
+    });
+
+    it('calls onReorder when item is dropped on another item', () => {
       const handleReorder = vi.fn();
       const items = [
         createMockItem({ id: 'item-1', title: 'First', order_index: 0 }),
         createMockItem({ id: 'item-2', title: 'Second', order_index: 1 }),
-        createMockItem({ id: 'item-3', title: 'Third', order_index: 2 }),
       ];
-      render(<Top5ShelfGrid items={items} onReorder={handleReorder} editMode />);
+      render(<Top5ShelfGrid items={items} editMode onReorder={handleReorder} />);
 
-      // Find the move up button for the second item (Second)
-      const moveUpButtons = screen.getAllByTitle('Move up in ranking');
-      // First item doesn't have move up, so moveUpButtons[0] is for Second item
-      fireEvent.click(moveUpButtons[0]);
+      const firstCard = screen.getByText('First').closest('div[class*="group"]');
+      const secondCard = screen.getByText('Second').closest('div[class*="group"]');
 
-      expect(handleReorder).toHaveBeenCalledWith(['item-2', 'item-1', 'item-3']);
-    });
+      // Simulate drag and drop
+      fireEvent.dragStart(firstCard!);
+      fireEvent.dragOver(secondCard!);
+      fireEvent.drop(secondCard!);
 
-    it('calls onReorder with correct order when moving item down', () => {
-      const handleReorder = vi.fn();
-      const items = [
-        createMockItem({ id: 'item-1', title: 'First', order_index: 0 }),
-        createMockItem({ id: 'item-2', title: 'Second', order_index: 1 }),
-        createMockItem({ id: 'item-3', title: 'Third', order_index: 2 }),
-      ];
-      render(<Top5ShelfGrid items={items} onReorder={handleReorder} editMode />);
-
-      // Find the move down button for the first item (First)
-      const moveDownButtons = screen.getAllByTitle('Move down in ranking');
-      fireEvent.click(moveDownButtons[0]);
-
-      expect(handleReorder).toHaveBeenCalledWith(['item-2', 'item-1', 'item-3']);
-    });
-
-    it('does not show move up button for first item', () => {
-      const items = [
-        createMockItem({ id: 'item-1', title: 'First', order_index: 0 }),
-        createMockItem({ id: 'item-2', title: 'Second', order_index: 1 }),
-      ];
-      render(<Top5ShelfGrid items={items} onReorder={vi.fn()} editMode />);
-
-      // Should only have 1 move up button (for Second item)
-      const moveUpButtons = screen.getAllByTitle('Move up in ranking');
-      expect(moveUpButtons).toHaveLength(1);
-    });
-
-    it('does not show move down button for last item', () => {
-      const items = [
-        createMockItem({ id: 'item-1', title: 'First', order_index: 0 }),
-        createMockItem({ id: 'item-2', title: 'Second', order_index: 1 }),
-      ];
-      render(<Top5ShelfGrid items={items} onReorder={vi.fn()} editMode />);
-
-      // Should only have 1 move down button (for First item)
-      const moveDownButtons = screen.getAllByTitle('Move down in ranking');
-      expect(moveDownButtons).toHaveLength(1);
+      expect(handleReorder).toHaveBeenCalledWith(['item-2', 'item-1']);
     });
   });
 });

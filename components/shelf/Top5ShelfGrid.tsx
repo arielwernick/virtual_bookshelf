@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Item } from '@/lib/types/shelf';
 import { Top5ItemCard } from './Top5ItemCard';
 import { TOP5_MAX_ITEMS } from '@/lib/utils/top5';
@@ -15,11 +16,20 @@ interface Top5ShelfGridProps {
 interface EmptySlotProps {
   rank: number;
   editMode?: boolean;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+  isDragOver?: boolean;
 }
 
-function EmptySlot({ rank, editMode }: EmptySlotProps) {
+function EmptySlot({ rank, editMode, onDragOver, onDrop, isDragOver }: EmptySlotProps) {
   return (
-    <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg border-2 border-dashed border-gray-300 overflow-hidden">
+    <div 
+      className={`relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg border-2 border-dashed overflow-hidden transition-all ${
+        isDragOver ? 'border-amber-500 bg-amber-50 scale-105' : 'border-gray-300'
+      }`}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       {/* Rank Badge */}
       <div className="absolute top-0 left-0 z-10 bg-gradient-to-r from-gray-400 to-gray-500 text-white font-bold text-lg sm:text-xl px-3 py-1 rounded-br-lg">
         #{rank}
@@ -52,25 +62,50 @@ export function Top5ShelfGrid({
   onDeleteItem,
   onReorder,
 }: Top5ShelfGridProps) {
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
   // Sort items by order_index
   const sortedItems = [...items].sort((a, b) => a.order_index - b.order_index);
 
-  const handleMoveUp = (index: number) => {
-    if (index <= 0 || !onReorder) return;
-
-    const newOrder = sortedItems.map((item) => item.id);
-    // Swap with previous item
-    [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
-    onReorder(newOrder);
+  // Drag and drop handlers
+  const handleDragStart = (itemId: string) => {
+    setDraggedItemId(itemId);
   };
 
-  const handleMoveDown = (index: number) => {
-    if (index >= sortedItems.length - 1 || !onReorder) return;
+  const handleDragEnd = () => {
+    setDraggedItemId(null);
+    setDragOverIndex(null);
+  };
 
+  const handleDragOver = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    setDragOverIndex(targetIndex);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (!draggedItemId || !onReorder) return;
+
+    const draggedIndex = sortedItems.findIndex((item) => item.id === draggedItemId);
+    if (draggedIndex === -1 || draggedIndex === targetIndex) {
+      setDraggedItemId(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    // Create new order array
     const newOrder = sortedItems.map((item) => item.id);
-    // Swap with next item
-    [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+    
+    // Remove dragged item
+    newOrder.splice(draggedIndex, 1);
+    
+    // Insert at new position
+    newOrder.splice(targetIndex, 0, draggedItemId);
+
     onReorder(newOrder);
+    setDraggedItemId(null);
+    setDragOverIndex(null);
   };
 
   // Create array of 5 slots
@@ -87,15 +122,27 @@ export function Top5ShelfGrid({
           onClick={onItemClick ? () => onItemClick(item) : undefined}
           editMode={editMode}
           onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}
-          onMoveUp={onReorder ? () => handleMoveUp(index) : undefined}
-          onMoveDown={onReorder ? () => handleMoveDown(index) : undefined}
-          canMoveUp={index > 0}
-          canMoveDown={index < sortedItems.length - 1}
+          draggable={editMode && !!onReorder}
+          onDragStart={() => handleDragStart(item.id)}
+          onDragEnd={handleDragEnd}
+          onDragOver={(e) => handleDragOver(e, index)}
+          onDrop={(e) => handleDrop(e, index)}
+          isDragging={draggedItemId === item.id}
+          isDragOver={dragOverIndex === index && draggedItemId !== item.id}
         />
       );
     }
 
-    return <EmptySlot key={`empty-${rank}`} rank={rank} editMode={editMode} />;
+    return (
+      <EmptySlot 
+        key={`empty-${rank}`} 
+        rank={rank} 
+        editMode={editMode}
+        onDragOver={editMode ? (e) => handleDragOver(e, index) : undefined}
+        onDrop={editMode ? (e) => handleDrop(e, index) : undefined}
+        isDragOver={dragOverIndex === index}
+      />
+    );
   });
 
   return (
@@ -125,6 +172,13 @@ export function Top5ShelfGrid({
       {editMode && items.length < TOP5_MAX_ITEMS && (
         <p className="mt-4 text-sm text-gray-500 text-center">
           Add {TOP5_MAX_ITEMS - items.length} more item{TOP5_MAX_ITEMS - items.length !== 1 ? 's' : ''} to complete your Top 5
+        </p>
+      )}
+
+      {/* Drag hint in edit mode */}
+      {editMode && items.length > 1 && (
+        <p className="mt-2 text-sm text-amber-600 text-center">
+          💡 Drag and drop items to reorder your rankings
         </p>
       )}
     </div>

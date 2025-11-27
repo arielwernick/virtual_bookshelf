@@ -9,10 +9,14 @@ interface Top5ItemCardProps {
   onClick?: () => void;
   editMode?: boolean;
   onDelete?: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
-  canMoveUp?: boolean;
-  canMoveDown?: boolean;
+  // Drag and drop props
+  draggable?: boolean;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+  isDragging?: boolean;
+  isDragOver?: boolean;
 }
 
 export function Top5ItemCard({
@@ -21,10 +25,13 @@ export function Top5ItemCard({
   onClick,
   editMode,
   onDelete,
-  onMoveUp,
-  onMoveDown,
-  canMoveUp = true,
-  canMoveDown = true,
+  draggable,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+  isDragging,
+  isDragOver,
 }: Top5ItemCardProps) {
   const handleClick = () => {
     if (onClick && !editMode) {
@@ -46,11 +53,27 @@ export function Top5ItemCard({
 
   return (
     <div
-      className={`group relative bg-white rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 ${
-        isClickable ? 'cursor-pointer' : ''
-      }`}
+      className={`group relative bg-white rounded-lg shadow-sm overflow-hidden transition-all ${
+        isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-1' : ''
+      } ${draggable ? 'cursor-grab active:cursor-grabbing' : ''} ${
+        isDragging ? 'opacity-50 scale-95' : ''
+      } ${isDragOver ? 'ring-2 ring-amber-500 scale-105' : ''}`}
       onClick={handleClick}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
     >
+      {/* Drag Handle Indicator in edit mode */}
+      {editMode && draggable && (
+        <div className="absolute top-0 right-0 z-20 bg-amber-500 text-white p-1 rounded-bl-lg opacity-60 group-hover:opacity-100 transition-opacity">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+          </svg>
+        </div>
+      )}
+
       {/* Rank Badge */}
       <div
         className={`absolute top-0 left-0 z-10 ${rankGradient} text-white font-bold text-lg sm:text-xl px-3 py-1 rounded-br-lg shadow-md`}
@@ -70,6 +93,7 @@ export function Top5ItemCard({
             alt={item.title}
             className="w-full h-full object-cover"
             loading="lazy"
+            draggable={false}
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
             }}
@@ -91,7 +115,7 @@ export function Top5ItemCard({
         )}
 
         {/* Type Badge */}
-        <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
+        <div className="absolute top-1 right-8 sm:top-2 sm:right-10">
           <span className={`px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full ${badgeColor[item.type]}`}>
             {item.type}
           </span>
@@ -120,38 +144,6 @@ export function Top5ItemCard({
                 </svg>
               </button>
             )}
-
-            {/* Reorder Buttons - Always visible in edit mode for better discoverability */}
-            <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 flex flex-col gap-1">
-              {onMoveUp && canMoveUp && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onMoveUp();
-                  }}
-                  className="p-1.5 sm:p-2 bg-amber-500 text-white rounded-full hover:bg-amber-600 shadow-md"
-                  title="Move up in ranking"
-                >
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                  </svg>
-                </button>
-              )}
-              {onMoveDown && canMoveDown && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onMoveDown();
-                  }}
-                  className="p-1.5 sm:p-2 bg-amber-500 text-white rounded-full hover:bg-amber-600 shadow-md"
-                  title="Move down in ranking"
-                >
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              )}
-            </div>
           </>
         )}
       </div>

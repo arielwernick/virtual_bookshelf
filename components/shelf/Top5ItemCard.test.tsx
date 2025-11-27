@@ -142,116 +142,127 @@ describe('Top5ItemCard', () => {
       expect(handleDelete).toHaveBeenCalledTimes(1);
     });
 
-    it('shows move up button when canMoveUp is true', () => {
-      const handleMoveUp = vi.fn();
-      render(
-        <Top5ItemCard
-          item={createMockItem()}
-          rank={2}
-          editMode
-          onMoveUp={handleMoveUp}
-          canMoveUp={true}
-        />
-      );
-
-      const moveUpButton = screen.getByTitle('Move up in ranking');
-      expect(moveUpButton).toBeInTheDocument();
-    });
-
-    it('does not show move up button when canMoveUp is false', () => {
-      const handleMoveUp = vi.fn();
-      render(
-        <Top5ItemCard
-          item={createMockItem()}
-          rank={1}
-          editMode
-          onMoveUp={handleMoveUp}
-          canMoveUp={false}
-        />
-      );
-
-      expect(screen.queryByTitle('Move up in ranking')).not.toBeInTheDocument();
-    });
-
-    it('shows move down button when canMoveDown is true', () => {
-      const handleMoveDown = vi.fn();
-      render(
-        <Top5ItemCard
-          item={createMockItem()}
-          rank={1}
-          editMode
-          onMoveDown={handleMoveDown}
-          canMoveDown={true}
-        />
-      );
-
-      const moveDownButton = screen.getByTitle('Move down in ranking');
-      expect(moveDownButton).toBeInTheDocument();
-    });
-
-    it('does not show move down button when canMoveDown is false', () => {
-      const handleMoveDown = vi.fn();
-      render(
-        <Top5ItemCard
-          item={createMockItem()}
-          rank={5}
-          editMode
-          onMoveDown={handleMoveDown}
-          canMoveDown={false}
-        />
-      );
-
-      expect(screen.queryByTitle('Move down in ranking')).not.toBeInTheDocument();
-    });
-
-    it('calls onMoveUp when move up button clicked', () => {
-      const handleMoveUp = vi.fn();
-      render(
-        <Top5ItemCard
-          item={createMockItem()}
-          rank={2}
-          editMode
-          onMoveUp={handleMoveUp}
-          canMoveUp={true}
-        />
-      );
-
-      const moveUpButton = screen.getByTitle('Move up in ranking');
-      fireEvent.click(moveUpButton);
-      expect(handleMoveUp).toHaveBeenCalledTimes(1);
-    });
-
-    it('calls onMoveDown when move down button clicked', () => {
-      const handleMoveDown = vi.fn();
-      render(
-        <Top5ItemCard
-          item={createMockItem()}
-          rank={1}
-          editMode
-          onMoveDown={handleMoveDown}
-          canMoveDown={true}
-        />
-      );
-
-      const moveDownButton = screen.getByTitle('Move down in ranking');
-      fireEvent.click(moveDownButton);
-      expect(handleMoveDown).toHaveBeenCalledTimes(1);
-    });
-
     it('does not show edit controls in view mode', () => {
       render(
         <Top5ItemCard
           item={createMockItem()}
           rank={1}
           onDelete={vi.fn()}
-          onMoveUp={vi.fn()}
-          onMoveDown={vi.fn()}
         />
       );
 
       expect(screen.queryByTitle('Delete item')).not.toBeInTheDocument();
-      expect(screen.queryByTitle('Move up in ranking')).not.toBeInTheDocument();
-      expect(screen.queryByTitle('Move down in ranking')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Drag and Drop', () => {
+    it('is draggable when draggable prop is true', () => {
+      render(
+        <Top5ItemCard
+          item={createMockItem()}
+          rank={1}
+          editMode
+          draggable
+        />
+      );
+
+      const card = screen.getByText('The Great Gatsby').closest('div[class*="group"]');
+      expect(card).toHaveAttribute('draggable', 'true');
+    });
+
+    it('is not draggable when draggable prop is false', () => {
+      render(
+        <Top5ItemCard
+          item={createMockItem()}
+          rank={1}
+          editMode
+        />
+      );
+
+      const card = screen.getByText('The Great Gatsby').closest('div[class*="group"]');
+      expect(card).not.toHaveAttribute('draggable', 'true');
+    });
+
+    it('calls onDragStart when drag starts', () => {
+      const handleDragStart = vi.fn();
+      render(
+        <Top5ItemCard
+          item={createMockItem()}
+          rank={1}
+          editMode
+          draggable
+          onDragStart={handleDragStart}
+        />
+      );
+
+      const card = screen.getByText('The Great Gatsby').closest('div[class*="group"]');
+      fireEvent.dragStart(card!);
+      expect(handleDragStart).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls onDragEnd when drag ends', () => {
+      const handleDragEnd = vi.fn();
+      render(
+        <Top5ItemCard
+          item={createMockItem()}
+          rank={1}
+          editMode
+          draggable
+          onDragEnd={handleDragEnd}
+        />
+      );
+
+      const card = screen.getByText('The Great Gatsby').closest('div[class*="group"]');
+      fireEvent.dragEnd(card!);
+      expect(handleDragEnd).toHaveBeenCalledTimes(1);
+    });
+
+    it('applies dragging styles when isDragging is true', () => {
+      render(
+        <Top5ItemCard
+          item={createMockItem()}
+          rank={1}
+          editMode
+          draggable
+          isDragging
+        />
+      );
+
+      const card = screen.getByText('The Great Gatsby').closest('div[class*="group"]');
+      expect(card).toHaveClass('opacity-50');
+      expect(card).toHaveClass('scale-95');
+    });
+
+    it('applies drag over styles when isDragOver is true', () => {
+      render(
+        <Top5ItemCard
+          item={createMockItem()}
+          rank={1}
+          editMode
+          draggable
+          isDragOver
+        />
+      );
+
+      const card = screen.getByText('The Great Gatsby').closest('div[class*="group"]');
+      expect(card).toHaveClass('ring-2');
+      expect(card).toHaveClass('scale-105');
+    });
+
+    it('shows drag handle indicator in edit mode when draggable', () => {
+      render(
+        <Top5ItemCard
+          item={createMockItem()}
+          rank={1}
+          editMode
+          draggable
+        />
+      );
+
+      // The drag handle is an SVG with horizontal lines
+      const card = screen.getByText('The Great Gatsby').closest('div[class*="group"]');
+      const dragHandle = card?.querySelector('div[class*="bg-amber-500"]');
+      expect(dragHandle).toBeInTheDocument();
     });
   });
 });
