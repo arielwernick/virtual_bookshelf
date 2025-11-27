@@ -13,11 +13,12 @@ interface SearchResult {
 }
 
 interface AddItemFormProps {
+  shelfId: string;
   onItemAdded: () => void;
   onClose: () => void;
 }
 
-export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
+export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps) {
   const [itemType, setItemType] = useState<ItemType>('book');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -39,7 +40,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
 
     setLoading(true);
     try {
-      const endpoint = itemType === 'book' 
+      const endpoint = itemType === 'book'
         ? `/api/search/books?q=${encodeURIComponent(searchQuery)}`
         : `/api/search/music?q=${encodeURIComponent(searchQuery)}&type=${itemType === 'podcast' ? 'podcast' : 'music'}`;
 
@@ -63,6 +64,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          shelf_id: shelfId,
           type: itemType,
           title: result.title,
           creator: result.creator,
@@ -73,9 +75,13 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
 
       if (res.ok) {
         onItemAdded();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to add item');
       }
     } catch (error) {
       console.error('Add error:', error);
+      alert('Failed to add item');
     } finally {
       setAdding(false);
     }
@@ -93,6 +99,7 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          shelf_id: shelfId,
           type: itemType,
           ...manualData,
         }),
@@ -100,9 +107,13 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
 
       if (res.ok) {
         onItemAdded();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to add item');
       }
     } catch (error) {
       console.error('Add error:', error);
+      alert('Failed to add item');
     } finally {
       setAdding(false);
     }
@@ -182,7 +193,10 @@ export function AddItemForm({ onItemAdded, onClose }: AddItemFormProps) {
           {/* Results */}
           <div className="max-h-96 overflow-y-auto space-y-3">
             {searchResults.map((result) => (
-              <div key={result.id} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+              <div
+                key={result.id}
+                className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+              >
                 {result.imageUrl && (
                   <img
                     src={result.imageUrl}

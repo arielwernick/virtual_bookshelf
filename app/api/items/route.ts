@@ -121,7 +121,7 @@ export async function POST(request: Request) {
       order_index: orderIndex,
     };
 
-    const item = await createItem(shelf_id, itemData);
+    const item = await createItem(shelf_id, itemData, session.userId);
 
     return NextResponse.json({
       success: true,
