@@ -402,14 +402,15 @@ export default function EditShelfPage() {
             </Modal>
 
             {/* Note Editor Modal */}
-            <NoteEditorModal
-                isOpen={!!noteEditItem}
-                onClose={() => setNoteEditItem(null)}
-                itemId={noteEditItem?.id || ''}
-                itemTitle={noteEditItem?.title || ''}
-                initialNotes={noteEditItem?.notes || null}
-                onSave={handleSaveNote}
-            />
+            {noteEditItem && (
+                <NoteEditorModal
+                    isOpen={true}
+                    onClose={() => setNoteEditItem(null)}
+                    itemTitle={noteEditItem.title}
+                    initialNotes={noteEditItem.notes}
+                    onSave={handleSaveNote}
+                />
+            )}
         </div>
     );
 }

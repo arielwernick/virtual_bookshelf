@@ -8,7 +8,6 @@ const MAX_NOTES_LENGTH = 500;
 interface NoteEditorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  itemId: string;
   itemTitle: string;
   initialNotes: string | null;
   onSave: (notes: string | null) => Promise<void>;

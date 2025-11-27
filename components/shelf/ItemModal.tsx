@@ -1,7 +1,7 @@
 'use client';
 
 import { Item } from '@/lib/types/shelf';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface ItemModalProps {
   item: Item | null;
@@ -11,15 +11,15 @@ interface ItemModalProps {
 
 export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
   const [notesExpanded, setNotesExpanded] = useState(false);
+  const previousItemId = useRef<string | null>(null);
 
-  // Reset notes expanded state when modal opens or item changes
-  // This is an intentional state synchronization with props (resetting UI state)
-  useEffect(() => {
-    if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+  // Reset notes expanded state when item changes
+  if (item?.id !== previousItemId.current) {
+    previousItemId.current = item?.id ?? null;
+    if (notesExpanded) {
       setNotesExpanded(false);
     }
-  }, [isOpen, item?.id]);
+  }
 
   useEffect(() => {
     if (isOpen) {
