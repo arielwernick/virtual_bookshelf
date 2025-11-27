@@ -108,8 +108,8 @@ describe('DemoShelf', () => {
     expect(links[0]).toHaveAttribute('href', '/s/abc123');
   });
 
-  it('limits display to 6 items', () => {
-    const manyItems: Item[] = Array.from({ length: 10 }, (_, i) => ({
+  it('limits display to 12 items', () => {
+    const manyItems: Item[] = Array.from({ length: 15 }, (_, i) => ({
       id: `item-${i}`,
       shelf_id: 'shelf-1',
       type: 'book' as const,
@@ -130,9 +130,9 @@ describe('DemoShelf', () => {
       />
     );
 
-    // Should only render 6 images (items 0-5)
+    // Should only render 12 images (limited to 12, created 15)
     const images = screen.getAllByRole('img');
-    expect(images).toHaveLength(6);
+    expect(images).toHaveLength(12);
   });
 
   it('renders explore prompt', () => {

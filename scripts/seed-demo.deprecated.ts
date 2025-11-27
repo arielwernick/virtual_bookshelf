@@ -1,4 +1,23 @@
 /**
+ * @deprecated This script is deprecated in favor of the admin account approach.
+ * 
+ * Instead of running this script:
+ * 1. Create an admin account manually (e.g., admin@virtualbookshelf.app)
+ * 2. Log in and create a public shelf with your desired demo items
+ * 3. Copy the share token from the shelf's share URL
+ * 4. Set DEMO_SHELF_TOKEN in your environment variables
+ * 
+ * This approach is more maintainable because:
+ * - Admins can update demo content through the UI without deployments
+ * - No script execution required in production environments
+ * - Demo shelf evolves naturally as the app does
+ * 
+ * See docs/ADMIN_DEMO_SETUP.md for detailed instructions.
+ * 
+ * ---
+ * 
+ * [ORIGINAL DOCUMENTATION BELOW - FOR REFERENCE ONLY]
+ * 
  * Seed script to create a demo account with a public shelf
  * 
  * Run with: npx tsx scripts/seed-demo.ts

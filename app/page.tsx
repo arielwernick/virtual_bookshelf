@@ -3,6 +3,15 @@ import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
 import { getDemoShelfToken } from '@/lib/utils/env';
 import { DemoShelf } from '@/components/home/DemoShelf';
 
+/**
+ * Fetch the demo shelf for the home page
+ * 
+ * The demo shelf is managed by an admin account and configured via
+ * the DEMO_SHELF_TOKEN environment variable. This allows admins to
+ * update the demo content through the normal UI without deployments.
+ * 
+ * See docs/ADMIN_DEMO_SETUP.md for setup instructions.
+ */
 async function getDemoShelfData() {
   const token = getDemoShelfToken();
   if (!token) return null;

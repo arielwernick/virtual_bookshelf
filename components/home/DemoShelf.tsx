@@ -15,8 +15,8 @@ interface DemoShelfProps {
  * Clickable to view the full demo shelf
  */
 export function DemoShelf({ items, shelfName, shareToken }: DemoShelfProps) {
-  // Limit to 6 items for the demo to keep it clean
-  const displayItems = items.slice(0, 6);
+  // Show up to 12 items to fill two rows on desktop
+  const displayItems = items.slice(0, 12);
   const shelfUrl = `/s/${shareToken}`;
 
   return (
@@ -37,7 +37,7 @@ export function DemoShelf({ items, shelfName, shareToken }: DemoShelfProps) {
         {/* Shelf items */}
         <div className="bg-white/50 backdrop-blur-sm">
           <div
-            className="px-4 py-4 flex gap-3 overflow-x-auto"
+            className="px-4 py-4 flex flex-wrap gap-3"
             style={{ alignItems: 'flex-end' }}
           >
             {displayItems.map((item) => (
