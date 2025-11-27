@@ -181,7 +181,7 @@ describe('Top5ShelfGrid', () => {
       render(<Top5ShelfGrid items={items} onReorder={handleReorder} editMode />);
 
       // Find the move up button for the second item (Second)
-      const moveUpButtons = screen.getAllByTitle('Move up');
+      const moveUpButtons = screen.getAllByTitle('Move up in ranking');
       // First item doesn't have move up, so moveUpButtons[0] is for Second item
       fireEvent.click(moveUpButtons[0]);
 
@@ -198,7 +198,7 @@ describe('Top5ShelfGrid', () => {
       render(<Top5ShelfGrid items={items} onReorder={handleReorder} editMode />);
 
       // Find the move down button for the first item (First)
-      const moveDownButtons = screen.getAllByTitle('Move down');
+      const moveDownButtons = screen.getAllByTitle('Move down in ranking');
       fireEvent.click(moveDownButtons[0]);
 
       expect(handleReorder).toHaveBeenCalledWith(['item-2', 'item-1', 'item-3']);
@@ -212,7 +212,7 @@ describe('Top5ShelfGrid', () => {
       render(<Top5ShelfGrid items={items} onReorder={vi.fn()} editMode />);
 
       // Should only have 1 move up button (for Second item)
-      const moveUpButtons = screen.getAllByTitle('Move up');
+      const moveUpButtons = screen.getAllByTitle('Move up in ranking');
       expect(moveUpButtons).toHaveLength(1);
     });
 
@@ -224,7 +224,7 @@ describe('Top5ShelfGrid', () => {
       render(<Top5ShelfGrid items={items} onReorder={vi.fn()} editMode />);
 
       // Should only have 1 move down button (for First item)
-      const moveDownButtons = screen.getAllByTitle('Move down');
+      const moveDownButtons = screen.getAllByTitle('Move down in ranking');
       expect(moveDownButtons).toHaveLength(1);
     });
   });

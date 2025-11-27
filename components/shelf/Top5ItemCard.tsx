@@ -121,16 +121,16 @@ export function Top5ItemCard({
               </button>
             )}
 
-            {/* Reorder Buttons */}
-            <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Reorder Buttons - Always visible in edit mode for better discoverability */}
+            <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 flex flex-col gap-1">
               {onMoveUp && canMoveUp && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onMoveUp();
                   }}
-                  className="p-1.5 sm:p-2 bg-gray-800 text-white rounded-full hover:bg-gray-700"
-                  title="Move up"
+                  className="p-1.5 sm:p-2 bg-amber-500 text-white rounded-full hover:bg-amber-600 shadow-md"
+                  title="Move up in ranking"
                 >
                   <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -143,8 +143,8 @@ export function Top5ItemCard({
                     e.stopPropagation();
                     onMoveDown();
                   }}
-                  className="p-1.5 sm:p-2 bg-gray-800 text-white rounded-full hover:bg-gray-700"
-                  title="Move down"
+                  className="p-1.5 sm:p-2 bg-amber-500 text-white rounded-full hover:bg-amber-600 shadow-md"
+                  title="Move down in ranking"
                 >
                   <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

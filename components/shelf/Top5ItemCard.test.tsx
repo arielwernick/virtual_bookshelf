@@ -154,7 +154,7 @@ describe('Top5ItemCard', () => {
         />
       );
 
-      const moveUpButton = screen.getByTitle('Move up');
+      const moveUpButton = screen.getByTitle('Move up in ranking');
       expect(moveUpButton).toBeInTheDocument();
     });
 
@@ -170,7 +170,7 @@ describe('Top5ItemCard', () => {
         />
       );
 
-      expect(screen.queryByTitle('Move up')).not.toBeInTheDocument();
+      expect(screen.queryByTitle('Move up in ranking')).not.toBeInTheDocument();
     });
 
     it('shows move down button when canMoveDown is true', () => {
@@ -185,7 +185,7 @@ describe('Top5ItemCard', () => {
         />
       );
 
-      const moveDownButton = screen.getByTitle('Move down');
+      const moveDownButton = screen.getByTitle('Move down in ranking');
       expect(moveDownButton).toBeInTheDocument();
     });
 
@@ -201,7 +201,7 @@ describe('Top5ItemCard', () => {
         />
       );
 
-      expect(screen.queryByTitle('Move down')).not.toBeInTheDocument();
+      expect(screen.queryByTitle('Move down in ranking')).not.toBeInTheDocument();
     });
 
     it('calls onMoveUp when move up button clicked', () => {
@@ -216,7 +216,7 @@ describe('Top5ItemCard', () => {
         />
       );
 
-      const moveUpButton = screen.getByTitle('Move up');
+      const moveUpButton = screen.getByTitle('Move up in ranking');
       fireEvent.click(moveUpButton);
       expect(handleMoveUp).toHaveBeenCalledTimes(1);
     });
@@ -233,7 +233,7 @@ describe('Top5ItemCard', () => {
         />
       );
 
-      const moveDownButton = screen.getByTitle('Move down');
+      const moveDownButton = screen.getByTitle('Move down in ranking');
       fireEvent.click(moveDownButton);
       expect(handleMoveDown).toHaveBeenCalledTimes(1);
     });
@@ -250,8 +250,8 @@ describe('Top5ItemCard', () => {
       );
 
       expect(screen.queryByTitle('Delete item')).not.toBeInTheDocument();
-      expect(screen.queryByTitle('Move up')).not.toBeInTheDocument();
-      expect(screen.queryByTitle('Move down')).not.toBeInTheDocument();
+      expect(screen.queryByTitle('Move up in ranking')).not.toBeInTheDocument();
+      expect(screen.queryByTitle('Move down in ranking')).not.toBeInTheDocument();
     });
   });
 });
