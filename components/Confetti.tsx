@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface Particle {
   id: number;
@@ -14,22 +14,20 @@ interface Particle {
 
 const EMOJIS = ['📚', '📖', '🎧', '🎵', '🎶'];
 
+function createParticles(): Particle[] {
+  return Array.from({ length: 25 }, (_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    delay: Math.random() * 0.1,
+    duration: 2 + Math.random() * 1,
+    emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
+    rotation: Math.random() * 360,
+    scale: 0.5 + Math.random() * 0.5,
+  }));
+}
+
 export function Confetti() {
-  const [particles, setParticles] = useState<Particle[]>([]);
-
-  useEffect(() => {
-    const newParticles: Particle[] = Array.from({ length: 25 }, (_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      delay: Math.random() * 0.1,
-      duration: 2 + Math.random() * 1,
-      emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
-      rotation: Math.random() * 360,
-      scale: 0.5 + Math.random() * 0.5,
-    }));
-
-    setParticles(newParticles);
-  }, []);
+  const [particles] = useState<Particle[]>(createParticles);
 
   return (
     <>

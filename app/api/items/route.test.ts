@@ -94,7 +94,12 @@ describe('POST /api/items', () => {
         id: 'shelf-1',
         user_id: 'user-1',
         name: 'Test',
-      } as any);
+        description: null,
+        share_token: 'token',
+        is_public: false,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -115,7 +120,12 @@ describe('POST /api/items', () => {
         id: 'shelf-1',
         user_id: 'user-1',
         name: 'Test',
-      } as any);
+        description: null,
+        share_token: 'token',
+        is_public: false,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -136,7 +146,12 @@ describe('POST /api/items', () => {
         id: 'shelf-1',
         user_id: 'user-1',
         name: 'Test',
-      } as any);
+        description: null,
+        share_token: 'token',
+        is_public: false,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -157,7 +172,12 @@ describe('POST /api/items', () => {
         id: 'shelf-1',
         user_id: 'user-1',
         name: 'Test',
-      } as any);
+        description: null,
+        share_token: 'token',
+        is_public: false,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -202,7 +222,12 @@ describe('POST /api/items', () => {
         id: 'shelf-1',
         user_id: 'different-user', // Different owner
         name: 'Test',
-      } as any);
+        description: null,
+        share_token: 'token',
+        is_public: false,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -226,7 +251,12 @@ describe('POST /api/items', () => {
         id: 'shelf-1',
         user_id: 'user-1',
         name: 'My Shelf',
-      } as any);
+        description: null,
+        share_token: 'token',
+        is_public: false,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
       vi.mocked(getNextOrderIndex).mockResolvedValue(0);
     });
 
@@ -234,12 +264,18 @@ describe('POST /api/items', () => {
       const mockItem = {
         id: 'item-1',
         shelf_id: 'shelf-1',
-        type: 'book',
+        user_id: 'user-1',
+        type: 'book' as const,
         title: 'The Great Gatsby',
         creator: 'F. Scott Fitzgerald',
+        image_url: null,
+        external_url: null,
+        notes: null,
         order_index: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
       };
-      vi.mocked(createItem).mockResolvedValue(mockItem as any);
+      vi.mocked(createItem).mockResolvedValue(mockItem);
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -261,15 +297,18 @@ describe('POST /api/items', () => {
       const mockItem = {
         id: 'item-2',
         shelf_id: 'shelf-1',
-        type: 'podcast',
+        user_id: 'user-1',
+        type: 'podcast' as const,
         title: 'Tech Talk',
         creator: 'Host Name',
         image_url: 'https://example.com/image.jpg',
         external_url: 'https://podcast.example.com',
         notes: 'Great podcast!',
         order_index: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
       };
-      vi.mocked(createItem).mockResolvedValue(mockItem as any);
+      vi.mocked(createItem).mockResolvedValue(mockItem);
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -295,8 +334,17 @@ describe('POST /api/items', () => {
       vi.mocked(createItem).mockImplementation(async (shelfId, itemData) => ({
         id: 'item-new',
         shelf_id: shelfId,
-        ...itemData,
-      } as any));
+        user_id: 'user-1',
+        type: itemData.type,
+        title: itemData.title,
+        creator: itemData.creator,
+        image_url: itemData.image_url ?? null,
+        external_url: itemData.external_url ?? null,
+        notes: itemData.notes ?? null,
+        order_index: itemData.order_index ?? 0,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }));
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -320,8 +368,17 @@ describe('POST /api/items', () => {
       vi.mocked(createItem).mockImplementation(async (shelfId, itemData) => ({
         id: 'item-new',
         shelf_id: shelfId,
-        ...itemData,
-      } as any));
+        user_id: 'user-1',
+        type: itemData.type,
+        title: itemData.title,
+        creator: itemData.creator,
+        image_url: itemData.image_url ?? null,
+        external_url: itemData.external_url ?? null,
+        notes: itemData.notes ?? null,
+        order_index: itemData.order_index ?? 0,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }));
 
       for (const type of ['book', 'podcast', 'music']) {
         const req = createRequest({

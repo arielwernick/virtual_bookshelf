@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { ShelfGrid } from '@/components/shelf/ShelfGrid';
 import { ItemModal } from '@/components/shelf/ItemModal';
 import { Item } from '@/lib/types/shelf';
@@ -82,9 +83,9 @@ export default function EmbedShelfPage() {
       <div className="border-t border-gray-200 bg-gray-50 p-3 text-center">
         <p className="text-xs text-gray-500">
           Powered by{' '}
-          <a href="/" className="font-medium text-gray-900 hover:underline">
+          <Link href="/" className="font-medium text-gray-900 hover:underline">
             Virtual Bookshelf
-          </a>
+          </Link>
         </p>
       </div>
     </div>

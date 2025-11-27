@@ -201,7 +201,7 @@ export async function updateShelf(
   data: Partial<Shelf>
 ): Promise<Shelf> {
   const setClauses: string[] = [];
-  const values: Record<string, any> = {};
+  const values: Record<string, string | boolean | null> = {};
 
   if (data.name !== undefined) {
     setClauses.push('name = $1');
@@ -221,7 +221,7 @@ export async function updateShelf(
   }
 
   // Simple approach: update one field at a time
-  let result: any;
+  let result: { rows?: Shelf[] } & Shelf[] = [];
 
   if (data.name !== undefined) {
     result = await sql`UPDATE shelves SET name = ${data.name} WHERE id = ${shelfId} RETURNING *`;
@@ -349,7 +349,7 @@ export async function getItemById(itemId: string): Promise<Item | null> {
  * Update an item
  */
 export async function updateItem(itemId: string, itemData: UpdateItemData): Promise<Item> {
-  let result: any;
+  let result: { rows?: Item[] } & Item[] = [];
 
   if (itemData.title !== undefined) {
     result = await sql`UPDATE items SET title = ${itemData.title} WHERE id = ${itemId} RETURNING *`;

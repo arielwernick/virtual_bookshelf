@@ -97,7 +97,12 @@ describe('POST /api/auth/login', () => {
         email: 'test@example.com',
         password_hash: null, // No password - Google auth only
         google_id: 'google-123',
-      } as any);
+        share_token: 'token',
+        description: null,
+        title: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
 
       const req = createRequest({ username: 'testuser', password: 'password123' });
 
@@ -114,7 +119,13 @@ describe('POST /api/auth/login', () => {
         username: 'testuser',
         email: 'test@example.com',
         password_hash: 'hashed_password',
-      } as any);
+        google_id: null,
+        share_token: 'token',
+        description: null,
+        title: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
       vi.mocked(verifyPassword).mockResolvedValue(false);
 
       const req = createRequest({ username: 'testuser', password: 'wrongpassword' });
@@ -134,8 +145,14 @@ describe('POST /api/auth/login', () => {
         username: 'testuser',
         email: 'test@example.com',
         password_hash: 'hashed_password',
+        google_id: null,
+        share_token: 'token',
+        description: null,
+        title: null,
+        created_at: new Date(),
+        updated_at: new Date(),
       };
-      vi.mocked(getUserByUsername).mockResolvedValue(mockUser as any);
+      vi.mocked(getUserByUsername).mockResolvedValue(mockUser);
       vi.mocked(verifyPassword).mockResolvedValue(true);
       vi.mocked(setSessionCookie).mockResolvedValue(undefined);
 
@@ -155,8 +172,14 @@ describe('POST /api/auth/login', () => {
         username: 'testuser',
         email: 'test@example.com',
         password_hash: 'hashed_password',
+        google_id: null,
+        share_token: 'token',
+        description: null,
+        title: null,
+        created_at: new Date(),
+        updated_at: new Date(),
       };
-      vi.mocked(getUserByUsername).mockResolvedValue(mockUser as any);
+      vi.mocked(getUserByUsername).mockResolvedValue(mockUser);
       vi.mocked(verifyPassword).mockResolvedValue(true);
 
       const req = createRequest({ username: 'TestUser', password: 'password123' });
@@ -172,8 +195,14 @@ describe('POST /api/auth/login', () => {
         username: 'testuser',
         email: 'test@example.com',
         password_hash: 'hashed_password',
+        google_id: null,
+        share_token: 'token',
+        description: null,
+        title: null,
+        created_at: new Date(),
+        updated_at: new Date(),
       };
-      vi.mocked(getUserByUsername).mockResolvedValue(mockUser as any);
+      vi.mocked(getUserByUsername).mockResolvedValue(mockUser);
       vi.mocked(verifyPassword).mockResolvedValue(true);
 
       const req = createRequest({ username: 'testuser', password: 'password123' });

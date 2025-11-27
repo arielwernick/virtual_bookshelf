@@ -13,7 +13,7 @@ export function resetSqlMock() {
 }
 
 // Helper to set up a mock response
-export function mockSqlResponse(response: unknown[]) {
+export function mockSqlResponse(response: unknown) {
   mockSql.mockResolvedValueOnce(response);
 }
 
