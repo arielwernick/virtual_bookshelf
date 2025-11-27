@@ -192,27 +192,28 @@ describe('ItemCard', () => {
     });
   });
 
-  describe('Note Indicator', () => {
-    it('renders note indicator when item has notes in non-edit mode', () => {
+  describe('Note Preview', () => {
+    it('renders note preview when item has notes in non-edit mode', () => {
       render(<ItemCard item={createMockItem({ notes: 'Some notes here' })} />);
 
-      const noteIndicator = screen.getByTestId('note-indicator');
-      expect(noteIndicator).toBeInTheDocument();
+      const notePreview = screen.getByTestId('note-preview');
+      expect(notePreview).toBeInTheDocument();
+      expect(notePreview).toHaveTextContent('Some notes here');
     });
 
-    it('does not show note indicator when item has no notes', () => {
+    it('does not show note preview when item has no notes', () => {
       render(<ItemCard item={createMockItem({ notes: null })} />);
 
-      expect(screen.queryByTestId('note-indicator')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('note-preview')).not.toBeInTheDocument();
     });
 
-    it('does not show note indicator when notes is empty string', () => {
+    it('does not show note preview when notes is empty string', () => {
       render(<ItemCard item={createMockItem({ notes: '' })} />);
 
-      expect(screen.queryByTestId('note-indicator')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('note-preview')).not.toBeInTheDocument();
     });
 
-    it('does not show note indicator in edit mode even when item has notes', () => {
+    it('does not show note preview in edit mode even when item has notes', () => {
       render(
         <ItemCard 
           item={createMockItem({ notes: 'Some notes' })} 
@@ -221,7 +222,7 @@ describe('ItemCard', () => {
         />
       );
 
-      expect(screen.queryByTestId('note-indicator')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('note-preview')).not.toBeInTheDocument();
     });
   });
 
