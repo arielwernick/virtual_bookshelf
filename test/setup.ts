@@ -18,4 +18,3 @@ vi.mock('next/headers', () => ({
 // Mock environment variables for tests
 process.env.SESSION_SECRET = 'test-secret-key-minimum-32-characters-long';
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
-process.env.NODE_ENV = 'test';
