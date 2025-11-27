@@ -87,15 +87,10 @@ export default function DashboardPage() {
 
       // Redirect to new shelf
       router.push(`/shelf/${json.data.id}`);
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.');
       setCreatingShelf(false);
     }
-  };
-
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/');
   };
 
   if (loading) {
@@ -116,28 +111,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <Link href="/" className="text-2xl font-bold text-gray-900">
-                Virtual Bookshelf
-              </Link>
-              <p className="text-sm text-gray-600 mt-1">{data.email}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Section Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
