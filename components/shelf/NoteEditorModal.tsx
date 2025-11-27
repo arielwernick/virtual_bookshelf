@@ -136,7 +136,7 @@ export function NoteEditorModal({
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || notes.trim() === (initialNotes || '')}
+            disabled={saving || notes.trim() === (initialNotes?.trim() || '')}
             className="px-5 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
           >
             {saving ? (
