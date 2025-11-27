@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
+import { Shelf, ShelfType } from '@/lib/types/shelf';
 
 // Mock dependencies
 vi.mock('@/lib/utils/session', () => ({
@@ -13,10 +14,11 @@ vi.mock('@/lib/db/queries', () => ({
   getShelfById: vi.fn(),
   createItem: vi.fn(),
   getNextOrderIndex: vi.fn(),
+  getItemsByShelfId: vi.fn(),
 }));
 
 import { getSession } from '@/lib/utils/session';
-import { getShelfById, createItem, getNextOrderIndex } from '@/lib/db/queries';
+import { getShelfById, createItem, getNextOrderIndex, getItemsByShelfId } from '@/lib/db/queries';
 
 // Helper to create a mock request
 function createRequest(body: object): Request {
@@ -27,12 +29,29 @@ function createRequest(body: object): Request {
   });
 }
 
+// Helper to create a mock shelf
+function createMockShelf(overrides: Partial<Shelf> = {}): Shelf {
+  return {
+    id: 'shelf-1',
+    user_id: 'user-1',
+    name: 'Test',
+    description: null,
+    share_token: 'token',
+    is_public: false,
+    shelf_type: 'standard' as ShelfType,
+    created_at: new Date(),
+    updated_at: new Date(),
+    ...overrides,
+  };
+}
+
 describe('POST /api/items', () => {
   beforeEach(() => {
     vi.mocked(getSession).mockReset();
     vi.mocked(getShelfById).mockReset();
     vi.mocked(createItem).mockReset();
     vi.mocked(getNextOrderIndex).mockReset();
+    vi.mocked(getItemsByShelfId).mockReset();
   });
 
   describe('Authentication', () => {
@@ -90,16 +109,7 @@ describe('POST /api/items', () => {
     });
 
     it('returns 400 for invalid item type', async () => {
-      vi.mocked(getShelfById).mockResolvedValue({
-        id: 'shelf-1',
-        user_id: 'user-1',
-        name: 'Test',
-        description: null,
-        share_token: 'token',
-        is_public: false,
-        created_at: new Date(),
-        updated_at: new Date(),
-      });
+      vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -116,16 +126,7 @@ describe('POST /api/items', () => {
     });
 
     it('returns 400 for empty title', async () => {
-      vi.mocked(getShelfById).mockResolvedValue({
-        id: 'shelf-1',
-        user_id: 'user-1',
-        name: 'Test',
-        description: null,
-        share_token: 'token',
-        is_public: false,
-        created_at: new Date(),
-        updated_at: new Date(),
-      });
+      vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -142,16 +143,7 @@ describe('POST /api/items', () => {
     });
 
     it('returns 400 for empty creator', async () => {
-      vi.mocked(getShelfById).mockResolvedValue({
-        id: 'shelf-1',
-        user_id: 'user-1',
-        name: 'Test',
-        description: null,
-        share_token: 'token',
-        is_public: false,
-        created_at: new Date(),
-        updated_at: new Date(),
-      });
+      vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -168,16 +160,7 @@ describe('POST /api/items', () => {
     });
 
     it('returns 400 for invalid image URL', async () => {
-      vi.mocked(getShelfById).mockResolvedValue({
-        id: 'shelf-1',
-        user_id: 'user-1',
-        name: 'Test',
-        description: null,
-        share_token: 'token',
-        is_public: false,
-        created_at: new Date(),
-        updated_at: new Date(),
-      });
+      vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -218,16 +201,7 @@ describe('POST /api/items', () => {
     });
 
     it('returns 403 when user does not own the shelf', async () => {
-      vi.mocked(getShelfById).mockResolvedValue({
-        id: 'shelf-1',
-        user_id: 'different-user', // Different owner
-        name: 'Test',
-        description: null,
-        share_token: 'token',
-        is_public: false,
-        created_at: new Date(),
-        updated_at: new Date(),
-      });
+      vi.mocked(getShelfById).mockResolvedValue(createMockShelf({ user_id: 'different-user' }));
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -247,16 +221,7 @@ describe('POST /api/items', () => {
   describe('Success Cases', () => {
     beforeEach(() => {
       vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
-      vi.mocked(getShelfById).mockResolvedValue({
-        id: 'shelf-1',
-        user_id: 'user-1',
-        name: 'My Shelf',
-        description: null,
-        share_token: 'token',
-        is_public: false,
-        created_at: new Date(),
-        updated_at: new Date(),
-      });
+      vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
       vi.mocked(getNextOrderIndex).mockResolvedValue(0);
     });
 

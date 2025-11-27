@@ -33,9 +33,13 @@ CREATE TABLE IF NOT EXISTS shelves (
   description TEXT,
   share_token VARCHAR(128) UNIQUE NOT NULL DEFAULT encode(gen_random_uuid()::text::bytea, 'hex'),
   is_public BOOLEAN DEFAULT FALSE,
+  shelf_type VARCHAR(20) NOT NULL DEFAULT 'standard' CHECK (shelf_type IN ('standard', 'top5')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Migration: Add shelf_type column to existing shelves table
+-- ALTER TABLE shelves ADD COLUMN shelf_type VARCHAR(20) NOT NULL DEFAULT 'standard' CHECK (shelf_type IN ('standard', 'top5'));
 
 -- Create indexes for shelves
 CREATE INDEX IF NOT EXISTS idx_shelves_user_id ON shelves(user_id);

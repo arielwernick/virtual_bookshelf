@@ -16,7 +16,8 @@ function createMockItem(overrides: Partial<Item> = {}): Item {
     external_url: null,
     notes: null,
     order_index: 0,
-    created_at: new Date().toISOString(),
+    created_at: new Date(),
+    updated_at: new Date(),
     ...overrides,
   };
 }

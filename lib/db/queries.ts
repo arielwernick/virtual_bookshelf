@@ -1,5 +1,5 @@
 import { sql } from './client';
-import { User, Item, Shelf, CreateItemData, UpdateItemData } from '../types/shelf';
+import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfType } from '../types/shelf';
 
 // ============================================================================
 // USER QUERIES
@@ -143,11 +143,12 @@ export async function updateUserTitle(userId: string, title: string | null): Pro
 export async function createShelf(
   userId: string,
   name: string,
-  description?: string | null
+  description?: string | null,
+  shelfType: ShelfType = 'standard'
 ): Promise<Shelf> {
   const result = await sql`
-    INSERT INTO shelves (user_id, name, description)
-    VALUES (${userId}, ${name}, ${description || null})
+    INSERT INTO shelves (user_id, name, description, shelf_type)
+    VALUES (${userId}, ${name}, ${description || null}, ${shelfType})
     RETURNING *
   `;
 
@@ -410,4 +411,17 @@ export async function getNextOrderIndex(shelfId: string): Promise<number> {
   `;
 
   return result[0].next_index as number;
+}
+
+/**
+ * Get the count of items in a shelf
+ */
+export async function getItemCountForShelf(shelfId: string): Promise<number> {
+  const result = await sql`
+    SELECT COUNT(*) as count
+    FROM items
+    WHERE shelf_id = ${shelfId}
+  `;
+
+  return parseInt(result[0].count as string, 10);
 }

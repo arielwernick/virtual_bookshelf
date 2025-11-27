@@ -13,6 +13,8 @@ export interface User {
   updated_at: Date;
 }
 
+export type ShelfType = 'standard' | 'top5';
+
 export interface Shelf {
   id: string;
   user_id: string;
@@ -20,6 +22,7 @@ export interface Shelf {
   description: string | null;
   share_token: string;
   is_public: boolean;
+  shelf_type: ShelfType;
   created_at: Date;
   updated_at: Date;
 }
