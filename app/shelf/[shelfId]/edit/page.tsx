@@ -333,7 +333,7 @@ export default function EditShelfPage() {
                             </svg>
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">No items yet</h3>
-                        <p className="text-gray-600">Click "+ Add Item" to get started!</p>
+                        <p className="text-gray-600">Click &quot;+ Add Item&quot; to get started!</p>
                     </div>
                 ) : (
                     <ShelfGrid

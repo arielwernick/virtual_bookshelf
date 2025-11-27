@@ -201,7 +201,7 @@ export async function updateShelf(
   data: Partial<Shelf>
 ): Promise<Shelf> {
   const setClauses: string[] = [];
-  const values: Record<string, any> = {};
+  const values: Record<string, string | boolean | null> = {};
 
   if (data.name !== undefined) {
     setClauses.push('name = $1');
@@ -221,16 +221,16 @@ export async function updateShelf(
   }
 
   // Simple approach: update one field at a time
-  let result: any;
+  let result: Shelf[] = [];
 
   if (data.name !== undefined) {
-    result = await sql`UPDATE shelves SET name = ${data.name} WHERE id = ${shelfId} RETURNING *`;
+    result = await sql`UPDATE shelves SET name = ${data.name} WHERE id = ${shelfId} RETURNING *` as Shelf[];
   }
   if (data.description !== undefined) {
-    result = await sql`UPDATE shelves SET description = ${data.description} WHERE id = ${shelfId} RETURNING *`;
+    result = await sql`UPDATE shelves SET description = ${data.description} WHERE id = ${shelfId} RETURNING *` as Shelf[];
   }
   if (data.is_public !== undefined) {
-    result = await sql`UPDATE shelves SET is_public = ${data.is_public} WHERE id = ${shelfId} RETURNING *`;
+    result = await sql`UPDATE shelves SET is_public = ${data.is_public} WHERE id = ${shelfId} RETURNING *` as Shelf[];
   }
 
   return result[0] as Shelf;
@@ -349,25 +349,25 @@ export async function getItemById(itemId: string): Promise<Item | null> {
  * Update an item
  */
 export async function updateItem(itemId: string, itemData: UpdateItemData): Promise<Item> {
-  let result: any;
+  let result: Item[] = [];
 
   if (itemData.title !== undefined) {
-    result = await sql`UPDATE items SET title = ${itemData.title} WHERE id = ${itemId} RETURNING *`;
+    result = await sql`UPDATE items SET title = ${itemData.title} WHERE id = ${itemId} RETURNING *` as Item[];
   }
   if (itemData.creator !== undefined) {
-    result = await sql`UPDATE items SET creator = ${itemData.creator} WHERE id = ${itemId} RETURNING *`;
+    result = await sql`UPDATE items SET creator = ${itemData.creator} WHERE id = ${itemId} RETURNING *` as Item[];
   }
   if (itemData.image_url !== undefined) {
-    result = await sql`UPDATE items SET image_url = ${itemData.image_url} WHERE id = ${itemId} RETURNING *`;
+    result = await sql`UPDATE items SET image_url = ${itemData.image_url} WHERE id = ${itemId} RETURNING *` as Item[];
   }
   if (itemData.external_url !== undefined) {
-    result = await sql`UPDATE items SET external_url = ${itemData.external_url} WHERE id = ${itemId} RETURNING *`;
+    result = await sql`UPDATE items SET external_url = ${itemData.external_url} WHERE id = ${itemId} RETURNING *` as Item[];
   }
   if (itemData.notes !== undefined) {
-    result = await sql`UPDATE items SET notes = ${itemData.notes} WHERE id = ${itemId} RETURNING *`;
+    result = await sql`UPDATE items SET notes = ${itemData.notes} WHERE id = ${itemId} RETURNING *` as Item[];
   }
   if (itemData.order_index !== undefined) {
-    result = await sql`UPDATE items SET order_index = ${itemData.order_index} WHERE id = ${itemId} RETURNING *`;
+    result = await sql`UPDATE items SET order_index = ${itemData.order_index} WHERE id = ${itemId} RETURNING *` as Item[];
   }
 
   return result[0] as Item;

@@ -120,9 +120,9 @@ export default function SharedShelfPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <p className="text-center text-sm text-gray-500">
             Powered by{' '}
-            <a href="/" className="font-medium text-gray-900 hover:underline">
+            <Link href="/" className="font-medium text-gray-900 hover:underline">
               Virtual Bookshelf
-            </a>
+            </Link>
           </p>
         </div>
       </footer>

@@ -107,7 +107,7 @@ export default function Home() {
             href="/login"
             className="inline-block px-12 py-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-lg"
           >
-            Get Started - It's Free
+            Get Started - It&apos;s Free
           </Link>
         </div>
       </div>

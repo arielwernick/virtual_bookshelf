@@ -18,7 +18,7 @@ function getSql(): NeonQueryFunction<false, false> {
 }
 
 // Export wrapper function that creates connection on first use
-export const sql = ((strings: TemplateStringsArray, ...values: any[]) => {
+export const sql = ((strings: TemplateStringsArray, ...values: unknown[]) => {
   return getSql()(strings, ...values);
 }) as NeonQueryFunction<false, false>;
 

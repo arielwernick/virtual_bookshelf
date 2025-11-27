@@ -64,6 +64,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem }: ShelfCon
 
   useEffect(() => {
     if (!containerRef.current || items.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShelves([items]);
       return;
     }
@@ -117,8 +118,9 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem }: ShelfCon
     }
 
     document.body.removeChild(tempContainer);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShelves(shelfMap);
-  }, [items, containerRef.current?.clientWidth]);
+  }, [items]);
 
   return (
     <div ref={containerRef} className="space-y-4 sm:space-y-6">
