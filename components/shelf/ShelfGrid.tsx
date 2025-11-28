@@ -9,12 +9,13 @@ interface ShelfRowProps {
   onItemClick?: (item: Item) => void;
   editMode?: boolean;
   onDeleteItem?: (itemId: string) => void;
+  onEditNote?: (item: Item) => void;
 }
 
 /**
  * ShelfRow - A single shelf displaying items with a visual divider
  */
-function ShelfRow({ items, onItemClick, editMode, onDeleteItem }: ShelfRowProps) {
+function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfRowProps) {
   return (
     <div className="bg-white/50 backdrop-blur-sm rounded-lg border border-gray-100 shadow-xs overflow-hidden">
       {/* Shelf items */}
@@ -32,6 +33,7 @@ function ShelfRow({ items, onItemClick, editMode, onDeleteItem }: ShelfRowProps)
               onClick={onItemClick ? () => onItemClick(item) : undefined}
               editMode={editMode}
               onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}
+              onEditNote={onEditNote ? () => onEditNote(item) : undefined}
             />
           </div>
         ))}
@@ -53,15 +55,50 @@ interface ShelfContainerProps {
   onItemClick?: (item: Item) => void;
   editMode?: boolean;
   onDeleteItem?: (itemId: string) => void;
+  onEditNote?: (item: Item) => void;
 }
 
 /**
  * ShelfContainer - Splits items into shelf rows based on actual flex layout
+ * Recalculates on window resize with debouncing
  */
-function ShelfContainer({ items, onItemClick, editMode, onDeleteItem }: ShelfContainerProps) {
+function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [shelves, setShelves] = useState<Item[][]>([]);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Track container width changes with debouncing
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth);
+      }
+    };
+
+    // Initial measurement
+    updateWidth();
+
+    // Debounced resize handler
+    const handleResize = () => {
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+      resizeTimeoutRef.current = setTimeout(updateWidth, 150);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Recalculate shelves when items or container width changes
   useEffect(() => {
     if (!containerRef.current || items.length === 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -120,7 +157,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem }: ShelfCon
     document.body.removeChild(tempContainer);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setShelves(shelfMap);
-  }, [items]);
+  }, [items, containerWidth]);
 
   return (
     <div ref={containerRef} className="space-y-4 sm:space-y-6">
@@ -131,6 +168,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem }: ShelfCon
           onItemClick={onItemClick}
           editMode={editMode}
           onDeleteItem={onDeleteItem}
+          onEditNote={onEditNote}
         />
       ))}
     </div>
@@ -142,9 +180,10 @@ interface ShelfGridProps {
   onItemClick?: (item: Item) => void;
   editMode?: boolean;
   onDeleteItem?: (itemId: string) => void;
+  onEditNote?: (item: Item) => void;
 }
 
-export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem }: ShelfGridProps) {
+export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfGridProps) {
   const [selectedType, setSelectedType] = useState<ItemType | 'all'>('all');
 
   const filteredItems =
@@ -204,6 +243,7 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem }: ShelfG
           onItemClick={onItemClick}
           editMode={editMode}
           onDeleteItem={onDeleteItem}
+          onEditNote={onEditNote}
         />
       )}
     </div>

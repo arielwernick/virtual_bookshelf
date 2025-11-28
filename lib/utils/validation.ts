@@ -128,8 +128,8 @@ export function validateNotes(notes: string): { valid: boolean; error?: string }
     return { valid: true }; // Notes are optional
   }
   
-  if (notes.length > 5000) {
-    return { valid: false, error: 'Notes must be 5000 characters or less' };
+  if (notes.length > 500) {
+    return { valid: false, error: 'Notes must be 500 characters or less' };
   }
   
   return { valid: true };

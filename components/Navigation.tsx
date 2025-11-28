@@ -1,25 +1,40 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export function Navigation() {
-  const router = useRouter();
   const pathname = usePathname();
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
-  // Don't show navigation on home page
-  if (pathname === '/') {
-    return null;
-  }
+  useEffect(() => {
+    // Check auth status on mount and when pathname changes
+    fetch('/api/auth/me')
+      .then((res) => {
+        setIsLoggedIn(res.ok);
+      })
+      .catch(() => {
+        setIsLoggedIn(false);
+      });
+  }, [pathname]);
+
+  const isHomePage = pathname === '/';
+
+  const handleSignOut = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/';
+  };
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14">
+          {/* Logo / Home link */}
           <Link
             href="/"
             className="flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors font-medium"
-            title="Go home"
+            title="Virtual Bookshelf"
           >
             <svg
               className="w-6 h-6"
@@ -37,29 +52,42 @@ export function Navigation() {
               <rect x="19.5" y="7" width="2" height="11" />
               <line x1="1" y1="19" x2="23" y2="19" stroke="currentColor" strokeWidth="1.5" />
             </svg>
-            <span className="text-base hidden sm:inline">Home</span>
+            {isHomePage && (
+              <span className="text-base font-semibold">Virtual Bookshelf</span>
+            )}
           </Link>
 
-          <button
-            onClick={() => router.back()}
-            className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Go back"
-            aria-label="Go back"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
+          {/* Right side - auth actions */}
+          <div className="flex items-center gap-3">
+            {isLoggedIn === null ? (
+              // Loading state - show nothing to prevent flash
+              <div className="w-20 h-8" />
+            ) : isLoggedIn ? (
+              // Logged in
+              <>
+                <Link
+                  href="/dashboard"
+                  className="text-sm text-gray-700 hover:text-gray-900 font-medium"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              // Not logged in
+              <Link
+                href="/login"
+                className="text-sm text-gray-700 hover:text-gray-900 font-medium"
+              >
+                Sign In
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </nav>
