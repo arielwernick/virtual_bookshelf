@@ -116,13 +116,14 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
 
   // Handle resize with debouncing
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
     // Initial measurement
     if (containerRef.current) {
       setContainerWidth(containerRef.current.clientWidth);
     }
-    if (typeof window !== 'undefined') {
-      setWindowWidth(window.innerWidth);
-    }
+    setWindowWidth(window.innerWidth);
 
     // Debounced resize handler
     const handleResize = () => {
@@ -133,9 +134,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
         if (containerRef.current) {
           setContainerWidth(containerRef.current.clientWidth);
         }
-        if (typeof window !== 'undefined') {
-          setWindowWidth(window.innerWidth);
-        }
+        setWindowWidth(window.innerWidth);
       }, RESIZE_DEBOUNCE_MS);
     };
 
