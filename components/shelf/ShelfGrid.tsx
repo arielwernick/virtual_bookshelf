@@ -4,23 +4,39 @@ import { Item, ItemType } from '@/lib/types/shelf';
 import { ItemCard } from './ItemCard';
 import { useState, useRef, useEffect } from 'react';
 
+// Constants for layout calculations
+const MOBILE_BREAKPOINT = 640;
+const ITEM_WIDTH_MOBILE = 100;
+const ITEM_WIDTH_DESKTOP = 140;
+const GAP_MOBILE = 8;
+const GAP_DESKTOP = 16;
+const PADDING_MOBILE = 12;
+const PADDING_DESKTOP = 24;
+const RESIZE_DEBOUNCE_MS = 150;
+
 interface ShelfRowProps {
   items: Item[];
   onItemClick?: (item: Item) => void;
   editMode?: boolean;
   onDeleteItem?: (itemId: string) => void;
   onEditNote?: (item: Item) => void;
+  enableHorizontalScroll?: boolean;
 }
 
 /**
  * ShelfRow - A single shelf displaying items with a visual divider
+ * Supports both wrapped and horizontal scroll layouts
  */
-function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfRowProps) {
+function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote, enableHorizontalScroll = false }: ShelfRowProps) {
   return (
     <div className="bg-white/50 backdrop-blur-sm rounded-lg border border-gray-100 shadow-xs overflow-hidden">
       {/* Shelf items */}
       <div
-        className="px-3 py-3 sm:px-6 sm:py-5 flex flex-wrap"
+        className={`px-3 py-3 sm:px-6 sm:py-5 ${
+          enableHorizontalScroll 
+            ? 'flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent' 
+            : 'flex flex-wrap'
+        }`}
         style={{
           gap: '0.5rem',
           alignItems: 'flex-end',
@@ -59,84 +75,121 @@ interface ShelfContainerProps {
 }
 
 /**
- * ShelfContainer - Splits items into shelf rows based on actual flex layout
+ * Calculate items per row based on container width and viewport
+ */
+function calculateItemsPerRow(containerWidth: number, isMobile: boolean): number {
+  const itemWidth = isMobile ? ITEM_WIDTH_MOBILE : ITEM_WIDTH_DESKTOP;
+  const gap = isMobile ? GAP_MOBILE : GAP_DESKTOP;
+  const padding = isMobile ? PADDING_MOBILE : PADDING_DESKTOP;
+  
+  const availableWidth = containerWidth - (padding * 2);
+  if (availableWidth <= 0) return 1;
+  
+  // Calculate how many items fit: availableWidth = n*itemWidth + (n-1)*gap
+  // Solving for n: n = (availableWidth + gap) / (itemWidth + gap)
+  const itemsPerRow = Math.floor((availableWidth + gap) / (itemWidth + gap));
+  return Math.max(1, itemsPerRow);
+}
+
+/**
+ * Split items into shelf rows based on calculated items per row
+ */
+function splitIntoShelves(items: Item[], itemsPerRow: number): Item[][] {
+  if (items.length === 0 || itemsPerRow <= 0) return [items];
+  
+  const shelves: Item[][] = [];
+  for (let i = 0; i < items.length; i += itemsPerRow) {
+    shelves.push(items.slice(i, i + itemsPerRow));
+  }
+  return shelves;
+}
+
+/**
+ * ShelfContainer - Splits items into shelf rows based on container width
+ * Automatically recalculates on window resize with debouncing
  */
 function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [shelves, setShelves] = useState<Item[][]>([]);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0);
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Handle resize with debouncing
   useEffect(() => {
-    if (!containerRef.current || items.length === 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setShelves([items]);
-      return;
+    // Initial measurement
+    if (containerRef.current) {
+      setContainerWidth(containerRef.current.clientWidth);
+    }
+    if (typeof window !== 'undefined') {
+      setWindowWidth(window.innerWidth);
     }
 
-    // Determine if we're on mobile (small screen)
-    const isMobile = window.innerWidth < 640; // sm breakpoint
-    const itemWidth = isMobile ? 100 : 140;
-    const gap = isMobile ? 8 : 16; // 0.5rem = 8px, 1rem = 16px
-    const padding = isMobile ? 12 : 24; // px-3 = 12px, px-6 = 24px
-
-    // Measure flex layout with temporary container
-    const tempContainer = document.createElement('div');
-    tempContainer.style.cssText = `
-      display: flex;
-      flex-wrap: wrap;
-      gap: ${gap}px;
-      padding: ${padding}px;
-      position: absolute;
-      visibility: hidden;
-      width: ${containerRef.current.clientWidth}px;
-    `;
-
-    // Create measurement items
-    items.forEach(() => {
-      const item = document.createElement('div');
-      item.style.cssText = `width: ${itemWidth}px; flex-shrink: 0; height: ${isMobile ? 150 : 200}px;`;
-      tempContainer.appendChild(item);
-    });
-
-    document.body.appendChild(tempContainer);
-
-    // Determine which items belong to which shelf based on Y position
-    const shelfMap: Item[][] = [];
-    let currentShelf: Item[] = [];
-    let currentY = (tempContainer.children[0] as HTMLElement)?.offsetTop ?? 0;
-
-    Array.from(tempContainer.children).forEach((child, index) => {
-      const childY = (child as HTMLElement).offsetTop;
-
-      if (childY > currentY && currentShelf.length > 0) {
-        shelfMap.push([...currentShelf]);
-        currentShelf = [items[index]];
-        currentY = childY;
-      } else {
-        currentShelf.push(items[index]);
+    // Debounced resize handler
+    const handleResize = () => {
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
       }
-    });
+      resizeTimeoutRef.current = setTimeout(() => {
+        if (containerRef.current) {
+          setContainerWidth(containerRef.current.clientWidth);
+        }
+        if (typeof window !== 'undefined') {
+          setWindowWidth(window.innerWidth);
+        }
+      }, RESIZE_DEBOUNCE_MS);
+    };
 
-    if (currentShelf.length > 0) {
-      shelfMap.push(currentShelf);
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Re-measure when items change
+  useEffect(() => {
+    if (containerRef.current) {
+      setContainerWidth(containerRef.current.clientWidth);
     }
-
-    document.body.removeChild(tempContainer);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setShelves(shelfMap);
   }, [items]);
+
+  // Calculate derived values
+  const isMobileView = windowWidth < MOBILE_BREAKPOINT;
+  const itemsPerRow = containerWidth > 0 ? calculateItemsPerRow(containerWidth, isMobileView) : 1;
+  const shelves = items.length > 0 ? splitIntoShelves(items, itemsPerRow) : [items];
+  
+  // On mobile, use horizontal scroll for single-row display option
+  const useMobileHorizontalScroll = isMobileView && items.length > 3;
 
   return (
     <div ref={containerRef} className="space-y-4 sm:space-y-6">
-      {shelves.map((shelfItems, index) => (
+      {useMobileHorizontalScroll ? (
+        // Mobile horizontal scroll layout - single row with scroll
         <ShelfRow
-          key={`shelf-${index}`}
-          items={shelfItems}
+          items={items}
           onItemClick={onItemClick}
           editMode={editMode}
           onDeleteItem={onDeleteItem}
           onEditNote={onEditNote}
+          enableHorizontalScroll={true}
         />
-      ))}
+      ) : (
+        // Desktop and small mobile - wrapped rows
+        shelves.map((shelfItems, index) => (
+          <ShelfRow
+            key={`shelf-${index}`}
+            items={shelfItems}
+            onItemClick={onItemClick}
+            editMode={editMode}
+            onDeleteItem={onDeleteItem}
+            onEditNote={onEditNote}
+          />
+        ))
+      )}
     </div>
   );
 }
