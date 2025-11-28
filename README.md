@@ -6,6 +6,7 @@ A Next.js application for curating and sharing your favorite books, podcasts, an
 
 - 📚 **Create shelves** - Organize your recommendations into themed collections
 - 🔗 **Share publicly** - Generate shareable links for your shelves
+- 🖼️ **Beautiful social previews** - Dynamic OG images for stunning LinkedIn/Twitter shares
 - 🎵 **Multi-media support** - Add books, podcasts, and music
 - 🔍 **Smart search** - Find items via Google Books and Spotify APIs
 - 📱 **Responsive design** - Works great on all devices
@@ -38,6 +39,9 @@ DATABASE_URL=postgresql://...
 SESSION_SECRET=your-secure-random-string
 SPOTIFY_CLIENT_ID=your-spotify-client-id
 SPOTIFY_CLIENT_SECRET=your-spotify-client-secret
+
+# For OG image generation (used in social sharing previews)
+NEXT_PUBLIC_BASE_URL=https://your-domain.com
 
 # Optional: Demo shelf for home page (see docs/ADMIN_DEMO_SETUP.md)
 DEMO_SHELF_TOKEN=your-admin-shelf-share-token
