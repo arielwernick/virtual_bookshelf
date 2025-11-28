@@ -165,6 +165,8 @@ export default function EditShelfPage() {
         } catch (err) {
             console.error('Reorder error:', err);
         }
+    };
+
     const handleSaveNote = async (notes: string | null) => {
         if (!noteEditItem) return;
         
