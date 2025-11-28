@@ -1,137 +1,133 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { ShelfGrid } from '@/components/shelf/ShelfGrid';
-import { Top5ShelfGrid } from '@/components/shelf/Top5ShelfGrid';
-import { ItemModal } from '@/components/shelf/ItemModal';
-import { Item, ShelfType } from '@/lib/types/shelf';
+import { Metadata } from 'next';
 import Link from 'next/link';
+import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
+import { SharedShelfClient } from './SharedShelfClient';
 
-interface SharedShelfData {
-  id: string;
-  name: string;
-  description: string | null;
-  items: Item[];
-  created_at: string;
-  shelf_type: ShelfType;
+interface PageProps {
+  params: Promise<{ shareToken: string }>;
 }
 
-export default function SharedShelfPage() {
-  const params = useParams();
-  const shareToken = params?.shareToken as string;
-
-  const [shelfData, setShelfData] = useState<SharedShelfData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-
-  useEffect(() => {
-    async function fetchShelf() {
-      try {
-        const res = await fetch(`/api/shelf/share/${shareToken}`);
-        if (res.ok) {
-          const data = await res.json();
-          setShelfData(data.data);
-        }
-      } catch (error) {
-        console.error('Error fetching shelf:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (shareToken) {
-      fetchShelf();
-    }
-  }, [shareToken]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading shelf...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!shelfData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="text-center">
-          <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
-          <h2 className="text-2xl font-semibold text-gray-700 mb-2">Shelf Not Found</h2>
-          <p className="text-gray-600 mb-8">This shared bookshelf doesn&apos;t exist or the link has expired.</p>
-          <Link href="/" className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
-            Go Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
+/**
+ * Not Found component for shared shelves
+ */
+function ShelfNotFound() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
-                  Shared Shelf
-                </span>
-              </div>
-              <h1 className="text-3xl font-bold text-gray-900">{shelfData.name}</h1>
-              <p className="mt-1 text-sm text-gray-500">
-                {shelfData.items.length} {shelfData.items.length === 1 ? 'item' : 'items'}
-              </p>
-            </div>
-            <Link
-              href="/login"
-              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
-            >
-              Create My Own Shelf
-            </Link>
-          </div>
-
-          {/* Description */}
-          {shelfData.description && (
-            <div className="pt-4 border-t border-gray-200">
-              <p className="text-gray-700">{shelfData.description}</p>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {shelfData.shelf_type === 'top5' ? (
-          <Top5ShelfGrid items={shelfData.items} onItemClick={setSelectedItem} />
-        ) : (
-          <ShelfGrid items={shelfData.items} onItemClick={setSelectedItem} />
-        )}
-      </main>
-
-      {/* Item Modal */}
-      <ItemModal
-        item={selectedItem}
-        isOpen={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-      />
-
-      {/* Footer */}
-      <footer className="mt-16 border-t border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-sm text-gray-500">
-            Powered by{' '}
-            <Link href="/" className="font-medium text-gray-900 hover:underline">
-              Virtual Bookshelf
-            </Link>
-          </p>
-        </div>
-      </footer>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="text-center">
+        <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
+        <h2 className="text-2xl font-semibold text-gray-700 mb-2">Shelf Not Found</h2>
+        <p className="text-gray-600 mb-8">This shared bookshelf doesn&apos;t exist or is not public.</p>
+        <Link href="/" className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
+          Go Home
+        </Link>
+      </div>
     </div>
   );
+}
+
+/**
+ * Generate dynamic metadata for shared shelves
+ * This enables beautiful OG images when sharing on social media
+ */
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { shareToken } = await params;
+  
+  try {
+    const shelf = await getShelfByShareToken(shareToken);
+    
+    if (!shelf || !shelf.is_public) {
+      return {
+        title: 'Shelf Not Found | Virtual Bookshelf',
+        description: 'This shelf could not be found.',
+      };
+    }
+
+    const items = await getItemsByShelfId(shelf.id);
+    const itemCount = items.length;
+    const itemText = itemCount === 1 ? '1 item' : `${itemCount} items`;
+    
+    // Build description
+    const description = shelf.description 
+      ? `${shelf.description.substring(0, 150)}${shelf.description.length > 150 ? '...' : ''}`
+      : `A curated collection of ${itemText} on Virtual Bookshelf`;
+
+    // Get the base URL for OG image
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.vercel.app';
+    const ogImageUrl = `${baseUrl}/api/og/${shareToken}`;
+
+    return {
+      title: `${shelf.name} | Virtual Bookshelf`,
+      description,
+      openGraph: {
+        title: shelf.name,
+        description,
+        type: 'website',
+        url: `${baseUrl}/s/${shareToken}`,
+        images: [
+          {
+            url: ogImageUrl,
+            width: 1200,
+            height: 630,
+            alt: `${shelf.name} - Virtual Bookshelf`,
+          },
+        ],
+        siteName: 'Virtual Bookshelf',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: shelf.name,
+        description,
+        images: [ogImageUrl],
+      },
+    };
+  } catch (error) {
+    console.error('Error generating metadata:', error);
+    return {
+      title: 'Virtual Bookshelf',
+      description: 'Curate and share your favorite books, podcasts, and music.',
+    };
+  }
+}
+
+/**
+ * Fetch shelf data for the page
+ * Returns null if shelf not found or not public
+ */
+async function getShelfData(shareToken: string) {
+  try {
+    const shelf = await getShelfByShareToken(shareToken);
+
+    if (!shelf || !shelf.is_public) {
+      return null;
+    }
+
+    const items = await getItemsByShelfId(shelf.id);
+
+    return {
+      id: shelf.id,
+      name: shelf.name,
+      description: shelf.description,
+      items,
+      created_at: shelf.created_at.toISOString(),
+      shelf_type: shelf.shelf_type,
+    };
+  } catch (error) {
+    console.error('Error loading shared shelf:', error);
+    return null;
+  }
+}
+
+/**
+ * Shared Shelf Page - Server Component
+ * Fetches shelf data server-side for better SEO and performance
+ */
+export default async function SharedShelfPage({ params }: PageProps) {
+  const { shareToken } = await params;
+  const shelfData = await getShelfData(shareToken);
+
+  if (!shelfData) {
+    return <ShelfNotFound />;
+  }
+
+  return <SharedShelfClient shelfData={shelfData} />;
 }

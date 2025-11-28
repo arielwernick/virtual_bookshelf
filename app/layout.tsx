@@ -16,6 +16,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Virtual Bookshelf",
   description: "Curate and share your favorite books, podcasts, and music in a beautiful digital bookshelf.",
+  keywords: ["bookshelf", "books", "podcasts", "music", "recommendations", "share", "curate"],
+  authors: [{ name: "Virtual Bookshelf" }],
+  openGraph: {
+    title: "Virtual Bookshelf",
+    description: "Curate and share your favorite books, podcasts, and music in a beautiful digital bookshelf.",
+    type: "website",
+    siteName: "Virtual Bookshelf",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Virtual Bookshelf",
+    description: "Curate and share your favorite books, podcasts, and music in a beautiful digital bookshelf.",
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "32x32", type: "image/x-icon" },
