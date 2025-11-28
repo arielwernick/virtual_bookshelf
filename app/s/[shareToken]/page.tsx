@@ -1,11 +1,28 @@
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
 import { SharedShelfClient } from './SharedShelfClient';
 
 interface PageProps {
   params: Promise<{ shareToken: string }>;
+}
+
+/**
+ * Not Found component for shared shelves
+ */
+function ShelfNotFound() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="text-center">
+        <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
+        <h2 className="text-2xl font-semibold text-gray-700 mb-2">Shelf Not Found</h2>
+        <p className="text-gray-600 mb-8">This shared bookshelf doesn&apos;t exist or is not public.</p>
+        <Link href="/" className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
+          Go Home
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -73,33 +90,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /**
- * Shared Shelf Page - Server Component
- * Fetches shelf data server-side for better SEO and performance
+ * Fetch shelf data for the page
+ * Returns null if shelf not found or not public
  */
-export default async function SharedShelfPage({ params }: PageProps) {
-  const { shareToken } = await params;
-
+async function getShelfData(shareToken: string) {
   try {
     const shelf = await getShelfByShareToken(shareToken);
 
     if (!shelf || !shelf.is_public) {
-      return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-          <div className="text-center">
-            <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
-            <h2 className="text-2xl font-semibold text-gray-700 mb-2">Shelf Not Found</h2>
-            <p className="text-gray-600 mb-8">This shared bookshelf doesn&apos;t exist or is not public.</p>
-            <Link href="/" className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
-              Go Home
-            </Link>
-          </div>
-        </div>
-      );
+      return null;
     }
 
     const items = await getItemsByShelfId(shelf.id);
 
-    const shelfData = {
+    return {
       id: shelf.id,
       name: shelf.name,
       description: shelf.description,
@@ -107,10 +111,23 @@ export default async function SharedShelfPage({ params }: PageProps) {
       created_at: shelf.created_at.toISOString(),
       shelf_type: shelf.shelf_type,
     };
-
-    return <SharedShelfClient shelfData={shelfData} />;
   } catch (error) {
     console.error('Error loading shared shelf:', error);
-    notFound();
+    return null;
   }
+}
+
+/**
+ * Shared Shelf Page - Server Component
+ * Fetches shelf data server-side for better SEO and performance
+ */
+export default async function SharedShelfPage({ params }: PageProps) {
+  const { shareToken } = await params;
+  const shelfData = await getShelfData(shareToken);
+
+  if (!shelfData) {
+    return <ShelfNotFound />;
+  }
+
+  return <SharedShelfClient shelfData={shelfData} />;
 }
