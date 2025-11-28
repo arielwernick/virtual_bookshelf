@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : `A curated collection of ${itemText} on Virtual Bookshelf`;
 
     // Get the base URL for OG image
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.vercel.app';
     const ogImageUrl = `${baseUrl}/api/og/${shareToken}`;
 
     return {
