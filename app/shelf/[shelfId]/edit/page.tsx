@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ShelfGrid } from '@/components/shelf/ShelfGrid';
 import { AddItemForm } from '@/components/shelf/AddItemForm';
+import { NoteEditorModal } from '@/components/shelf/NoteEditorModal';
 import { Modal } from '@/components/ui/Modal';
 import { Item } from '@/lib/types/shelf';
 import Link from 'next/link';
@@ -29,6 +30,9 @@ export default function EditShelfPage() {
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
+    
+    // Note editing state
+    const [noteEditItem, setNoteEditItem] = useState<Item | null>(null);
     
     // Editing states
     const [isEditingName, setIsEditingName] = useState(false);
@@ -143,6 +147,32 @@ export default function EditShelfPage() {
         } catch (err) {
             console.error('Delete error:', err);
         }
+    };
+
+    const handleSaveNote = async (notes: string | null) => {
+        if (!noteEditItem) return;
+        
+        const res = await fetch(`/api/items/${noteEditItem.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notes }),
+        });
+        
+        if (!res.ok) {
+            const json = await res.json();
+            throw new Error(json.error || 'Failed to save notes');
+        }
+        
+        // Update local state
+        setShelfData(prev => {
+            if (!prev) return null;
+            return {
+                ...prev,
+                items: prev.items.map(item => 
+                    item.id === noteEditItem.id ? { ...item, notes } : item
+                )
+            };
+        });
     };
 
     const handleDeleteShelf = async () => {
@@ -340,6 +370,7 @@ export default function EditShelfPage() {
                         items={shelfData.items}
                         editMode
                         onDeleteItem={handleDeleteItem}
+                        onEditNote={(item) => setNoteEditItem(item)}
                     />
                 )}
 
@@ -369,6 +400,17 @@ export default function EditShelfPage() {
                     onClose={() => setShowAddModal(false)}
                 />
             </Modal>
+
+            {/* Note Editor Modal */}
+            {noteEditItem && (
+                <NoteEditorModal
+                    isOpen={true}
+                    onClose={() => setNoteEditItem(null)}
+                    itemTitle={noteEditItem.title}
+                    initialNotes={noteEditItem.notes}
+                    onSave={handleSaveNote}
+                />
+            )}
         </div>
     );
 }

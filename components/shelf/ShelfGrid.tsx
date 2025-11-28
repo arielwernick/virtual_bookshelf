@@ -9,12 +9,13 @@ interface ShelfRowProps {
   onItemClick?: (item: Item) => void;
   editMode?: boolean;
   onDeleteItem?: (itemId: string) => void;
+  onEditNote?: (item: Item) => void;
 }
 
 /**
  * ShelfRow - A single shelf displaying items with a visual divider
  */
-function ShelfRow({ items, onItemClick, editMode, onDeleteItem }: ShelfRowProps) {
+function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfRowProps) {
   return (
     <div className="bg-white/50 backdrop-blur-sm rounded-lg border border-gray-100 shadow-xs overflow-hidden">
       {/* Shelf items */}
@@ -32,6 +33,7 @@ function ShelfRow({ items, onItemClick, editMode, onDeleteItem }: ShelfRowProps)
               onClick={onItemClick ? () => onItemClick(item) : undefined}
               editMode={editMode}
               onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}
+              onEditNote={onEditNote ? () => onEditNote(item) : undefined}
             />
           </div>
         ))}
@@ -53,12 +55,13 @@ interface ShelfContainerProps {
   onItemClick?: (item: Item) => void;
   editMode?: boolean;
   onDeleteItem?: (itemId: string) => void;
+  onEditNote?: (item: Item) => void;
 }
 
 /**
  * ShelfContainer - Splits items into shelf rows based on actual flex layout
  */
-function ShelfContainer({ items, onItemClick, editMode, onDeleteItem }: ShelfContainerProps) {
+function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [shelves, setShelves] = useState<Item[][]>([]);
 
@@ -131,6 +134,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem }: ShelfCon
           onItemClick={onItemClick}
           editMode={editMode}
           onDeleteItem={onDeleteItem}
+          onEditNote={onEditNote}
         />
       ))}
     </div>
@@ -142,9 +146,10 @@ interface ShelfGridProps {
   onItemClick?: (item: Item) => void;
   editMode?: boolean;
   onDeleteItem?: (itemId: string) => void;
+  onEditNote?: (item: Item) => void;
 }
 
-export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem }: ShelfGridProps) {
+export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfGridProps) {
   const [selectedType, setSelectedType] = useState<ItemType | 'all'>('all');
 
   const filteredItems =
@@ -204,6 +209,7 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem }: ShelfG
           onItemClick={onItemClick}
           editMode={editMode}
           onDeleteItem={onDeleteItem}
+          onEditNote={onEditNote}
         />
       )}
     </div>

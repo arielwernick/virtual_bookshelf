@@ -366,14 +366,14 @@ describe('validateNotes', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('accepts notes up to 5000 characters', () => {
-    const result = validateNotes('a'.repeat(5000));
+  it('accepts notes up to 500 characters', () => {
+    const result = validateNotes('a'.repeat(500));
     expect(result.valid).toBe(true);
   });
 
-  it('rejects notes longer than 5000 characters', () => {
-    const result = validateNotes('a'.repeat(5001));
+  it('rejects notes longer than 500 characters', () => {
+    const result = validateNotes('a'.repeat(501));
     expect(result.valid).toBe(false);
-    expect(result.error).toBe('Notes must be 5000 characters or less');
+    expect(result.error).toBe('Notes must be 500 characters or less');
   });
 });
