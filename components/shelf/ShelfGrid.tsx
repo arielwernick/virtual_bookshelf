@@ -60,11 +60,45 @@ interface ShelfContainerProps {
 
 /**
  * ShelfContainer - Splits items into shelf rows based on actual flex layout
+ * Recalculates on window resize with debouncing
  */
 function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [shelves, setShelves] = useState<Item[][]>([]);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Track container width changes with debouncing
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth);
+      }
+    };
+
+    // Initial measurement
+    updateWidth();
+
+    // Debounced resize handler
+    const handleResize = () => {
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+      resizeTimeoutRef.current = setTimeout(updateWidth, 150);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Recalculate shelves when items or container width changes
   useEffect(() => {
     if (!containerRef.current || items.length === 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -123,7 +157,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
     document.body.removeChild(tempContainer);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setShelves(shelfMap);
-  }, [items]);
+  }, [items, containerWidth]);
 
   return (
     <div ref={containerRef} className="space-y-4 sm:space-y-6">
