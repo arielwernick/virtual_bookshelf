@@ -555,8 +555,8 @@ describe('Item Queries', () => {
 
       await updateItemOrder('shelf-1', ['item-3', 'item-1', 'item-2']);
 
-      // Should call sql 3 times (once per item)
-      expect(sql).toHaveBeenCalledTimes(3);
+      // Should call sql 6 times (twice per item: once for temp index, once for final)
+      expect(sql).toHaveBeenCalledTimes(6);
     });
   });
 

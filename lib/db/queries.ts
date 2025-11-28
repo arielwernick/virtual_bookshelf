@@ -389,8 +389,19 @@ export async function deleteItem(itemId: string): Promise<boolean> {
 
 /**
  * Update item order for a shelf (batch reorder)
+ * Uses two-pass approach to avoid unique constraint violations on (shelf_id, order_index)
  */
 export async function updateItemOrder(shelfId: string, itemIds: string[]): Promise<void> {
+  // First pass: set all items to negative temporary indices to avoid conflicts
+  for (let i = 0; i < itemIds.length; i++) {
+    await sql`
+      UPDATE items
+      SET order_index = ${-(i + 1)}
+      WHERE id = ${itemIds[i]} AND shelf_id = ${shelfId}
+    `;
+  }
+  
+  // Second pass: set items to their final positive indices
   for (let i = 0; i < itemIds.length; i++) {
     await sql`
       UPDATE items
