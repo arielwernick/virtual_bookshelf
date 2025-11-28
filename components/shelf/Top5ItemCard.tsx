@@ -124,14 +124,14 @@ export function Top5ItemCard({
         {/* Edit Mode Controls */}
         {editMode && (
           <>
-            {/* Delete Button */}
+            {/* Delete Button - Always visible in edit mode */}
             {onDelete && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete();
                 }}
-                className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 p-1.5 sm:p-2 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 p-1.5 sm:p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
                 title="Delete item"
               >
                 <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
