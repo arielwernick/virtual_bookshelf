@@ -87,7 +87,7 @@ Replace `DemoShelf` with a new `RotatingDemoShelf` component that:
     └─────────────────────────────────────┘
 ```
 
-**Recommended: Option A or B** - More intuitive for showcasing multiple shelves.
+**Selected: Option B** - Swipeable cards with mobile-friendly design.
 
 ### Data Flow
 
@@ -148,10 +148,10 @@ interface RotatingDemoShelfProps {
 
 ## Open Questions
 
-1. Should we limit the number of shelves in rotation? (Recommend: yes, max 5)
-2. Should rotation pause when user interacts? (Recommend: yes)
-3. Should we show shelf descriptions in the preview? (Recommend: no, keep minimal)
-4. Auto-rotate interval? (Recommend: 6 seconds)
+1. ~~Should we limit the number of shelves in rotation?~~ **Yes, max 5**
+2. ~~Should rotation pause when user interacts?~~ **Yes**
+3. ~~Should we show shelf descriptions in the preview?~~ **No, keep minimal**
+4. ~~Auto-rotate interval?~~ **3 seconds**
 
 ## Success Metrics
 

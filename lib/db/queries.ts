@@ -195,6 +195,20 @@ export async function getShelfsByUserId(userId: string): Promise<Shelf[]> {
 }
 
 /**
+ * Get all public shelves for a user (for demo/showcase purposes)
+ */
+export async function getPublicShelvesByUserId(userId: string): Promise<Shelf[]> {
+  const result = await sql`
+    SELECT * FROM shelves
+    WHERE user_id = ${userId}
+    AND is_public = true
+    ORDER BY created_at DESC
+  `;
+
+  return result as Shelf[];
+}
+
+/**
  * Update shelf
  */
 export async function updateShelf(

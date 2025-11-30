@@ -1,18 +1,44 @@
 import Link from 'next/link';
-import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
-import { getDemoShelfToken } from '@/lib/utils/env';
+import { getShelfByShareToken, getItemsByShelfId, getPublicShelvesByUserId } from '@/lib/db/queries';
+import { getDemoShelfToken, getDemoUserId } from '@/lib/utils/env';
 import { DemoShelf } from '@/components/home/DemoShelf';
+import { RotatingDemoShelf, ShelfPreview } from '@/components/home/RotatingDemoShelf';
+
+const MAX_DEMO_SHELVES = 5;
 
 /**
- * Fetch the demo shelf for the home page
+ * Fetch demo shelves for the home page
  * 
- * The demo shelf is managed by an admin account and configured via
- * the DEMO_SHELF_TOKEN environment variable. This allows admins to
- * update the demo content through the normal UI without deployments.
+ * Supports two modes:
+ * 1. DEMO_USER_ID (preferred): Fetches all public shelves from admin user
+ * 2. DEMO_SHELF_TOKEN (legacy): Fetches a single shelf by token
  * 
  * See docs/ADMIN_DEMO_SETUP.md for setup instructions.
  */
-async function getDemoShelfData() {
+async function getDemoShelvesData(): Promise<ShelfPreview[] | null> {
+  // Try new approach first: fetch all public shelves from demo user
+  const userId = getDemoUserId();
+  if (userId) {
+    try {
+      const shelves = await getPublicShelvesByUserId(userId);
+      if (shelves.length === 0) return null;
+
+      // Limit to MAX_DEMO_SHELVES and fetch items for each
+      const limitedShelves = shelves.slice(0, MAX_DEMO_SHELVES);
+      const shelfPreviews: ShelfPreview[] = await Promise.all(
+        limitedShelves.map(async (shelf) => {
+          const items = await getItemsByShelfId(shelf.id);
+          return { shelf, items: items.slice(0, 12) };
+        })
+      );
+
+      return shelfPreviews;
+    } catch {
+      return null;
+    }
+  }
+
+  // Fallback to legacy single shelf approach
   const token = getDemoShelfToken();
   if (!token) return null;
 
@@ -21,14 +47,14 @@ async function getDemoShelfData() {
     if (!shelf || !shelf.is_public) return null;
 
     const items = await getItemsByShelfId(shelf.id);
-    return { shelf, items, token };
+    return [{ shelf, items }];
   } catch {
     return null;
   }
 }
 
 export default async function Home() {
-  const demoData = await getDemoShelfData();
+  const demoShelves = await getDemoShelvesData();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -43,14 +69,20 @@ export default async function Home() {
           </p>
         </div>
 
-        {/* Demo Shelf */}
-        {demoData && (
+        {/* Demo Shelf - Rotating or Single */}
+        {demoShelves && demoShelves.length > 0 && (
           <div className="mb-10">
-            <DemoShelf 
-              items={demoData.items} 
-              shelfName={demoData.shelf.name} 
-              shareToken={demoData.token}
-            />
+            {demoShelves.length === 1 ? (
+              // Single shelf - use original DemoShelf component
+              <DemoShelf 
+                items={demoShelves[0].items} 
+                shelfName={demoShelves[0].shelf.name} 
+                shareToken={demoShelves[0].shelf.share_token}
+              />
+            ) : (
+              // Multiple shelves - use rotating carousel
+              <RotatingDemoShelf shelves={demoShelves} />
+            )}
           </div>
         )}
 
