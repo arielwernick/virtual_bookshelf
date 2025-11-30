@@ -7,6 +7,9 @@ const ENTER_ANIMATION_DELAY = 10;
 const EXIT_ANIMATION_DURATION = 300;
 const AUTO_DISMISS_DELAY = 3500;
 
+// Z-index for toast container - set high to ensure toasts appear above modals and other overlays
+const TOAST_Z_INDEX = 'z-50';
+
 export type ToastVariant = 'success' | 'error' | 'info';
 
 interface Toast {
@@ -155,7 +158,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
       {/* Toast container - fixed at bottom of screen */}
       <div
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-full max-w-sm px-4"
+        className={`fixed bottom-4 left-1/2 -translate-x-1/2 ${TOAST_Z_INDEX} flex flex-col gap-2 w-full max-w-sm px-4`}
         aria-live="polite"
         aria-atomic="true"
       >

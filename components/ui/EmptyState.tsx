@@ -2,6 +2,9 @@
 
 import React from 'react';
 
+// Common CTA button styles for both link and button variants
+const CTA_BUTTON_STYLES = 'px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium';
+
 interface EmptyStateProps {
   /** Optional icon element to display above the heading */
   icon?: React.ReactNode;
@@ -46,18 +49,12 @@ export function EmptyState({
 
       {/* CTA Button or Link */}
       {ctaText && ctaHref && (
-        <a
-          href={ctaHref}
-          className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
-        >
+        <a href={ctaHref} className={`inline-block ${CTA_BUTTON_STYLES}`}>
           {ctaText}
         </a>
       )}
       {ctaText && onCTA && !ctaHref && (
-        <button
-          onClick={onCTA}
-          className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
-        >
+        <button onClick={onCTA} className={CTA_BUTTON_STYLES}>
           {ctaText}
         </button>
       )}
