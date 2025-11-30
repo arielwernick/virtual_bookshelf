@@ -10,12 +10,13 @@ interface ShelfRowProps {
   editMode?: boolean;
   onDeleteItem?: (itemId: string) => void;
   onEditNote?: (item: Item) => void;
+  startIndex?: number;
 }
 
 /**
  * ShelfRow - A single shelf displaying items with a visual divider
  */
-function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfRowProps) {
+function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote, startIndex = 0 }: ShelfRowProps) {
   return (
     <div className="bg-white/50 backdrop-blur-sm rounded-lg border border-gray-100 shadow-xs overflow-hidden">
       {/* Shelf items */}
@@ -26,7 +27,7 @@ function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: Sh
           alignItems: 'flex-end',
         }}
       >
-        {items.map((item) => (
+        {items.map((item, index) => (
           <div key={item.id} className="w-[100px] max-h-[180px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
             <ItemCard
               item={item}
@@ -34,6 +35,7 @@ function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: Sh
               editMode={editMode}
               onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}
               onEditNote={onEditNote ? () => onEditNote(item) : undefined}
+              animationIndex={startIndex + index + 1}
             />
           </div>
         ))}
@@ -159,6 +161,15 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
     setShelves(shelfMap);
   }, [items, containerWidth]);
 
+  // Calculate start index for each shelf row for animation staggering
+  const getStartIndex = (shelfIndex: number): number => {
+    let startIdx = 0;
+    for (let i = 0; i < shelfIndex; i++) {
+      startIdx += shelves[i]?.length || 0;
+    }
+    return startIdx;
+  };
+
   return (
     <div ref={containerRef} className="space-y-4 sm:space-y-6">
       {shelves.map((shelfItems, index) => (
@@ -169,6 +180,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
           editMode={editMode}
           onDeleteItem={onDeleteItem}
           onEditNote={onEditNote}
+          startIndex={getStartIndex(index)}
         />
       ))}
     </div>
