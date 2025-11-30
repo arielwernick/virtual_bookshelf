@@ -15,20 +15,31 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Virtual Bookshelf",
-  description: "Curate and share your favorite books, podcasts, and music in a beautiful digital bookshelf.",
+  description: "Create beautiful shelves to share your favorite books, podcasts, and music",
   keywords: ["bookshelf", "books", "podcasts", "music", "recommendations", "share", "curate"],
   authors: [{ name: "Virtual Bookshelf" }],
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.vercel.app'),
   openGraph: {
     title: "Virtual Bookshelf",
-    description: "Curate and share your favorite books, podcasts, and music in a beautiful digital bookshelf.",
+    description: "Create beautiful shelves to share your favorite books, podcasts, and music",
     type: "website",
     siteName: "Virtual Bookshelf",
     locale: "en_US",
+    url: "/",
+    images: [
+      {
+        url: "/api/og",
+        width: 1200,
+        height: 630,
+        alt: "Virtual Bookshelf - Share your favorite books, podcasts, and music",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Virtual Bookshelf",
-    description: "Curate and share your favorite books, podcasts, and music in a beautiful digital bookshelf.",
+    description: "Create beautiful shelves to share your favorite books, podcasts, and music",
+    images: ["/api/og"],
   },
   icons: {
     icon: [

@@ -247,9 +247,16 @@ export async function GET(
             <span style={{ fontSize: '18px', color: '#9ca3af' }}>
               {items.length} {items.length === 1 ? 'item' : 'items'}
             </span>
-            <span style={{ fontSize: '18px', color: '#6b7280', fontWeight: '500' }}>
-              virtualbookshelf.app
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
+                <span>Built with</span>
+                <TechBadge name="Neon" color="#00E599" />
+                <span style={{ color: '#9ca3af' }}>•</span>
+                <TechBadge name="Next.js" color="#000000" />
+                <span style={{ color: '#9ca3af' }}>•</span>
+                <TechBadge name="Vercel" color="#000000" />
+              </div>
+            </div>
           </div>
         </div>
       ),
@@ -325,5 +332,23 @@ function TrophyIcon() {
     <svg width="24" height="24" viewBox="0 0 24 24" fill="#d97706">
       <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z" />
     </svg>
+  );
+}
+
+function TechBadge({ name, color }: { name: string; color: string }) {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+      background: `${color}15`,
+      padding: '4px 8px',
+      borderRadius: '4px',
+      border: `1px solid ${color}30`,
+    }}>
+      <span style={{ fontSize: '12px', fontWeight: '600', color: color === '#000000' ? '#374151' : color }}>
+        {name}
+      </span>
+    </div>
   );
 }

@@ -76,12 +76,28 @@ export function SharedShelfClient({ shelfData }: SharedShelfClientProps) {
       {/* Footer */}
       <footer className="mt-16 border-t border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-sm text-gray-500">
-            Powered by{' '}
-            <Link href="/" className="font-medium text-gray-900 hover:underline">
-              Virtual Bookshelf
-            </Link>
-          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-gray-500">
+              Powered by{' '}
+              <Link href="/" className="font-medium text-gray-900 hover:underline">
+                Virtual Bookshelf
+              </Link>
+            </p>
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <span>Built with</span>
+              <a href="https://neon.tech" target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100 transition-colors font-medium">
+                Neon
+              </a>
+              <span>•</span>
+              <a href="https://nextjs.org" target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors font-medium">
+                Next.js
+              </a>
+              <span>•</span>
+              <a href="https://vercel.com" target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors font-medium">
+                Vercel
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
