@@ -28,24 +28,16 @@ export function SharedShelfClient({ shelfData }: SharedShelfClientProps) {
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
-                  Shared Shelf
-                </span>
-              </div>
-              <h1 className="text-3xl font-bold text-gray-900">{shelfData.name}</h1>
-              <p className="mt-1 text-sm text-gray-500">
-                {shelfData.items.length} {shelfData.items.length === 1 ? 'item' : 'items'}
-              </p>
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
+                Shared Shelf
+              </span>
             </div>
-            <Link
-              href="/login"
-              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
-            >
-              Create My Own Shelf
-            </Link>
+            <h1 className="text-3xl font-bold text-gray-900">{shelfData.name}</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              {shelfData.items.length} {shelfData.items.length === 1 ? 'item' : 'items'}
+            </p>
           </div>
 
           {/* Description */}
@@ -73,8 +65,25 @@ export function SharedShelfClient({ shelfData }: SharedShelfClientProps) {
         onClose={() => setSelectedItem(null)}
       />
 
+      {/* CTA Section */}
+      <section className="mt-16 border-t border-gray-200 bg-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">
+              Want to curate your own collection?
+            </p>
+            <Link
+              href="/login"
+              className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+            >
+              Create My Own Shelf
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="mt-16 border-t border-gray-200 bg-white">
+      <footer className="border-t border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <p className="text-center text-sm text-gray-500">
             Powered by{' '}
