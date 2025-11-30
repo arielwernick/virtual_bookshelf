@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Item, Shelf } from '@/lib/types/shelf';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -17,7 +17,7 @@ interface RotatingDemoShelfProps {
 
 /**
  * A rotating carousel of shelf previews for the home page
- * Shows one shelf at a time with smooth transitions and navigation
+ * Shows one shelf at a time with smooth slide transitions and navigation
  */
 export function RotatingDemoShelf({ 
   shelves, 
@@ -25,20 +25,41 @@ export function RotatingDemoShelf({
 }: RotatingDemoShelfProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
 
   const shelfCount = shelves.length;
 
   const goToNext = useCallback(() => {
+    if (isAnimating) return;
+    setSlideDirection('left');
+    setIsAnimating(true);
     setActiveIndex((prev) => (prev + 1) % shelfCount);
-  }, [shelfCount]);
+  }, [shelfCount, isAnimating]);
 
   const goToPrev = useCallback(() => {
+    if (isAnimating) return;
+    setSlideDirection('right');
+    setIsAnimating(true);
     setActiveIndex((prev) => (prev - 1 + shelfCount) % shelfCount);
-  }, [shelfCount]);
+  }, [shelfCount, isAnimating]);
 
   const goToIndex = useCallback((index: number) => {
+    if (isAnimating || index === activeIndex) return;
+    setSlideDirection(index > activeIndex ? 'left' : 'right');
+    setIsAnimating(true);
     setActiveIndex(index);
-  }, []);
+  }, [activeIndex, isAnimating]);
+
+  // Reset animation state after transition completes
+  useEffect(() => {
+    if (isAnimating) {
+      const timer = setTimeout(() => setIsAnimating(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAnimating]);
 
   // Auto-rotate effect
   useEffect(() => {
@@ -64,6 +85,34 @@ export function RotatingDemoShelf({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [goToNext, goToPrev]);
 
+  // Touch/swipe handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const diff = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(diff) > minSwipeDistance) {
+      if (diff > 0) {
+        goToNext();
+      } else {
+        goToPrev();
+      }
+      setIsPaused(true);
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   // Handle single shelf case - render static like DemoShelf
   if (shelfCount === 0) return null;
 
@@ -71,77 +120,126 @@ export function RotatingDemoShelf({
   const displayItems = currentShelf.items.slice(0, 12);
   const shelfUrl = `/s/${currentShelf.shelf.share_token}`;
 
+  // Animation classes based on direction
+  const getSlideClasses = () => {
+    if (!isAnimating) return 'translate-x-0 opacity-100';
+    return slideDirection === 'left' 
+      ? 'animate-slide-in-left' 
+      : 'animate-slide-in-right';
+  };
+
   return (
     <div
       className="relative"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       role="region"
       aria-label="Featured shelves carousel"
       aria-roledescription="carousel"
     >
-      {/* Shelf card with transition */}
-      <div className="relative overflow-hidden">
-        <Link
-          href={shelfUrl}
-          className="block bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow group"
-          aria-label={`View ${currentShelf.shelf.name} shelf`}
-        >
-          {/* Shelf header */}
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-sm font-medium text-gray-700">
-              {currentShelf.shelf.name}
-            </h3>
-            <span className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">
-              Click to explore →
-            </span>
-          </div>
+      {/* CSS for animations */}
+      <style jsx>{`
+        @keyframes slideInLeft {
+          0% {
+            opacity: 0;
+            transform: translateX(30px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        @keyframes slideInRight {
+          0% {
+            opacity: 0;
+            transform: translateX(-30px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        .animate-slide-in-left {
+          animation: slideInLeft 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        .animate-slide-in-right {
+          animation: slideInRight 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+      `}</style>
 
-          {/* Shelf items with fade transition */}
-          <div 
-            className="bg-white/50 backdrop-blur-sm transition-opacity duration-300"
-            key={currentShelf.shelf.id}
+      {/* Shelf card with slide transition */}
+      <div className="relative overflow-hidden rounded-lg">
+        <div 
+          key={currentShelf.shelf.id}
+          className={getSlideClasses()}
+        >
+          <Link
+            href={shelfUrl}
+            className="block bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300 group"
+            aria-label={`View ${currentShelf.shelf.name} shelf`}
           >
-            <div
-              className="px-4 py-4 flex flex-wrap gap-3"
-              style={{ alignItems: 'flex-end' }}
-            >
-              {displayItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex-shrink-0 w-[80px] sm:w-[100px] group-hover:scale-[1.02] transition-transform"
-                >
-                  <div className="relative aspect-[2/3] rounded overflow-hidden bg-gray-100 shadow-md">
-                    {item.image_url ? (
-                      <Image
-                        src={item.image_url}
-                        alt={item.title}
-                        fill
-                        sizes="100px"
-                        className="object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center p-2">
-                        <span className="text-xs text-gray-400 text-center line-clamp-3">
-                          {item.title}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+            {/* Shelf header */}
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-sm font-medium text-gray-700 transition-colors duration-200 group-hover:text-gray-900">
+                {currentShelf.shelf.name}
+              </h3>
+              <span className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors duration-200 flex items-center gap-1">
+                Click to explore 
+                <svg className="w-3 h-3 transform group-hover:translate-x-0.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
             </div>
 
-            {/* Shelf divider */}
-            <div
-              className="h-1.5 bg-gradient-to-r from-gray-400 via-gray-600 to-gray-400"
-              style={{
-                boxShadow: '0 8px 16px rgba(0, 0, 0, 0.35), 0 4px 8px rgba(0, 0, 0, 0.25)',
-              }}
-            />
-          </div>
-        </Link>
+            {/* Shelf items */}
+            <div className="bg-gradient-to-b from-white to-gray-50/50">
+              <div
+                className="px-4 py-4 flex flex-wrap gap-3"
+                style={{ alignItems: 'flex-end' }}
+              >
+                {displayItems.map((item, itemIndex) => (
+                  <div
+                    key={item.id}
+                    className="flex-shrink-0 w-[80px] sm:w-[100px] transform transition-transform duration-300 group-hover:scale-[1.02]"
+                    style={{ 
+                      transitionDelay: `${itemIndex * 30}ms`,
+                    }}
+                  >
+                    <div className="relative aspect-[2/3] rounded overflow-hidden bg-gray-100 shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                      {item.image_url ? (
+                        <Image
+                          src={item.image_url}
+                          alt={item.title}
+                          fill
+                          sizes="100px"
+                          className="object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center p-2 bg-gradient-to-br from-gray-100 to-gray-200">
+                          <span className="text-xs text-gray-500 text-center line-clamp-3 font-medium">
+                            {item.title}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Shelf divider - wooden shelf look */}
+              <div
+                className="h-2 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700"
+                style={{
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                }}
+              />
+            </div>
+          </Link>
+        </div>
 
         {/* Navigation arrows - only show if multiple shelves */}
         {shelfCount > 1 && (
@@ -149,26 +247,28 @@ export function RotatingDemoShelf({
             <button
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 goToPrev();
                 setIsPaused(true);
               }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-gray-600 hover:bg-white hover:text-gray-900 transition-colors z-10"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 shadow-lg flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-white hover:scale-110 active:scale-95 transition-all duration-200 z-10 backdrop-blur-sm"
               aria-label="Previous shelf"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <button
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 goToNext();
                 setIsPaused(true);
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-gray-600 hover:bg-white hover:text-gray-900 transition-colors z-10"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 shadow-lg flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-white hover:scale-110 active:scale-95 transition-all duration-200 z-10 backdrop-blur-sm"
               aria-label="Next shelf"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -177,7 +277,7 @@ export function RotatingDemoShelf({
       </div>
 
       {/* Navigation dots and helper text */}
-      <div className="mt-3 flex flex-col items-center gap-2">
+      <div className="mt-4 flex flex-col items-center gap-3">
         {/* Dots - only show if multiple shelves */}
         {shelfCount > 1 && (
           <div className="flex gap-2" role="tablist" aria-label="Shelf navigation">
@@ -188,10 +288,10 @@ export function RotatingDemoShelf({
                   goToIndex(index);
                   setIsPaused(true);
                 }}
-                className={`w-2 h-2 rounded-full transition-all ${
+                className={`h-2 rounded-full transition-all duration-300 ease-out ${
                   index === activeIndex
-                    ? 'bg-gray-700 w-4'
-                    : 'bg-gray-300 hover:bg-gray-400'
+                    ? 'bg-gray-800 w-6'
+                    : 'bg-gray-300 w-2 hover:bg-gray-400 hover:w-3'
                 }`}
                 role="tab"
                 aria-selected={index === activeIndex}
@@ -204,13 +304,20 @@ export function RotatingDemoShelf({
         {/* Helper text */}
         <p className="text-sm text-gray-500">
           {shelfCount > 1 ? (
-            <>Swipe or click arrows to see more shelves →</>
+            <span className="flex items-center gap-1">
+              <span className="hidden sm:inline">Swipe or use arrows</span>
+              <span className="sm:hidden">Swipe</span>
+              <span>to explore more shelves</span>
+            </span>
           ) : (
             <Link
               href={shelfUrl}
-              className="hover:text-gray-700 hover:underline"
+              className="hover:text-gray-700 hover:underline inline-flex items-center gap-1"
             >
-              View full example shelf →
+              View full example shelf
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
           )}
         </p>
