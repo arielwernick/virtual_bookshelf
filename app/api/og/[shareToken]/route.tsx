@@ -336,15 +336,23 @@ function TrophyIcon() {
 }
 
 function TechBadge({ name, color }: { name: string; color: string }) {
+  // Convert hex color to rgba for better browser compatibility
+  const hexToRgba = (hex: string, alpha: number): string => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
   return (
     <div style={{
       display: 'flex',
       alignItems: 'center',
       gap: '4px',
-      background: `${color}15`,
+      background: hexToRgba(color, 0.08),
       padding: '4px 8px',
       borderRadius: '4px',
-      border: `1px solid ${color}30`,
+      border: `1px solid ${hexToRgba(color, 0.2)}`,
     }}>
       <span style={{ fontSize: '12px', fontWeight: '600', color: color === '#000000' ? '#374151' : color }}>
         {name}
