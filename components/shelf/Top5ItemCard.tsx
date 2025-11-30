@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Item } from '@/lib/types/shelf';
 import { getAspectRatio } from '@/lib/constants/aspectRatios';
+import { MAX_STAGGER_INDEX } from '@/lib/constants/animation';
 
 interface Top5ItemCardProps {
   item: Item;
@@ -57,8 +58,8 @@ export function Top5ItemCard({
   // Gold gradient for rank badge
   const rankGradient = 'bg-gradient-to-r from-amber-400 to-yellow-500';
 
-  // Get stagger class based on animation index (capped at 12)
-  const staggerClass = animationIndex > 0 ? `stagger-${Math.min(animationIndex, 12)}` : '';
+  // Get stagger class based on animation index (capped at MAX_STAGGER_INDEX)
+  const staggerClass = animationIndex > 0 ? `stagger-${Math.min(animationIndex, MAX_STAGGER_INDEX)}` : '';
 
   return (
     <div

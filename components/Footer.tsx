@@ -26,6 +26,7 @@ export function Footer({ className = '' }: FooterProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+              aria-label="Neon Database (opens in new tab)"
             >
               Neon
             </a>
@@ -35,6 +36,7 @@ export function Footer({ className = '' }: FooterProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+              aria-label="Next.js Framework (opens in new tab)"
             >
               Next.js
             </a>
@@ -44,6 +46,7 @@ export function Footer({ className = '' }: FooterProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+              aria-label="Vercel Platform (opens in new tab)"
             >
               Vercel
             </a>

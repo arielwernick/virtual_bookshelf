@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Item } from '@/lib/types/shelf';
 import { getAspectRatio } from '@/lib/constants/aspectRatios';
+import { MAX_STAGGER_INDEX } from '@/lib/constants/animation';
 
 interface ItemCardProps {
   item: Item;
@@ -32,8 +33,8 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote, animat
     music: 'bg-green-100 text-green-800',
   };
 
-  // Get stagger class based on animation index (capped at 12)
-  const staggerClass = animationIndex > 0 ? `stagger-${Math.min(animationIndex, 12)}` : '';
+  // Get stagger class based on animation index (capped at MAX_STAGGER_INDEX)
+  const staggerClass = animationIndex > 0 ? `stagger-${Math.min(animationIndex, MAX_STAGGER_INDEX)}` : '';
 
   return (
     <div
