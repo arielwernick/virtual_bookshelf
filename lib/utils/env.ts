@@ -36,6 +36,8 @@ export function validateEnv() {
  * Get the demo shelf share token for the home page
  * Returns undefined if not configured (home page will skip the demo)
  * 
+ * @deprecated Use getDemoUserId() instead for rotating shelf previews
+ * 
  * Admin Demo Approach:
  * --------------------
  * The demo shelf is managed by an admin account in production.
@@ -52,4 +54,26 @@ export function validateEnv() {
  */
 export function getDemoShelfToken(): string | undefined {
   return process.env.DEMO_SHELF_TOKEN;
+}
+
+/**
+ * Get the demo user ID for the home page rotating shelf previews
+ * Returns undefined if not configured (home page will skip the demo)
+ * 
+ * Admin Demo Approach:
+ * --------------------
+ * All public shelves from this user will be displayed in a rotating
+ * carousel on the home page (up to 5 shelves).
+ * 
+ * To set up:
+ * 1. Create an admin account (e.g., admin@virtualbookshelf.app)
+ * 2. Get the user ID from the database
+ * 3. Set DEMO_USER_ID environment variable to this ID
+ * 4. Create multiple public shelves with sample items
+ * 
+ * This approach allows admins to update demo content through
+ * the normal UI without requiring code deployments.
+ */
+export function getDemoUserId(): string | undefined {
+  return process.env.DEMO_USER_ID;
 }
