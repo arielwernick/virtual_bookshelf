@@ -132,7 +132,7 @@ export default function DashboardPage() {
             {!showCreateForm && (
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 btn-interactive font-medium"
               >
                 + Create Shelf
               </button>
@@ -234,7 +234,7 @@ export default function DashboardPage() {
                 <button
                   type="submit"
                   disabled={creatingShelf || !shelfName.trim()}
-                  className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 btn-interactive font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {creatingShelf ? 'Creating...' : 'Create Shelf'}
                 </button>
@@ -246,7 +246,7 @@ export default function DashboardPage() {
                     setShelfDescription('');
                     setShelfType('standard');
                   }}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 btn-interactive font-medium"
                 >
                   Cancel
                 </button>
@@ -278,7 +278,7 @@ export default function DashboardPage() {
             {!showCreateForm && (
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 btn-interactive font-medium"
               >
                 Create Shelf
               </button>

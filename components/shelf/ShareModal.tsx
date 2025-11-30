@@ -45,12 +45,16 @@ export function ShareModal({ isOpen, onClose, shareToken, isPublic = false, onPu
 
     return (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-black/50 animate-modal-backdrop" onClick={onClose} />
+            
+            {/* Modal content */}
+            <div className="relative bg-white rounded-lg shadow-lg max-w-md w-full p-6 animate-modal-content">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-gray-900">Share Your Shelf</h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-500 hover:text-gray-700 p-1"
+                        className="text-gray-500 hover:text-gray-700 p-1 btn-interactive focus-ring rounded-full"
                         title="Close"
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +83,7 @@ export function ShareModal({ isOpen, onClose, shareToken, isPublic = false, onPu
                         <button
                             onClick={handlePublishToggle}
                             disabled={isPublishing}
-                            className={`w-full py-2 rounded-lg font-medium text-sm transition-colors ${isPublic
+                            className={`w-full py-2 rounded-lg font-medium text-sm btn-interactive ${isPublic
                                     ? 'bg-red-600 text-white hover:bg-red-700 disabled:opacity-50'
                                     : 'bg-green-600 text-white hover:bg-green-700 disabled:opacity-50'
                                 }`}
@@ -127,16 +131,23 @@ export function ShareModal({ isOpen, onClose, shareToken, isPublic = false, onPu
                                     type="text"
                                     value={shareUrl}
                                     readOnly
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-600 focus:outline-none"
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-600 focus:outline-none focus-ring"
                                 />
                                 <button
                                     onClick={() => handleCopy(shareUrl)}
-                                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap ${copied
-                                            ? 'bg-green-600 text-white'
+                                    className={`px-4 py-2 rounded-lg font-medium text-sm btn-interactive whitespace-nowrap flex items-center gap-1.5 ${copied
+                                            ? 'bg-green-600 text-white animate-copy-success'
                                             : 'bg-gray-900 text-white hover:bg-gray-800'
                                         }`}
                                 >
-                                    {copied ? 'Copied!' : 'Copy'}
+                                    {copied ? (
+                                        <>
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Copied!
+                                        </>
+                                    ) : 'Copy'}
                                 </button>
                             </div>
                         </div>
@@ -164,16 +175,23 @@ export function ShareModal({ isOpen, onClose, shareToken, isPublic = false, onPu
                                 value={embedCode}
                                 readOnly
                                 rows={4}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-xs text-gray-600 focus:outline-none font-mono"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-xs text-gray-600 focus:outline-none font-mono focus-ring"
                             />
                             <button
                                 onClick={() => handleCopy(embedCode)}
-                                className={`w-full mt-2 py-2 rounded-lg font-medium text-sm transition-colors ${copied
-                                        ? 'bg-green-600 text-white'
+                                className={`w-full mt-2 py-2 rounded-lg font-medium text-sm btn-interactive flex items-center justify-center gap-1.5 ${copied
+                                        ? 'bg-green-600 text-white animate-copy-success'
                                         : 'bg-gray-900 text-white hover:bg-gray-800'
                                     }`}
                             >
-                                {copied ? 'Copied!' : 'Copy Code'}
+                                {copied ? (
+                                    <>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Copied!
+                                    </>
+                                ) : 'Copy Code'}
                             </button>
                         </div>
 
@@ -188,7 +206,7 @@ export function ShareModal({ isOpen, onClose, shareToken, isPublic = false, onPu
                 {/* Close button */}
                 <button
                     onClick={onClose}
-                    className="w-full py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm mt-4"
+                    className="w-full py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 btn-interactive font-medium text-sm mt-4"
                 >
                     Close
                 </button>

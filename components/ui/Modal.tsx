@@ -41,16 +41,19 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose} />
+      {/* Backdrop with animation */}
+      <div 
+        className="fixed inset-0 bg-black/50 animate-modal-backdrop" 
+        onClick={onClose} 
+      />
       
-      {/* Modal - Centered */}
+      {/* Modal - Centered with animation */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg overflow-hidden">
+        <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg overflow-hidden animate-modal-content">
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10"
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10 btn-interactive focus-ring rounded-full p-1"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

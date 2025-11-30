@@ -129,6 +129,7 @@ export function Top5ShelfGrid({
           onDrop={(e) => handleDrop(e, index)}
           isDragging={draggedItemId === item.id}
           isDragOver={dragOverIndex === index && draggedItemId !== item.id}
+          animationIndex={rank}
         />
       );
     }
