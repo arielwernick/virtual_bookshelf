@@ -65,6 +65,13 @@ npm run lint         # Run ESLint
 │   ├── ui/                # Generic UI components
 │   ├── Navigation.tsx
 │   └── Confetti.tsx
+├── docs/                  # Documentation
+│   ├── ADMIN_DEMO_SETUP.md
+│   ├── DEPLOYMENT_CHECKLIST.md
+│   ├── MIGRATION.md
+│   ├── MIGRATION_GOOGLE_AUTH.md
+│   ├── OAUTH_TROUBLESHOOTING.md
+│   └── QUICK_START.md
 ├── lib/
 │   ├── api/               # API client helpers
 │   ├── constants/         # Application constants
@@ -80,11 +87,19 @@ npm run lint         # Run ESLint
 │       ├── password.ts    # Password hashing (bcrypt)
 │       ├── session.ts     # JWT session management
 │       └── validation.ts  # Input validation
+├── prds/                  # Product Requirement Documents
+│   ├── BUTTON_HOVER_ENHANCEMENT.md
+│   ├── GOOGLE_AUTH_PRD.md
+│   ├── LINKEDIN_REDESIGN_PRD.md
+│   ├── prd-responsive-card-layouts.md
+│   ├── prd-virtual-bookshelf.md
+│   ├── SHELF_DESCRIPTION.md
+│   ├── SHELF_RENAME_PRD.md
+│   └── UNIT_TESTING_PRD.md
 ├── test/
 │   └── setup.ts           # Vitest setup file
 ├── public/                # Static assets
-├── __mocks__/             # Test mocks
-└── tasks/                 # Task documentation
+└── __mocks__/             # Test mocks
 ```
 
 ## Coding Conventions
