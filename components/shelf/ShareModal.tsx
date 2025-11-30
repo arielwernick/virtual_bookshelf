@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useToast } from '@/components/ui/Toast';
 
 interface ShareModalProps {
     isOpen: boolean;
@@ -17,15 +18,17 @@ export function ShareModal({ isOpen, onClose, shareToken, isPublic = false, onPu
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType>('link');
     const [isPublishing, setIsPublishing] = useState(false);
+    const { showToast } = useToast();
 
     const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/s/${shareToken}`;
     const embedUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/embed/${shareToken}`;
     const embedCode = `<iframe src="${embedUrl}" width="100%" height="800" style="border:none;border-radius:8px;" title="Bookshelf"></iframe>`;
 
-    const handleCopy = (text: string) => {
+    const handleCopy = (text: string, type: 'link' | 'embed' = 'link') => {
         navigator.clipboard.writeText(text);
         setCopied(true);
         onCopy?.();
+        showToast(type === 'link' ? 'Link copied to clipboard!' : 'Embed code copied!', 'success', '📋');
         setTimeout(() => setCopied(false), 2000);
     };
 
@@ -130,7 +133,7 @@ export function ShareModal({ isOpen, onClose, shareToken, isPublic = false, onPu
                                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-600 focus:outline-none"
                                 />
                                 <button
-                                    onClick={() => handleCopy(shareUrl)}
+                                    onClick={() => handleCopy(shareUrl, 'link')}
                                     className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap ${copied
                                             ? 'bg-green-600 text-white'
                                             : 'bg-gray-900 text-white hover:bg-gray-800'
@@ -167,7 +170,7 @@ export function ShareModal({ isOpen, onClose, shareToken, isPublic = false, onPu
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-xs text-gray-600 focus:outline-none font-mono"
                             />
                             <button
-                                onClick={() => handleCopy(embedCode)}
+                                onClick={() => handleCopy(embedCode, 'embed')}
                                 className={`w-full mt-2 py-2 rounded-lg font-medium text-sm transition-colors ${copied
                                         ? 'bg-green-600 text-white'
                                         : 'bg-gray-900 text-white hover:bg-gray-800'

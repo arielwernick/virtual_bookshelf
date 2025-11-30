@@ -7,6 +7,8 @@ import { Top5ShelfGrid } from '@/components/shelf/Top5ShelfGrid';
 import { AddItemForm } from '@/components/shelf/AddItemForm';
 import { NoteEditorModal } from '@/components/shelf/NoteEditorModal';
 import { Modal } from '@/components/ui/Modal';
+import { EmptyState, BookshelfIcon } from '@/components/ui/EmptyState';
+import { SkeletonEditHeader, SkeletonItemGrid } from '@/components/ui/SkeletonLoader';
 import { Item, ShelfType } from '@/lib/types/shelf';
 import { TOP5_MAX_ITEMS } from '@/lib/utils/top5';
 import Link from 'next/link';
@@ -210,11 +212,24 @@ export default function EditShelfPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading...</p>
-                </div>
+            <div className="min-h-screen bg-gray-50">
+                {/* Header Skeleton */}
+                <header className="bg-white border-b border-gray-200">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <div className="flex justify-between items-center">
+                            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                            <div className="flex gap-3">
+                                <div className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse"></div>
+                                <div className="h-10 w-28 bg-gray-200 rounded-lg animate-pulse"></div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+                {/* Main Content Skeleton */}
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <SkeletonEditHeader />
+                    <SkeletonItemGrid count={6} />
+                </main>
             </div>
         );
     }
@@ -403,15 +418,11 @@ export default function EditShelfPage() {
                         onReorder={handleReorder}
                     />
                 ) : shelfData.items.length === 0 ? (
-                    <div className="text-center py-16 bg-white rounded-lg">
-                        <div className="text-gray-400 mb-4">
-                            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No items yet</h3>
-                        <p className="text-gray-600">Click &quot;+ Add Item&quot; to get started!</p>
-                    </div>
+                    <EmptyState
+                        icon={<BookshelfIcon />}
+                        heading="No items yet"
+                        subheading="Click the Add Item button above to get started!"
+                    />
                 ) : (
                     <ShelfGrid
                         items={shelfData.items}

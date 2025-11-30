@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ShelfType } from '@/lib/types/shelf';
+import { EmptyState, BookshelfIcon } from '@/components/ui/EmptyState';
+import { SkeletonShelfGrid } from '@/components/ui/SkeletonLoader';
 
 interface Shelf {
   id: string;
@@ -100,8 +102,21 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header Skeleton */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="h-9 w-40 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="h-5 w-56 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="h-12 w-36 bg-gray-200 rounded-lg animate-pulse"></div>
+            </div>
+          </div>
+          {/* Shelf Cards Skeleton */}
+          <SkeletonShelfGrid count={6} />
+        </div>
       </div>
     );
   }
@@ -257,33 +272,13 @@ export default function DashboardPage() {
 
         {/* Shelves Grid */}
         {data.shelves.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg">
-            <div className="text-gray-400 mb-4">
-              <svg
-                className="w-16 h-16 mx-auto"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No shelves yet</h3>
-            <p className="text-gray-600 mb-6">Create your first shelf to get started</p>
-            {!showCreateForm && (
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
-              >
-                Create Shelf
-              </button>
-            )}
-          </div>
+          <EmptyState
+            icon={<BookshelfIcon />}
+            heading="Create your first shelf"
+            subheading="Share your favorite books, podcasts, and music with the world"
+            ctaText={showCreateForm ? undefined : "Create Shelf"}
+            onCTA={showCreateForm ? undefined : () => setShowCreateForm(true)}
+          />
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.shelves.map((shelf) => (
