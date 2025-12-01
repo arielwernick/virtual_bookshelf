@@ -14,22 +14,35 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Base URL for OG images
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.vercel.app';
+
 export const metadata: Metadata = {
   title: "Virtual Bookshelf",
   description: "Curate and share your favorite books, podcasts, and music in a beautiful digital bookshelf.",
   keywords: ["bookshelf", "books", "podcasts", "music", "recommendations", "share", "curate"],
   authors: [{ name: "Virtual Bookshelf" }],
   openGraph: {
-    title: "Virtual Bookshelf",
-    description: "Curate and share your favorite books, podcasts, and music in a beautiful digital bookshelf.",
+    title: "Virtual Bookshelf - Your bookshelf, everywhere you are",
+    description: "Curate your favorite books, podcasts, and music. Share a link anywhere.",
     type: "website",
     siteName: "Virtual Bookshelf",
     locale: "en_US",
+    url: baseUrl,
+    images: [
+      {
+        url: `${baseUrl}/api/og/landing`,
+        width: 1200,
+        height: 630,
+        alt: "Virtual Bookshelf - Curate and share your favorites",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Virtual Bookshelf",
-    description: "Curate and share your favorite books, podcasts, and music in a beautiful digital bookshelf.",
+    title: "Virtual Bookshelf - Your bookshelf, everywhere you are",
+    description: "Curate your favorite books, podcasts, and music. Share a link anywhere.",
+    images: [`${baseUrl}/api/og/landing`],
   },
   icons: {
     icon: [
