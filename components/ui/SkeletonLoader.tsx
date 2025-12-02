@@ -13,7 +13,7 @@ function SkeletonBase({
   children?: React.ReactNode;
 }) {
   return (
-    <div className={`animate-pulse bg-gray-200 ${className}`} aria-hidden="true">
+    <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 ${className}`} aria-hidden="true">
       {children}
     </div>
   );
@@ -25,7 +25,7 @@ function SkeletonBase({
  */
 export function SkeletonShelfCard() {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6" data-testid="skeleton-shelf-card">
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6" data-testid="skeleton-shelf-card">
       {/* Title */}
       <SkeletonBase className="h-6 rounded w-3/4 mb-3" />
       
@@ -34,7 +34,7 @@ export function SkeletonShelfCard() {
       <SkeletonBase className="h-4 rounded w-2/3 mb-4" />
       
       {/* Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
         <SkeletonBase className="h-4 rounded w-20" />
         <SkeletonBase className="h-4 rounded w-16" />
       </div>
@@ -48,7 +48,7 @@ export function SkeletonShelfCard() {
  */
 export function SkeletonItemCard() {
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden" data-testid="skeleton-item-card">
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm overflow-hidden" data-testid="skeleton-item-card">
       {/* Image placeholder with aspect ratio matching book covers (2/3) */}
       <SkeletonBase className="w-full aspect-[2/3]" />
       

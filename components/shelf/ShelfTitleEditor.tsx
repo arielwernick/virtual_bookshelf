@@ -53,7 +53,7 @@ export function ShelfTitleEditor({ currentTitle, username, onSave, onCancel }: S
     return (
         <div className="space-y-4">
             <div className="space-y-2">
-                <label htmlFor="title-input" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="title-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Shelf Title
                 </label>
                 <input
@@ -69,11 +69,11 @@ export function ShelfTitleEditor({ currentTitle, username, onSave, onCancel }: S
                     placeholder={displayTitle}
                     maxLength={100}
                     disabled={loading}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent outline-none disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 />
                 <div className="flex justify-between items-center">
-                    <p className="text-xs text-gray-500">{title.length}/100 characters</p>
-                    {error && <p className="text-xs text-red-600">{error}</p>}
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{title.length}/100 characters</p>
+                    {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
                 </div>
             </div>
 
@@ -81,14 +81,14 @@ export function ShelfTitleEditor({ currentTitle, username, onSave, onCancel }: S
                 <button
                     onClick={handleSave}
                     disabled={loading}
-                    className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {loading ? 'Saving...' : 'Save'}
                 </button>
                 <button
                     onClick={onCancel}
                     disabled={loading}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Cancel
                 </button>

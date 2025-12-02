@@ -3,7 +3,7 @@
 import React from 'react';
 
 // Common CTA button styles for both link and button variants
-const CTA_BUTTON_STYLES = 'px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium';
+const CTA_BUTTON_STYLES = 'px-6 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium';
 
 interface EmptyStateProps {
   /** Optional icon element to display above the heading */
@@ -33,19 +33,19 @@ export function EmptyState({
   ctaHref,
 }: EmptyStateProps) {
   return (
-    <div className="text-center py-12 px-4 bg-white rounded-lg">
+    <div className="text-center py-12 px-4 bg-white dark:bg-gray-900 rounded-lg">
       {/* Icon */}
       {icon && (
-        <div className="text-gray-400 mb-4" data-testid="empty-state-icon">
+        <div className="text-gray-400 dark:text-gray-500 mb-4" data-testid="empty-state-icon">
           {icon}
         </div>
       )}
 
       {/* Heading */}
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{heading}</h3>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{heading}</h3>
 
       {/* Subheading */}
-      {subheading && <p className="text-gray-600 mb-6 max-w-md mx-auto">{subheading}</p>}
+      {subheading && <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">{subheading}</p>}
 
       {/* CTA Button or Link */}
       {ctaText && ctaHref && (

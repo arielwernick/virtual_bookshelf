@@ -23,21 +23,21 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
   const hasNotes = Boolean(item.notes);
 
   const badgeColor = {
-    book: 'bg-blue-100 text-blue-800',
-    podcast: 'bg-purple-100 text-purple-800',
-    music: 'bg-green-100 text-green-800',
+    book: 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200',
+    podcast: 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200',
+    music: 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200',
   };
 
   return (
     <div
-      className={`group relative bg-white rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 ${
+      className={`group relative bg-white dark:bg-gray-900 rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 ${
         isClickable ? 'cursor-pointer' : ''
       }`}
       onClick={handleClick}
     >
       {/* Image Container */}
       <div
-        className="relative bg-gradient-to-br from-gray-100 to-gray-200"
+        className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700"
         style={{ aspectRatio }}
       >
         {/* Item Image */}
@@ -55,7 +55,7 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
 
         {/* Fallback Icon */}
         {!item.image_url && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+          <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500">
             <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -104,8 +104,8 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
             }}
             className={`absolute bottom-1 left-1 sm:bottom-2 sm:left-2 flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium transition-colors ${
               hasNotes 
-                ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' 
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-900' 
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
             title={hasNotes ? 'Edit note' : 'Add note'}
             data-testid={hasNotes ? 'edit-note-button' : 'add-note-button'}
@@ -125,15 +125,15 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
 
       {/* Item Metadata */}
       <div className="p-2 sm:p-3">
-        <h3 className="font-semibold text-xs sm:text-sm text-gray-900 line-clamp-2 mb-0.5 sm:mb-1">
+        <h3 className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-gray-100 line-clamp-2 mb-0.5 sm:mb-1">
           {item.title}
         </h3>
-        <p className="text-[10px] sm:text-xs text-gray-600 line-clamp-1">{item.creator}</p>
+        <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-1">{item.creator}</p>
         
         {/* Display note text preview if exists (non-edit mode) */}
         {!editMode && hasNotes && (
-          <div className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-gray-100">
-            <p className="text-[10px] sm:text-xs text-gray-500 italic line-clamp-2" data-testid="note-preview">
+          <div className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 italic line-clamp-2" data-testid="note-preview">
               &ldquo;{item.notes}&rdquo;
             </p>
           </div>
