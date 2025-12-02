@@ -3,9 +3,24 @@ import { getUserByUsername, getUserByEmail, createUser } from '@/lib/db/queries'
 import { hashPassword } from '@/lib/utils/password';
 import { setSessionCookie } from '@/lib/utils/session';
 import { validateUsername, validatePassword, validateEmail } from '@/lib/utils/validation';
+import { 
+  getSignupRateLimiter, 
+  getClientIP, 
+  checkRateLimit, 
+  isRateLimitingEnabled 
+} from '@/lib/utils/rateLimit';
 
 export async function POST(request: Request) {
   try {
+    // Rate limiting check
+    if (isRateLimitingEnabled()) {
+      const ip = getClientIP(request);
+      const rateLimitResult = await checkRateLimit(getSignupRateLimiter(), ip);
+      if (!rateLimitResult.success) {
+        return rateLimitResult.response;
+      }
+    }
+
     const body = await request.json();
     const { username, email, password } = body;
 
@@ -65,7 +80,10 @@ export async function POST(request: Request) {
       passwordHash: passwordHash,
     });
 
-    console.log('New user created:', { userId: user.id, username: user.username, email: user.email });
+    // SAFE: Only log non-sensitive info in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('New user created:', { userId: user.id, username: user.username });
+    }
 
     // Set session cookie
     await setSessionCookie({
