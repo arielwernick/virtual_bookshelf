@@ -121,7 +121,7 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Add Item</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Add Item</h2>
 
       {/* Type Selector */}
       <div className="flex gap-2 mb-6">
@@ -129,8 +129,8 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
           onClick={() => setItemType('book')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             itemType === 'book'
-              ? 'bg-blue-100 text-blue-700'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
           }`}
         >
           Book
@@ -139,8 +139,8 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
           onClick={() => setItemType('podcast')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             itemType === 'podcast'
-              ? 'bg-purple-100 text-purple-700'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
           }`}
         >
           Podcast
@@ -149,8 +149,8 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
           onClick={() => setItemType('music')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             itemType === 'music'
-              ? 'bg-green-100 text-green-700'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
           }`}
         >
           Music
@@ -161,7 +161,7 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
       <div className="mb-6">
         <button
           onClick={() => setManualMode(!manualMode)}
-          className="text-sm text-gray-600 hover:text-gray-900"
+          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
         >
           {manualMode ? '← Back to Search' : 'Or add manually →'}
         </button>
@@ -178,12 +178,12 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder={`Search for ${itemType}s...`}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
               />
               <button
                 onClick={handleSearch}
                 disabled={loading}
-                className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
+                className="px-6 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
               >
                 {loading ? 'Searching...' : 'Search'}
               </button>
@@ -195,7 +195,7 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
             {searchResults.map((result) => (
               <div
                 key={result.id}
-                className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                className="flex items-center gap-4 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
               >
                 {result.imageUrl && (
                   <img
@@ -205,13 +205,13 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
                   />
                 )}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-gray-900 truncate">{result.title}</h4>
-                  <p className="text-sm text-gray-600 truncate">{result.creator}</p>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate">{result.title}</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{result.creator}</p>
                 </div>
                 <button
                   onClick={() => handleAddFromSearch(result)}
                   disabled={adding}
-                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm disabled:opacity-50"
+                  className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium text-sm disabled:opacity-50"
                 >
                   Add
                 </button>
@@ -224,57 +224,57 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
           {/* Manual Entry */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title *</label>
               <input
                 type="text"
                 value={manualData.title}
                 onChange={(e) => setManualData({ ...manualData, title: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {itemType === 'book' ? 'Author' : itemType === 'podcast' ? 'Host' : 'Artist'} *
               </label>
               <input
                 type="text"
                 value={manualData.creator}
                 onChange={(e) => setManualData({ ...manualData, creator: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image URL</label>
               <input
                 type="url"
                 value={manualData.image_url}
                 onChange={(e) => setManualData({ ...manualData, image_url: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 placeholder="https://..."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">External URL</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">External URL</label>
               <input
                 type="url"
                 value={manualData.external_url}
                 onChange={(e) => setManualData({ ...manualData, external_url: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 placeholder="https://..."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
               <textarea
                 value={manualData.notes}
                 onChange={(e) => setManualData({ ...manualData, notes: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 rows={3}
                 placeholder="Why do you like this?"
               />
@@ -283,7 +283,7 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
             <button
               onClick={handleManualAdd}
               disabled={adding}
-              className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
+              className="w-full py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
             >
               {adding ? 'Adding...' : 'Add to Shelf'}
             </button>

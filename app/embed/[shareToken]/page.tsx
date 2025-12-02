@@ -38,9 +38,9 @@ export default function EmbedShelfPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-3 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto"></div>
+          <div className="w-12 h-12 border-3 border-gray-300 dark:border-gray-700 border-t-gray-900 dark:border-t-gray-100 rounded-full animate-spin mx-auto"></div>
         </div>
       </div>
     );
@@ -48,22 +48,22 @@ export default function EmbedShelfPage() {
 
   if (!shelfData) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center px-4">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-4">
         <div className="text-center">
-          <p className="text-gray-600">Shelf not found</p>
+          <p className="text-gray-600 dark:text-gray-400">Shelf not found</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-white">
+    <div className="w-full bg-white dark:bg-gray-900">
       {/* Minimal header - just title */}
-      <div className="border-b border-gray-200 p-4">
-        <h1 className="text-lg font-bold text-gray-900">
+      <div className="border-b border-gray-200 dark:border-gray-800 p-4">
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">
           {shelfData.username}&apos;s Bookshelf
         </h1>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           {shelfData.items.length} {shelfData.items.length === 1 ? 'item' : 'items'}
         </p>
       </div>
@@ -85,10 +85,10 @@ export default function EmbedShelfPage() {
       />
 
       {/* Footer with attribution */}
-      <div className="border-t border-gray-200 bg-gray-50 p-3 text-center">
-        <p className="text-xs text-gray-500">
+      <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 p-3 text-center">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Powered by{' '}
-          <Link href="/" className="font-medium text-gray-900 hover:underline">
+          <Link href="/" className="font-medium text-gray-900 dark:text-gray-100 hover:underline">
             Virtual Bookshelf
           </Link>
         </p>

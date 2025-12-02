@@ -27,13 +27,13 @@ export function Navigation() {
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* Logo / Home link */}
           <Link
             href="/"
-            className="flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors font-medium"
+            className="flex items-center gap-2 text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300 transition-colors font-medium"
             title="Virtual Bookshelf"
           >
             <svg
@@ -67,13 +67,13 @@ export function Navigation() {
               <>
                 <Link
                   href="/dashboard"
-                  className="text-sm text-gray-700 hover:text-gray-900 font-medium"
+                  className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium"
                 >
                   Dashboard
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="text-sm text-gray-500 hover:text-gray-700"
+                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 >
                   Sign Out
                 </button>
@@ -82,7 +82,7 @@ export function Navigation() {
               // Not logged in
               <Link
                 href="/login"
-                className="text-sm text-gray-700 hover:text-gray-900 font-medium"
+                className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium"
               >
                 Sign In
               </Link>
