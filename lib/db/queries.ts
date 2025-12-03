@@ -1,5 +1,6 @@
 import { sql } from './client';
 import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfType } from '../types/shelf';
+import { generateShortToken } from '../utils/token';
 
 // ============================================================================
 // USER QUERIES
@@ -138,7 +139,7 @@ export async function updateUserTitle(userId: string, title: string | null): Pro
 // ============================================================================
 
 /**
- * Create a new shelf
+ * Create a new shelf with a short share token
  */
 export async function createShelf(
   userId: string,
@@ -146,9 +147,11 @@ export async function createShelf(
   description?: string | null,
   shelfType: ShelfType = 'standard'
 ): Promise<Shelf> {
+  const shareToken = generateShortToken();
+  
   const result = await sql`
-    INSERT INTO shelves (user_id, name, description, shelf_type)
-    VALUES (${userId}, ${name}, ${description || null}, ${shelfType})
+    INSERT INTO shelves (user_id, name, description, shelf_type, share_token)
+    VALUES (${userId}, ${name}, ${description || null}, ${shelfType}, ${shareToken})
     RETURNING *
   `;
 
