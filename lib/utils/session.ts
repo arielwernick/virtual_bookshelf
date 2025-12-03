@@ -1,9 +1,35 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.SESSION_SECRET || 'your-secret-key-change-in-production'
-);
+/**
+ * Get the secret key for JWT signing/verification.
+ * Throws if SESSION_SECRET is not configured.
+ */
+function getSecretKey(): Uint8Array {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error(
+      'SESSION_SECRET environment variable is required. ' +
+      'Please set it in your .env.local file or deployment environment.'
+    );
+  }
+  return new TextEncoder().encode(secret);
+}
+
+// Lazy initialization to avoid build-time errors
+let _secretKey: Uint8Array | null = null;
+
+function getSecretKeyLazy(): Uint8Array {
+  if (!_secretKey) {
+    _secretKey = getSecretKey();
+  }
+  return _secretKey;
+}
+
+// Export for testing purposes only
+export function _resetSecretKeyCache(): void {
+  _secretKey = null;
+}
 
 const COOKIE_NAME = 'bookshelf_session';
 const COOKIE_OPTIONS = {
@@ -29,7 +55,7 @@ export async function createSession(data: SessionData): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d')
     .setIssuedAt()
-    .sign(SECRET_KEY);
+    .sign(getSecretKeyLazy());
 
   return token;
 }
@@ -39,7 +65,7 @@ export async function createSession(data: SessionData): Promise<string> {
  */
 export async function verifySession(token: string): Promise<SessionData | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET_KEY);
+    const { payload } = await jwtVerify(token, getSecretKeyLazy());
     return payload as SessionData;
   } catch (error) {
     return null;
