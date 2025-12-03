@@ -3,9 +3,24 @@ import { getUserByUsername } from '@/lib/db/queries';
 import { verifyPassword } from '@/lib/utils/password';
 import { setSessionCookie } from '@/lib/utils/session';
 import { validateUsername, validatePassword } from '@/lib/utils/validation';
+import { 
+  getLoginRateLimiter, 
+  getClientIP, 
+  checkRateLimit, 
+  isRateLimitingEnabled 
+} from '@/lib/utils/rateLimit';
 
 export async function POST(request: Request) {
   try {
+    // Rate limiting check
+    if (isRateLimitingEnabled()) {
+      const ip = getClientIP(request);
+      const rateLimitResult = await checkRateLimit(getLoginRateLimiter(), ip);
+      if (!rateLimitResult.success) {
+        return rateLimitResult.response;
+      }
+    }
+
     const body = await request.json();
     const { username, password } = body;
 

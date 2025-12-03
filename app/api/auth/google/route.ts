@@ -1,12 +1,27 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { 
+  getOAuthRateLimiter, 
+  getClientIP, 
+  checkRateLimit, 
+  isRateLimitingEnabled 
+} from '@/lib/utils/rateLimit';
 
 /**
  * Google OAuth initiation route
  * Redirects user to Google OAuth consent screen
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Rate limiting check
+    if (isRateLimitingEnabled()) {
+      const ip = getClientIP(request);
+      const rateLimitResult = await checkRateLimit(getOAuthRateLimiter(), ip);
+      if (!rateLimitResult.success) {
+        return rateLimitResult.response;
+      }
+    }
+
     // Generate CSRF state token
     const state = crypto.randomBytes(32).toString('hex');
 

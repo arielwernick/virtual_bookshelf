@@ -4,8 +4,10 @@ This directory contains task prompts for addressing security vulnerabilities ide
 
 ## Task Priority
 
+### ✅ Completed
+- [TASK-001](./TASK-001-remove-hardcoded-secret.md) - ~~Remove hardcoded fallback secret key~~ ✅ (PR #45)
+
 ### 🔴 Critical (Immediate)
-- [TASK-001](./TASK-001-remove-hardcoded-secret.md) - Remove hardcoded fallback secret key
 - [TASK-002](./TASK-002-rate-limiting.md) - Implement rate limiting on auth endpoints
 
 ### 🟠 High (This Week)
