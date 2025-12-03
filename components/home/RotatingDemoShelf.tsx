@@ -178,15 +178,15 @@ export function RotatingDemoShelf({
         >
           <Link
             href={shelfUrl}
-            className="block bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300 group"
+            className="block bg-white dark:bg-gray-900 rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-300 group"
             aria-label={`View ${currentShelf.shelf.name} shelf`}
           >
             {/* Shelf header */}
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-sm font-medium text-gray-700 transition-colors duration-200 group-hover:text-gray-900">
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100">
                 {currentShelf.shelf.name}
               </h3>
-              <span className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors duration-200 flex items-center gap-1">
+              <span className="text-xs text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-400 transition-colors duration-200 flex items-center gap-1">
                 Click to explore 
                 <svg className="w-3 h-3 transform group-hover:translate-x-0.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -195,7 +195,7 @@ export function RotatingDemoShelf({
             </div>
 
             {/* Shelf items */}
-            <div className="bg-gradient-to-b from-white to-gray-50/50">
+            <div className="bg-gradient-to-b from-white dark:from-gray-900 to-gray-50/50 dark:to-gray-800/50">
               <div
                 className="px-4 py-4 flex flex-wrap gap-3"
                 style={{ alignItems: 'flex-end' }}
@@ -208,7 +208,7 @@ export function RotatingDemoShelf({
                       transitionDelay: `${itemIndex * 30}ms`,
                     }}
                   >
-                    <div className="relative aspect-[2/3] rounded overflow-hidden bg-gray-100 shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                    <div className="relative aspect-[2/3] rounded overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-md group-hover:shadow-lg transition-shadow duration-300">
                       {item.image_url ? (
                         <Image
                           src={item.image_url}
@@ -219,8 +219,8 @@ export function RotatingDemoShelf({
                           unoptimized
                         />
                       ) : (
-                        <div className="absolute inset-0 flex items-center justify-center p-2 bg-gradient-to-br from-gray-100 to-gray-200">
-                          <span className="text-xs text-gray-500 text-center line-clamp-3 font-medium">
+                        <div className="absolute inset-0 flex items-center justify-center p-2 bg-gradient-to-br from-gray-100 dark:from-gray-800 to-gray-200 dark:to-gray-700">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 text-center line-clamp-3 font-medium">
                             {item.title}
                           </span>
                         </div>
@@ -251,7 +251,7 @@ export function RotatingDemoShelf({
                 goToPrev();
                 setIsPaused(true);
               }}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 shadow-lg flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-white hover:scale-110 active:scale-95 transition-all duration-200 z-10 backdrop-blur-sm"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 dark:bg-gray-800/95 shadow-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-white dark:hover:bg-gray-800 hover:scale-110 active:scale-95 transition-all duration-200 z-10 backdrop-blur-sm"
               aria-label="Previous shelf"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -265,7 +265,7 @@ export function RotatingDemoShelf({
                 goToNext();
                 setIsPaused(true);
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 shadow-lg flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-white hover:scale-110 active:scale-95 transition-all duration-200 z-10 backdrop-blur-sm"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 dark:bg-gray-800/95 shadow-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-white dark:hover:bg-gray-800 hover:scale-110 active:scale-95 transition-all duration-200 z-10 backdrop-blur-sm"
               aria-label="Next shelf"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -290,8 +290,8 @@ export function RotatingDemoShelf({
                 }}
                 className={`h-2 rounded-full transition-all duration-300 ease-out ${
                   index === activeIndex
-                    ? 'bg-gray-800 w-6'
-                    : 'bg-gray-300 w-2 hover:bg-gray-400 hover:w-3'
+                    ? 'bg-gray-800 dark:bg-gray-200 w-6'
+                    : 'bg-gray-300 dark:bg-gray-600 w-2 hover:bg-gray-400 dark:hover:bg-gray-500 hover:w-3'
                 }`}
                 role="tab"
                 aria-selected={index === activeIndex}
@@ -302,7 +302,7 @@ export function RotatingDemoShelf({
         )}
 
         {/* Helper text */}
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {shelfCount > 1 ? (
             <span className="flex items-center gap-1">
               <span className="hidden sm:inline">Swipe or use arrows</span>
@@ -312,7 +312,7 @@ export function RotatingDemoShelf({
           ) : (
             <Link
               href={shelfUrl}
-              className="hover:text-gray-700 hover:underline inline-flex items-center gap-1"
+              className="hover:text-gray-700 dark:hover:text-gray-300 hover:underline inline-flex items-center gap-1"
             >
               View full example shelf
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

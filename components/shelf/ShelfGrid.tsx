@@ -17,7 +17,7 @@ interface ShelfRowProps {
  */
 function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfRowProps) {
   return (
-    <div className="bg-white/50 backdrop-blur-sm rounded-lg border border-gray-100 shadow-xs overflow-hidden">
+    <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-lg border border-gray-100 dark:border-gray-800 shadow-xs overflow-hidden">
       {/* Shelf items */}
       <div
         className="px-3 py-3 sm:px-6 sm:py-5 flex flex-wrap"
@@ -201,8 +201,8 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
       onClick={() => setSelectedType(type)}
       className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
         selectedType === type
-          ? `${type === 'all' ? 'border-gray-900 text-gray-900' : type === 'book' ? 'border-blue-600 text-blue-600' : type === 'podcast' ? 'border-purple-600 text-purple-600' : 'border-green-600 text-green-600'}`
-          : 'border-transparent text-gray-500 hover:text-gray-700'
+          ? `${type === 'all' ? 'border-gray-900 dark:border-gray-100 text-gray-900 dark:text-gray-100' : type === 'book' ? 'border-blue-600 text-blue-600' : type === 'podcast' ? 'border-purple-600 text-purple-600' : 'border-green-600 text-green-600'}`
+          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
       }`}
     >
       {label} ({count})
@@ -212,7 +212,7 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
   return (
     <div>
       {/* Filter tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200">
+      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
         {filterButton('all', 'All', counts.all)}
         {filterButton('book', 'Books', counts.book)}
         {filterButton('podcast', 'Podcasts', counts.podcast)}
@@ -222,7 +222,7 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
       {/* Shelves or empty state */}
       {filteredItems.length === 0 ? (
         <div className="text-center py-16">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -230,8 +230,8 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
               d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No items</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No items</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {selectedType === 'all'
               ? 'This shelf is empty.'
               : `No ${selectedType}s in this shelf.`}

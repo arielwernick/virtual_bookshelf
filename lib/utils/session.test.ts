@@ -1,8 +1,8 @@
 /**
  * @vitest-environment node
  */
-import { describe, it, expect } from 'vitest';
-import { createSession, verifySession } from './session';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createSession, verifySession, _resetSecretKeyCache } from './session';
 
 // Note: setSessionCookie, getSession, and clearSession use next/headers
 // which is mocked globally. We test the core JWT functions directly.
@@ -146,5 +146,45 @@ describe('session token expiration', () => {
     
     expect(payload.exp).toBeGreaterThanOrEqual(expectedExpMin);
     expect(payload.exp).toBeLessThanOrEqual(expectedExpMax);
+  });
+});
+
+describe('session security', () => {
+  const originalSecret = process.env.SESSION_SECRET;
+
+  beforeEach(() => {
+    // Reset the cached key before each test
+    _resetSecretKeyCache();
+  });
+
+  afterEach(() => {
+    // Restore the original secret after each test
+    process.env.SESSION_SECRET = originalSecret;
+    _resetSecretKeyCache();
+  });
+
+  it('throws error when SESSION_SECRET is not set', async () => {
+    delete process.env.SESSION_SECRET;
+
+    await expect(
+      createSession({ userId: '1', username: 'test' })
+    ).rejects.toThrow('SESSION_SECRET environment variable is required');
+  });
+
+  it('throws error with helpful message about configuration', async () => {
+    delete process.env.SESSION_SECRET;
+
+    await expect(
+      createSession({ userId: '1', username: 'test' })
+    ).rejects.toThrow('Please set it in your .env.local file or deployment environment');
+  });
+
+  it('works when SESSION_SECRET is properly set', async () => {
+    process.env.SESSION_SECRET = 'test-secret-for-unit-tests';
+
+    const token = await createSession({ userId: '1', username: 'test' });
+    const verified = await verifySession(token);
+
+    expect(verified?.userId).toBe('1');
   });
 });

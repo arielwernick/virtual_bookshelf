@@ -71,8 +71,8 @@ export function NoteEditorModal({
       <div className="p-6">
         {/* Header with icon */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-            <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+            <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -82,17 +82,17 @@ export function NoteEditorModal({
             </svg>
           </div>
           <div className="flex-1 min-w-0 pr-8">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {initialNotes ? 'Edit Note' : 'Add Note'}
             </h2>
-            <p className="text-sm text-gray-500 truncate" title={itemTitle}>
+            <p className="text-sm text-gray-500 dark:text-gray-400 truncate" title={itemTitle}>
               {itemTitle}
             </p>
           </div>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-center gap-2">
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 rounded-lg text-sm flex items-center gap-2">
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -106,19 +106,19 @@ export function NoteEditorModal({
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Share your thoughts, favorite quotes, or why you love this..."
             maxLength={MAX_NOTES_LENGTH}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none bg-gray-50 focus:bg-white transition-colors"
+            className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-900 transition-colors text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
             rows={5}
             autoFocus
           />
           <div className="flex items-center justify-between text-sm">
-            <span className={`${notes.length >= MAX_NOTES_LENGTH ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+            <span className={`${notes.length >= MAX_NOTES_LENGTH ? 'text-red-500 font-medium' : 'text-gray-400 dark:text-gray-500'}`}>
               {notes.length}/{MAX_NOTES_LENGTH}
             </span>
             {initialNotes && (
               <button
                 onClick={handleRemoveNote}
                 disabled={saving}
-                className="text-red-500 hover:text-red-600 text-sm font-medium disabled:opacity-50"
+                className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 text-sm font-medium disabled:opacity-50"
               >
                 Remove note
               </button>
@@ -130,14 +130,14 @@ export function NoteEditorModal({
           <button
             onClick={handleCancel}
             disabled={saving}
-            className="px-5 py-2.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium disabled:opacity-50"
+            className="px-5 py-2.5 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-medium disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving || notes.trim() === (initialNotes?.trim() || '')}
-            className="px-5 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+            className="px-5 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
           >
             {saving ? (
               <span className="flex items-center gap-2">
