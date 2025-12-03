@@ -8,33 +8,39 @@ import {
 } from '@/lib/db/queries';
 import { setSessionCookie } from '@/lib/utils/session';
 
+const isDev = process.env.NODE_ENV === 'development';
+
+// Helper for safe logging - only logs in development
+function safeLog(message: string, data?: Record<string, unknown>) {
+  if (isDev) {
+    console.log(`[OAuth Callback] ${message}`, data || '');
+  }
+}
+
 /**
  * Google OAuth callback handler
  * Exchanges authorization code for user data and creates session
  */
 export async function GET(request: Request) {
   try {
-    console.log('\n=== Google OAuth Callback ===');
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
     const error = url.searchParams.get('error');
-    const errorDescription = url.searchParams.get('error_description');
 
-    console.log('Full URL:', url.toString());
-    console.log('All search params:', Array.from(url.searchParams.entries()));
-    console.log('Callback params:', {
-      code: code ? code.substring(0, 10) + '...' : 'MISSING',
-      state: state ? state.substring(0, 8) + '...' : 'MISSING',
-      error: error,
-      errorDescription: errorDescription,
+    // Log only that callback was received, not the actual values
+    safeLog('Callback received', { 
+      hasCode: !!code, 
+      hasState: !!state, 
+      hasError: !!error 
     });
 
     // If Google returned an error
     if (error) {
-      console.error('Google OAuth error:', error, errorDescription);
+      // SAFE: Error type from Google is not sensitive
+      console.error('[OAuth Callback] Google returned error:', error);
       return NextResponse.json(
-        { success: false, error: `Google error: ${error}` },
+        { success: false, error: `Authentication failed: ${error}` },
         { status: 400 }
       );
     }
@@ -50,26 +56,17 @@ export async function GET(request: Request) {
     // Verify state token (CSRF protection)
     const cookieStore = await cookies();
     const storedState = cookieStore.get('oauth_state')?.value;
-    const allCookies = cookieStore.getAll();
     
-    console.log('Cookie verification:', {
-      incomingState: state.substring(0, 8) + '...',
-      storedState: storedState ? storedState.substring(0, 8) + '...' : 'NOT_FOUND',
-      match: state === storedState,
-      cookieCount: allCookies.length,
-      cookieNames: allCookies.map(c => c.name),
-      rawCookieHeader: request.headers.get('cookie')?.substring(0, 100) || 'NO_COOKIE_HEADER',
-    });
+    // SAFE: Only log whether match succeeded, not the actual values
+    safeLog('State verification', { stateMatch: state === storedState });
     
     if (state !== storedState) {
-      console.error('STATE MISMATCH - CSRF token validation failed');
+      console.error('[OAuth Callback] State mismatch - possible CSRF attempt');
       return NextResponse.json(
         { success: false, error: 'Invalid state token' },
         { status: 403 }
       );
     }
-    
-    console.log('✓ State token verified');
 
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -85,7 +82,7 @@ export async function GET(request: Request) {
     });
 
     if (!tokenResponse.ok) {
-      console.error('Token exchange failed:', await tokenResponse.text());
+      console.error('[OAuth Callback] Token exchange failed');
       return NextResponse.json(
         { success: false, error: 'Failed to exchange token' },
         { status: 500 }
@@ -100,7 +97,7 @@ export async function GET(request: Request) {
     });
 
     if (!userInfoResponse.ok) {
-      console.error('User info fetch failed:', await userInfoResponse.text());
+      console.error('[OAuth Callback] User info fetch failed');
       return NextResponse.json(
         { success: false, error: 'Failed to fetch user info' },
         { status: 500 }
@@ -119,7 +116,6 @@ export async function GET(request: Request) {
 
     // Check if user exists
     let user = await getUserByEmail(email);
-    console.log('Email lookup result:', { email, userFound: !!user });
 
     if (!user) {
       // Create new user
@@ -134,21 +130,17 @@ export async function GET(request: Request) {
         counter++;
       }
 
-      console.log('Creating new user:', { email, username });
+      safeLog('Creating new user');
       user = await createUser({
         email,
         username,
         googleId,
         name,
       });
-      console.log('User created:', { userId: user.id, email: user.email });
     } else if (!user.google_id) {
-      // Update existing user with google_id if not already linked
-      // This allows linking Google to existing accounts
-      console.log('Linking Google ID to existing user:', { userId: user.id });
+      // Link Google to existing account
+      safeLog('Linking Google account to existing user');
       user = await updateUserGoogleId(user.id, googleId);
-    } else {
-      console.log('User already has Google ID linked:', { userId: user.id });
     }
 
     // Set session cookie
@@ -163,9 +155,14 @@ export async function GET(request: Request) {
     const response = NextResponse.redirect(dashboardUrl);
     response.cookies.delete('oauth_state');
 
+    // SAFE: Only log success, not user details
+    safeLog('Authentication successful');
+
     return response;
   } catch (error) {
-    console.error('Error during Google OAuth callback:', error);
+    console.error('[OAuth Callback] Authentication failed:', 
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return NextResponse.json(
       { success: false, error: 'Authentication failed' },
       { status: 500 }

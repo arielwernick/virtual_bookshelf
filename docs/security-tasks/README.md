@@ -6,9 +6,7 @@ This directory contains task prompts for addressing security vulnerabilities ide
 
 ### ✅ Completed
 - [TASK-001](./TASK-001-remove-hardcoded-secret.md) - ~~Remove hardcoded fallback secret key~~ ✅ (PR #45)
-
-### 🔴 Critical (Immediate)
-- [TASK-002](./TASK-002-rate-limiting.md) - Implement rate limiting on auth endpoints
+- [TASK-002](./TASK-002-rate-limiting.md) - ~~Implement rate limiting on auth endpoints~~ ✅
 
 ### 🟠 High (This Week)
 - [TASK-003](./TASK-003-remove-sensitive-logs.md) - Remove sensitive data from OAuth logs
