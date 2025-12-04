@@ -208,6 +208,78 @@ function TalkToBookModal({
   onRelease,
   audioRef,
 }: TalkToBookModalProps) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isStoppingRef = useRef(false);
+
+  // Start timer when recording
+  useEffect(() => {
+    if (isRecording) {
+      isStoppingRef.current = false;
+      timerRef.current = setInterval(() => {
+        setRecordingSeconds((s) => s + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setRecordingSeconds(0);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isRecording]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      isStoppingRef.current = false;
+    };
+  }, []);
+
+  async function handleToggleRecording() {
+    // Prevent rapid clicks or double-triggering
+    if (isStoppingRef.current) return;
+    
+    if (!isRecording) {
+      // Start recording
+      setIsRecording(true);
+      try {
+        await onPress();
+      } catch (error) {
+        console.error('Error starting recording:', error);
+        setIsRecording(false);
+      }
+    } else {
+      // Stop recording
+      isStoppingRef.current = true;
+      setIsRecording(false);
+      try {
+        await onRelease();
+      } catch (error) {
+        console.error('Error stopping recording:', error);
+      } finally {
+        isStoppingRef.current = false;
+      }
+    }
+  }
+
+  async function handleStopRecording(e: React.MouseEvent) {
+    // Prevent rapid clicks or double-triggering
+    if (isStoppingRef.current || !isRecording) return;
+    
+    e.stopPropagation();
+    isStoppingRef.current = true;
+    setIsRecording(false);
+    try {
+      await onRelease();
+    } catch (error) {
+      console.error('Error stopping recording:', error);
+    } finally {
+      isStoppingRef.current = false;
+    }
+  }
+
   if (!isOpen) return null;
 
   return (
@@ -337,14 +409,36 @@ function TalkToBookModal({
                 {/* Input Controls */}
                 <div className="flex flex-col gap-2">
                   <button
-                    onMouseDown={onPress}
-                    onMouseUp={onRelease}
-                    onTouchStart={onPress}
-                    onTouchEnd={onRelease}
-                    disabled={loading !== 'idle'}
-                    className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-white text-sm font-medium hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleToggleRecording}
+                    disabled={loading !== 'idle' && !isRecording}
+                    className={`w-full rounded-lg px-4 py-3 text-white text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 ${isRecording ? 'bg-red-600 ring-2 ring-red-400 shadow-lg' : 'bg-blue-600 hover:bg-blue-700 active:scale-95'}`}
                   >
-                    {loading === 'listening' ? '🎙️ Listening...' : '🎤 Hold to ask via voice'}
+                    {isRecording ? (
+                      <>
+                        <svg className="w-5 h-5 animate-bounce" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                          <path d="M17 16.91c-1.48 1.46-3.51 2.36-5.77 2.36-2.26 0-4.29-.9-5.77-2.36M19 12c0 .29-.02.57-.07.84h2.03c.05-.27.07-.55.07-.84" />
+                          <path d="M12 16c-1.66 0-3 1.34-3 3v1h6v-1c0-1.66-1.34-3-3-3z" opacity="0.3" />
+                        </svg>
+                        <span className="font-mono text-base tracking-tight">{recordingSeconds}s</span>
+                        <button
+                          onClick={handleStopRecording}
+                          className="ml-auto text-lg cursor-pointer hover:scale-125 hover:brightness-150 transition-transform active:scale-95"
+                          title="Stop recording"
+                        >
+                          🛑
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                          <path d="M17 16.91c-1.48 1.46-3.51 2.36-5.77 2.36-2.26 0-4.29-.9-5.77-2.36M19 12c0 .29-.02.57-.07.84h2.03c.05-.27.07-.55.07-.84" />
+                          <path d="M12 16c-1.66 0-3 1.34-3 3v1h6v-1c0-1.66-1.34-3-3-3z" opacity="0.3" />
+                        </svg>
+                        <span>Ask via voice</span>
+                      </>
+                    )}
                   </button>
                   <div className="flex gap-2">
                     <input
@@ -352,12 +446,12 @@ function TalkToBookModal({
                       onChange={(e) => setTextInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && onSendText()}
                       placeholder="Or type your question..."
-                      disabled={loading !== 'idle'}
+                      disabled={loading !== 'idle' && !isRecording}
                       className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                     />
                     <button 
                       onClick={onSendText} 
-                      disabled={loading !== 'idle' || !textInput.trim()}
+                      disabled={(loading !== 'idle' && !isRecording) || !textInput.trim()}
                       className="rounded-lg bg-gray-800 dark:bg-gray-700 px-4 py-2 text-white text-sm font-medium hover:bg-gray-900 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Send
