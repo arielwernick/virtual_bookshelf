@@ -42,6 +42,13 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
   const [episodes, setEpisodes] = useState<EpisodeResult[]>([]);
   const [episodeOffset, setEpisodeOffset] = useState(0);
   const [hasMoreEpisodes, setHasMoreEpisodes] = useState(true);
+  
+  // Episode search state (search through all episodes in show via API)
+  const [searchingInShow, setSearchingInShow] = useState(false);
+  const [episodeSearchQuery, setEpisodeSearchQuery] = useState('');
+  const [searchedEpisodes, setSearchedEpisodes] = useState<EpisodeResult[]>([]);
+  const [hasMoreSearchResults, setHasMoreSearchResults] = useState(false);
+  const [searchOffset, setSearchOffset] = useState(0);
 
   // Manual entry
   const [manualMode, setManualMode] = useState(false);
@@ -78,18 +85,23 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
   const handleBrowseEpisodes = async (show: SearchResult) => {
     setSelectedShow(show);
     setBrowsingEpisodes(true);
-    setEpisodes([]);  // Ensure it's always an array
+    setSearchingInShow(false);
+    setEpisodes([]);
     setEpisodeOffset(0);
     setHasMoreEpisodes(true);
+    setEpisodeSearchQuery('');
+    setSearchedEpisodes([]);
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/search/episodes?showId=${show.id}&offset=0&limit=20`);
+      const res = await fetch(`/api/search/episodes?showId=${show.id}&offset=0&limit=50`);
       const data = await res.json();
 
       if (data.success) {
-        setEpisodes(data.data.episodes || []);
-        setHasMoreEpisodes(data.data.episodes && data.data.episodes.length >= 20); // Check if there might be more
+        const episodeList = data.data.episodes || [];
+        setEpisodes(episodeList);
+        setHasMoreEpisodes(episodeList && episodeList.length >= 50);
+        setEpisodeOffset(50);
       } else {
         console.error('Episodes API error:', data.error);
         setEpisodes([]);
@@ -102,19 +114,75 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
     }
   };
 
+  // Handle episode search within show
+  const handleEpisodeSearch = async () => {
+    if (!selectedShow || !episodeSearchQuery.trim()) return;
+
+    setSearchingInShow(true);
+    setLoading(true);
+    setSearchedEpisodes([]);
+    setSearchOffset(0);
+
+    try {
+      const res = await fetch(
+        `/api/search/episodes/in-show?showId=${selectedShow.id}&q=${encodeURIComponent(episodeSearchQuery)}&offset=0&limit=20`
+      );
+      const data = await res.json();
+
+      if (data.success) {
+        setSearchedEpisodes(data.data.episodes || []);
+        setHasMoreSearchResults(data.data.hasMore || false);
+        setSearchOffset(20);
+      } else {
+        console.error('Episode search API error:', data.error);
+        setSearchedEpisodes([]);
+      }
+    } catch (error) {
+      console.error('Episode search fetch error:', error);
+      setSearchedEpisodes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMoreSearchResults = async () => {
+    if (!selectedShow || !episodeSearchQuery.trim() || loading) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/search/episodes/in-show?showId=${selectedShow.id}&q=${encodeURIComponent(episodeSearchQuery)}&offset=${searchOffset}&limit=20`
+      );
+      const data = await res.json();
+
+      if (data.success) {
+        setSearchedEpisodes(prev => [...(prev || []), ...(data.data.episodes || [])]);
+        setHasMoreSearchResults(data.data.hasMore || false);
+        setSearchOffset(searchOffset + 20);
+      } else {
+        console.error('Load more search results API error:', data.error);
+      }
+    } catch (error) {
+      console.error('Load more search results fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadMoreEpisodes = async () => {
     if (!selectedShow || loading) return;
 
     setLoading(true);
     try {
-      const newOffset = episodeOffset + 20;
+      const newOffset = episodeOffset;
       const res = await fetch(`/api/search/episodes?showId=${selectedShow.id}&offset=${newOffset}&limit=20`);
       const data = await res.json();
 
       if (data.success) {
-        setEpisodes(prev => [...(prev || []), ...(data.data.episodes || [])]);
-        setEpisodeOffset(newOffset);
-        setHasMoreEpisodes(data.data.episodes && data.data.episodes.length >= 20); // Check if there might be more
+        const newEpisodes = data.data.episodes || [];
+        setEpisodes(prev => [...(prev || []), ...(newEpisodes || [])]);
+        setEpisodeOffset(newOffset + 20);
+        setHasMoreEpisodes(newEpisodes && newEpisodes.length >= 20);
       } else {
         console.error('Load more episodes API error:', data.error);
       }
@@ -156,8 +224,6 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
   };
 
   const handleAddEpisode = async (episode: EpisodeResult) => {
-    if (!selectedShow) return;
-
     setAdding(true);
     try {
       const res = await fetch('/api/items', {
@@ -168,7 +234,7 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
           type: 'podcast_episode',
           title: episode.title,
           creator: episode.showName,
-          image_url: episode.imageUrl || selectedShow.imageUrl,
+          image_url: episode.imageUrl || (selectedShow?.imageUrl),
           external_url: episode.externalUrl,
         }),
       });
@@ -257,6 +323,7 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
         >
           Podcast
         </button>
+
         <button
           onClick={() => setItemType('music')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -278,18 +345,21 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
           {manualMode ? '← Back to Search' : 'Or add manually →'}
         </button>
         
-        {browsingEpisodes && selectedShow && (
+        {browsingEpisodes && selectedShow ? (
           <button
             onClick={() => {
               setBrowsingEpisodes(false);
               setSelectedShow(null);
               setEpisodes([]);
+              setSearchingInShow(false);
+              setEpisodeSearchQuery('');
+              setSearchedEpisodes([]);
             }}
             className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
           >
             ← Back to Search Results
           </button>
-        )}
+        ) : null}
       </div>
 
       {!manualMode ? (
@@ -326,17 +396,118 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
                   Episodes from "{selectedShow.title}"
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Select an episode to add to your shelf
+                  Browse recent episodes or search through all episodes
                 </p>
+              </div>
+              
+              {/* Mode Toggle and Search */}
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setSearchingInShow(false);
+                      setEpisodeSearchQuery('');
+                      setSearchedEpisodes([]);
+                    }}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      !searchingInShow
+                        ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    Browse Recent
+                  </button>
+                  <button
+                    onClick={() => setSearchingInShow(true)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      searchingInShow
+                        ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    Search All Episodes
+                  </button>
+                </div>
+                
+                {/* Search Input (only shown in search mode) */}
+                {searchingInShow && (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={episodeSearchQuery}
+                      onChange={(e) => setEpisodeSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleEpisodeSearch()}
+                      placeholder="Search episodes by name or description..."
+                      className="flex-1 px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                    />
+                    <button
+                      onClick={handleEpisodeSearch}
+                      disabled={loading || !episodeSearchQuery.trim()}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
+                    >
+                      {loading ? 'Searching...' : 'Search'}
+                    </button>
+                  </div>
+                )}
               </div>
               
               <div className="max-h-96 overflow-y-auto space-y-3">
                 {loading ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-500 dark:text-gray-400">Loading episodes...</p>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      {searchingInShow ? 'Searching episodes...' : 'Loading episodes...'}
+                    </p>
                   </div>
-                ) : episodes && episodes.length > 0 ? (
-                  episodes.map((episode) => (
+                ) : searchingInShow ? (
+                  /* Search Results */
+                  searchedEpisodes && searchedEpisodes.length > 0 ? (
+                    searchedEpisodes.map((episode) => (
+                      <div
+                        key={episode.id}
+                        className="flex items-start gap-4 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+                      >
+                      {episode.imageUrl && (
+                        <img
+                          src={episode.imageUrl}
+                          alt={episode.title}
+                          className="w-16 h-16 object-cover rounded flex-shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 line-clamp-2">
+                          {episode.title}
+                        </h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {formatDuration(episode.duration_ms)} • {new Date(episode.release_date).toLocaleDateString()}
+                        </p>
+                        {episode.description && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
+                            {episode.description.replace(/<[^>]*>/g, '').slice(0, 120)}...
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleAddEpisode(episode)}
+                        disabled={adding}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm disabled:opacity-50 flex-shrink-0"
+                      >
+                        Add Episode
+                      </button>
+                      </div>
+                    ))
+                  ) : episodeSearchQuery && !loading ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 dark:text-gray-400">No episodes found for "{episodeSearchQuery}".</p>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 dark:text-gray-400">Enter a search term to find episodes.</p>
+                    </div>
+                  )
+                ) : (
+                  /* Browse Results */
+                  episodes && episodes.length > 0 ? (
+                    episodes.map((episode) => (
                     <div
                       key={episode.id}
                       className="flex items-start gap-4 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
@@ -370,27 +541,45 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
                     </button>
                   </div>
                   ))
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 dark:text-gray-400">No episodes found for this podcast.</p>
-                  </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 dark:text-gray-400">No episodes found for this podcast.</p>
+                    </div>
+                  )
                 )}
                 
-                {!loading && episodes && episodes.length > 0 && hasMoreEpisodes && (
-                  <button
-                    onClick={loadMoreEpisodes}
-                    disabled={loading}
-                    className="w-full py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors disabled:opacity-50"
-                  >
-                    {loading ? 'Loading...' : 'Load More Episodes'}
-                  </button>
+                {/* Load More Buttons */}
+                {!loading && (
+                  searchingInShow ? (
+                    /* Load More Search Results */
+                    searchedEpisodes && searchedEpisodes.length > 0 && hasMoreSearchResults && (
+                      <button
+                        onClick={loadMoreSearchResults}
+                        disabled={loading}
+                        className="w-full py-2 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 border border-purple-200 dark:border-purple-700 rounded-lg hover:border-purple-300 dark:hover:border-purple-600 transition-colors disabled:opacity-50"
+                      >
+                        {loading ? 'Loading...' : 'Load More Search Results'}
+                      </button>
+                    )
+                  ) : (
+                    /* Load More Browse Results */
+                    episodes && episodes.length > 0 && hasMoreEpisodes && (
+                      <button
+                        onClick={loadMoreEpisodes}
+                        disabled={loading}
+                        className="w-full py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors disabled:opacity-50"
+                      >
+                        {loading ? 'Loading...' : 'Load More Episodes'}
+                      </button>
+                    )
+                  )
                 )}
               </div>
             </div>
           ) : (
             /* Regular Search Results */
             <div className="max-h-96 overflow-y-auto space-y-3">
-              {searchResults.map((result) => (
+              {searchResults && searchResults.map((result) => (
                 <div
                   key={result.id}
                   className="flex items-center gap-4 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
