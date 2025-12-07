@@ -455,7 +455,6 @@ export default function EditShelfPage() {
                         setShowAddModal(false);
                         fetchShelf();
                     }}
-                    onClose={() => setShowAddModal(false)}
                 />
             </Modal>
 
