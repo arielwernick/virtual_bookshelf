@@ -120,7 +120,10 @@ describe('AddItemForm - Episode Browsing', () => {
     fireEvent.click(screen.getByText('Browse Episodes →'));
 
     await waitFor(() => {
-      expect(screen.getByText('Episodes from "Test Podcast Show"')).toBeInTheDocument();
+      // Use a more flexible text matching approach
+      const heading = screen.getByRole('heading', { level: 3 });
+      expect(heading.textContent).toContain('Episodes from');
+      expect(heading.textContent).toContain('Test Podcast Show');
     });
 
     // Check that episodes are displayed

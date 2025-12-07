@@ -357,7 +357,7 @@ describe('POST /api/items', () => {
       });
 
       const res = await POST(req);
-      const data = await res.json();
+      await res.json();
 
       expect(res.status).toBe(200);
       expect(createItem).toHaveBeenCalledWith(

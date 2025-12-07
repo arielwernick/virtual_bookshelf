@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ShelfGrid } from '@/components/shelf/ShelfGrid';
 import { Top5ShelfGrid } from '@/components/shelf/Top5ShelfGrid';
@@ -46,12 +46,7 @@ export default function EditShelfPage() {
     const [editDescription, setEditDescription] = useState('');
     const [saving, setSaving] = useState(false);
 
-    useEffect(() => {
-        if (!shelfId) return;
-        checkAuthAndFetch();
-    }, [shelfId]);
-
-    const checkAuthAndFetch = async () => {
+    const checkAuthAndFetch = useCallback(async () => {
         try {
             // Check auth first
             const authRes = await fetch('/api/auth/me');
@@ -86,7 +81,12 @@ export default function EditShelfPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [shelfId, router]);
+
+    useEffect(() => {
+        if (!shelfId) return;
+        checkAuthAndFetch();
+    }, [shelfId, checkAuthAndFetch]);
 
     const fetchShelf = async () => {
         try {

@@ -5,7 +5,7 @@ import { getSession } from '@/lib/utils/session';
  * Debug endpoint - check session status
  * Remove in production
  */
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     const session = await getSession();
 

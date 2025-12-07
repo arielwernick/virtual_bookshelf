@@ -29,7 +29,7 @@ interface AddItemFormProps {
   onClose: () => void;
 }
 
-export function AddItemForm({ shelfId, onItemAdded, onClose: _onClose }: AddItemFormProps) {
+export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'onClose'>) {
   const [itemType, setItemType] = useState<ItemType>('book');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
