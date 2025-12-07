@@ -27,7 +27,7 @@ export interface Shelf {
   updated_at: Date;
 }
 
-export type ItemType = 'book' | 'podcast' | 'music';
+export type ItemType = 'book' | 'podcast' | 'music' | 'podcast_episode';
 
 export interface Item {
   id: string;
@@ -72,6 +72,18 @@ export interface UpdateItemData {
   external_url?: string;
   notes?: string;
   order_index?: number;
+}
+
+// Episode-related types
+export interface EpisodeSearchResult {
+  id: string;
+  title: string;
+  description: string;
+  duration_ms: number;
+  release_date: string;
+  imageUrl: string;
+  externalUrl: string;
+  showName: string;
 }
 
 // API response types
