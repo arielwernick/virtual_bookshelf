@@ -29,7 +29,7 @@ interface AddItemFormProps {
   onClose: () => void;
 }
 
-export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps) {
+export function AddItemForm({ shelfId, onItemAdded, onClose: _onClose }: AddItemFormProps) {
   const [itemType, setItemType] = useState<ItemType>('book');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -393,7 +393,7 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
             <div className="space-y-4">
               <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
                 <h3 className="font-medium text-gray-900 dark:text-gray-100">
-                  Episodes from "{selectedShow.title}"
+                  Episodes from &ldquo;{selectedShow.title}&rdquo;
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Browse recent episodes or search through all episodes
@@ -497,7 +497,7 @@ export function AddItemForm({ shelfId, onItemAdded, onClose }: AddItemFormProps)
                     ))
                   ) : episodeSearchQuery && !loading ? (
                     <div className="text-center py-8">
-                      <p className="text-gray-500 dark:text-gray-400">No episodes found for "{episodeSearchQuery}".</p>
+                      <p className="text-gray-500 dark:text-gray-400">No episodes found for &ldquo;{episodeSearchQuery}&rdquo;.</p>
                     </div>
                   ) : (
                     <div className="text-center py-8">
