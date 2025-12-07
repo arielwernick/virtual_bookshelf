@@ -287,7 +287,7 @@ export async function searchEpisodes(query: string, options: { offset?: number; 
     release_date: episode.release_date,
     imageUrl: episode.images?.[0]?.url || '',
     externalUrl: episode.external_urls.spotify,
-    showName: episode.show?.name || 'Unknown Show',
+    showName: episode.show?.name?.trim() || 'Unknown Show',
   }));
 
   return {
@@ -306,6 +306,28 @@ export async function searchEpisodesInShow(
   limit: number = 20
 ): Promise<{ episodes: Episode[]; total: number }> {
   const token = await getAccessToken();
+
+  // First get the show info to get the show name
+  const showResponse = await fetch(
+    `https://api.spotify.com/v1/shows/${showId}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!showResponse.ok) {
+    if (showResponse.status === 404) {
+      throw new Error('Show not found');
+    }
+    const errorData = await showResponse.json().catch(() => ({}));
+    console.error('Failed to fetch show info:', errorData);
+    throw new Error(`Failed to fetch show information: ${showResponse.statusText}`);
+  }
+
+  const showData = await showResponse.json();
+  const showName = showData.name || 'Unknown Show';
 
   // Search through as many episodes as possible, but limit to prevent timeouts
   // Most shows have < 5000 episodes, this should cover comprehensive search
@@ -370,7 +392,7 @@ export async function searchEpisodesInShow(
     release_date: episode.release_date,
     imageUrl: episode.images?.[0]?.url || '',
     externalUrl: episode.external_urls.spotify,
-    showName: episode.show?.name || 'Unknown Show',
+    showName,
   }));
 
   return {
