@@ -1,0 +1,82 @@
+name: Create Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # Only run if the push is a merge from develop (not direct commits)
+    if: contains(github.event.head_commit.message, 'Merge pull request') || contains(github.event.head_commit.message, 'develop')
+    
+    permissions:
+      contents: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for changelog
+
+      - name: Get previous tag
+        id: previous_tag
+        run: |
+          # Get the latest tag, or use initial commit if no tags exist
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+
+      - name: Generate version
+        id: version
+        run: |
+          # Generate version based on date and short SHA
+          VERSION="v$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "## What's Changed" > changelog.md
+          echo "" >> changelog.md
+          
+          # Get commits since last tag (or all commits if no tag)
+          if [ -n "${{ steps.previous_tag.outputs.tag }}" ]; then
+            RANGE="${{ steps.previous_tag.outputs.tag }}..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+          
+          # Group commits by type
+          echo "### ✨ Features" >> changelog.md
+          git log $RANGE --pretty=format:"- %s (%h)" --grep="^feat" >> changelog.md || true
+          echo "" >> changelog.md
+          echo "" >> changelog.md
+          
+          echo "### 🐛 Bug Fixes" >> changelog.md
+          git log $RANGE --pretty=format:"- %s (%h)" --grep="^fix" >> changelog.md || true
+          echo "" >> changelog.md
+          echo "" >> changelog.md
+          
+          echo "### 🔧 Other Changes" >> changelog.md
+          git log $RANGE --pretty=format:"- %s (%h)" --grep="^chore\|^docs\|^refactor\|^style\|^test" >> changelog.md || true
+          echo "" >> changelog.md
+          echo "" >> changelog.md
+          
+          echo "---" >> changelog.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.previous_tag.outputs.tag }}...${{ steps.version.outputs.version }}" >> changelog.md
+          
+          # Output for the release
+          cat changelog.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body_path: changelog.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
