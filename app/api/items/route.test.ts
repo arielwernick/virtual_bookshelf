@@ -125,6 +125,44 @@ describe('POST /api/items', () => {
       expect(data.error).toContain('Type must be one of');
     });
 
+    it('accepts podcast_episode as valid item type', async () => {
+      vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
+      vi.mocked(getNextOrderIndex).mockResolvedValue(0);
+      
+      const mockItem = {
+        id: 'episode-1',
+        shelf_id: 'shelf-1',
+        user_id: 'user-1',
+        type: 'podcast_episode' as const,
+        title: 'Episode 42: The Answer',
+        creator: 'The Hitchhiker\'s Guide Podcast',
+        image_url: 'https://example.com/episode.jpg',
+        external_url: 'https://open.spotify.com/episode/abc123',
+        notes: null,
+        order_index: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+      vi.mocked(createItem).mockResolvedValue(mockItem);
+
+      const req = createRequest({
+        shelf_id: 'shelf-1',
+        type: 'podcast_episode',
+        title: 'Episode 42: The Answer',
+        creator: 'The Hitchhiker\'s Guide Podcast',
+        image_url: 'https://example.com/episode.jpg',
+        external_url: 'https://open.spotify.com/episode/abc123',
+      });
+
+      const res = await POST(req);
+      const data = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.data.type).toBe('podcast_episode');
+      expect(data.data.title).toBe('Episode 42: The Answer');
+    });
+
     it('returns 400 for empty title', async () => {
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
 
