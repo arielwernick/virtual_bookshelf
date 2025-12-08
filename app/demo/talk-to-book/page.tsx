@@ -93,20 +93,30 @@ export default function TalkToBookPage() {
         throw new Error(errorData.error || 'Failed to process audio');
       }
 
-      // Get audio response
-      const audioResponseBlob = await response.blob();
+      // Get JSON response with transcript, response text, and audio
+      const data = await response.json();
+      
+      if (!data.success || !data.data) {
+        throw new Error('Invalid response from server');
+      }
+
+      const { transcript, responseText, audio } = data.data;
+
+      // Convert base64 audio to blob
+      const audioBytes = Uint8Array.from(atob(audio), c => c.charCodeAt(0));
+      const audioResponseBlob = new Blob([audioBytes], { type: 'audio/mpeg' });
       const audioUrl = URL.createObjectURL(audioResponseBlob);
 
-      // For now, we'll show a placeholder for the user's question
-      // In a real implementation, we'd get the transcript from the API
+      // Add user's question
       const userMessage: Message = {
         role: 'user',
-        text: 'Your question...',
+        text: transcript,
       };
 
+      // Add book's response
       const bookMessage: Message = {
         role: 'book',
-        text: 'Book response',
+        text: responseText,
         audioUrl,
       };
 

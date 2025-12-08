@@ -32,18 +32,23 @@ export async function POST(request: Request) {
     }
 
     // Process through Hathora pipeline
-    const audioResponse = await processTalkToBook(
+    const result = await processTalkToBook(
       audioFile,
       BOOK_CONTEXT,
       SYSTEM_PROMPT
     );
 
-    // Return audio response
-    return new NextResponse(audioResponse, {
-      status: 200,
-      headers: {
-        'Content-Type': 'audio/mpeg',
-        'Content-Disposition': 'attachment; filename="response.mp3"',
+    // Convert audio blob to base64 for JSON response
+    const audioBuffer = await result.audioBlob.arrayBuffer();
+    const audioBase64 = Buffer.from(audioBuffer).toString('base64');
+
+    // Return JSON response with transcript, response text, and audio
+    return NextResponse.json({
+      success: true,
+      data: {
+        transcript: result.transcript,
+        responseText: result.responseText,
+        audio: audioBase64,
       },
     });
   } catch (error) {

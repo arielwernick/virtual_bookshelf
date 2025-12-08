@@ -109,14 +109,20 @@ export async function synthesizeSpeech(
   return await response.blob();
 }
 
+export interface TalkToBookResult {
+  transcript: string;
+  responseText: string;
+  audioBlob: Blob;
+}
+
 /**
  * Orchestrate the full voice conversation pipeline
  */
 export async function processTalkToBook(
-  audioBlob: Blob,
+  inputAudio: Blob,
   bookContext: string,
   systemPrompt: string
-): Promise<Blob> {
+): Promise<TalkToBookResult> {
   const apiKey = process.env.HATHORA_API_KEY;
   if (!apiKey) {
     throw new Error('HATHORA_API_KEY is not configured');
@@ -125,18 +131,22 @@ export async function processTalkToBook(
   const config: HathoraConfig = { apiKey };
 
   // Step 1: Transcribe audio to text
-  const userQuestion = await transcribeAudio(audioBlob, config);
+  const transcript = await transcribeAudio(inputAudio, config);
   
   // Step 2: Generate response using LLM
   const responseText = await generateResponse(
-    userQuestion,
+    transcript,
     bookContext,
     systemPrompt,
     config
   );
   
   // Step 3: Synthesize speech from response
-  const audioResponse = await synthesizeSpeech(responseText, config);
+  const audioBlob = await synthesizeSpeech(responseText, config);
   
-  return audioResponse;
+  return {
+    transcript,
+    responseText,
+    audioBlob,
+  };
 }
