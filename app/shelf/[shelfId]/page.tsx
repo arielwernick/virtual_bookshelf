@@ -184,7 +184,7 @@ export default function ShelfPage() {
         onClose={() => setShowShareModal(false)}
         shareToken={shelfData.share_token}
         isPublic={shelfData.is_public}
-        onPublishToggle={async (isPublic) => {
+        onPublishToggle={isOwner ? async (isPublic) => {
           const res = await fetch(`/api/shelf/${shelfId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -197,7 +197,7 @@ export default function ShelfPage() {
               setTimeout(() => setShowConfetti(false), 3500);
             }
           }
-        }}
+        } : undefined}
       />
 
       {showConfetti && <Confetti />}
