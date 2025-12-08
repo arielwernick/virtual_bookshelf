@@ -48,6 +48,9 @@ describe('ItemCard', () => {
 
       rerender(<ItemCard item={createMockItem({ type: 'music' })} />);
       expect(screen.getByText('music')).toBeInTheDocument();
+
+      rerender(<ItemCard item={createMockItem({ type: 'video' })} />);
+      expect(screen.getByText('video')).toBeInTheDocument();
     });
 
     it('renders image when provided', () => {

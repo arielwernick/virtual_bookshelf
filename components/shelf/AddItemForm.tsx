@@ -62,12 +62,6 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
 
   // Video URL mode state
   const [videoUrl, setVideoUrl] = useState('');
-  const [videoPreview, setVideoPreview] = useState<{
-    title: string;
-    creator: string;
-    imageUrl: string;
-    videoUrl: string;
-  } | null>(null);
   const [fetchingVideo, setFetchingVideo] = useState(false);
 
   const handleSearch = async () => {
@@ -314,7 +308,6 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
     }
 
     setFetchingVideo(true);
-    setVideoPreview(null);
 
     try {
       const res = await fetch('/api/items/from-url', {
@@ -332,7 +325,6 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
         // Item was created successfully, refresh the list
         onItemAdded();
         setVideoUrl('');
-        setVideoPreview(null);
       } else {
         alert(data.error || 'Failed to fetch video details');
       }
