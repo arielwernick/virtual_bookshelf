@@ -5,16 +5,19 @@
 
 import { ItemType, CreateItemData } from '@/lib/types/shelf';
 
-// Test 1: Verify ItemType includes podcast_episode
+// Test 1: Verify ItemType includes all types
 function testItemType() {
-  console.log('✅ Testing ItemType includes podcast_episode...');
+  console.log('✅ Testing ItemType includes all types...');
   
-  const validTypes: ItemType[] = ['book', 'podcast', 'music', 'podcast_episode'];
+  const validTypes: ItemType[] = ['book', 'podcast', 'music', 'podcast_episode', 'video'];
   console.log('Valid ItemTypes:', validTypes);
   
   // This should compile without errors
   const podcastEpisodeType: ItemType = 'podcast_episode';
   console.log('podcast_episode type assigned:', podcastEpisodeType);
+  
+  const videoType: ItemType = 'video';
+  console.log('video type assigned:', videoType);
 }
 
 // Test 2: Verify CreateItemData works with podcast_episode
