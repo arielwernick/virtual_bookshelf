@@ -11,6 +11,7 @@ export const ASPECT_RATIOS: Record<ItemType, string> = {
   podcast: '1/1',   // Square (standard podcast artwork)
   music: '1/1',     // Square (standard album artwork)
   podcast_episode: '1/1', // Square (same as podcast artwork)
+  video: '16/9',    // Widescreen (standard YouTube video aspect ratio)
 };
 
 /**
