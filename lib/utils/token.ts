@@ -27,12 +27,8 @@ export function generateShortToken(length: number = 8): string {
     // Edge Runtime or Node.js with webcrypto
     globalThis.crypto.getRandomValues(bytes);
   } else {
-    // Fallback for older Node.js versions
-    const crypto = require('crypto');
-    const randomBytes = crypto.randomBytes(length);
-    for (let i = 0; i < length; i++) {
-      bytes[i] = randomBytes[i];
-    }
+    // Fallback - this shouldn't happen in modern environments
+    throw new Error('Web Crypto API not available');
   }
   
   let result = '';
