@@ -53,7 +53,7 @@ describe('POST /api/auth/login', () => {
       const req = createRequest({ username: 'ab', password: 'password123' });
 
       const res = await POST(req);
-      const data = await res.json();
+      await res.json();
 
       expect(res.status).toBe(400);
     });

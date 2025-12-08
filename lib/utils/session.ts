@@ -67,7 +67,7 @@ export async function verifySession(token: string): Promise<SessionData | null> 
   try {
     const { payload } = await jwtVerify(token, getSecretKeyLazy());
     return payload as SessionData;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

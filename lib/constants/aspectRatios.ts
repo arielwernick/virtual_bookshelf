@@ -10,6 +10,7 @@ export const ASPECT_RATIOS: Record<ItemType, string> = {
   book: '2/2.55',   // Portrait rectangle (optimized for shelf display)
   podcast: '1/1',   // Square (standard podcast artwork)
   music: '1/1',     // Square (standard album artwork)
+  podcast_episode: '1/1', // Square (same as podcast artwork)
 };
 
 /**

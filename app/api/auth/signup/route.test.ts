@@ -114,7 +114,7 @@ describe('POST /api/auth/signup', () => {
       });
 
       const res = await POST(req);
-      const data = await res.json();
+      await res.json();
 
       expect(res.status).toBe(400);
     });
