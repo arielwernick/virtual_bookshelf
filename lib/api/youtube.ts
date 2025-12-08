@@ -19,8 +19,13 @@ export function extractVideoId(url: string): string | null {
   try {
     const urlObj = new URL(url);
     
+    // Only allow YouTube domains (exact match or subdomain of youtube.com)
+    const isYouTubeDomain = urlObj.hostname === 'youtube.com' || 
+                           urlObj.hostname === 'www.youtube.com' ||
+                           urlObj.hostname === 'm.youtube.com';
+    
     // Standard format: youtube.com/watch?v=VIDEO_ID
-    if (urlObj.hostname.includes('youtube.com') && urlObj.pathname === '/watch') {
+    if (isYouTubeDomain && urlObj.pathname === '/watch') {
       return urlObj.searchParams.get('v');
     }
     
@@ -30,12 +35,12 @@ export function extractVideoId(url: string): string | null {
     }
     
     // Embed format: youtube.com/embed/VIDEO_ID
-    if (urlObj.hostname.includes('youtube.com') && urlObj.pathname.startsWith('/embed/')) {
+    if (isYouTubeDomain && urlObj.pathname.startsWith('/embed/')) {
       return urlObj.pathname.split('/')[2];
     }
     
     // Shorts format: youtube.com/shorts/VIDEO_ID
-    if (urlObj.hostname.includes('youtube.com') && urlObj.pathname.startsWith('/shorts/')) {
+    if (isYouTubeDomain && urlObj.pathname.startsWith('/shorts/')) {
       return urlObj.pathname.split('/')[2];
     }
     

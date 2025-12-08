@@ -68,5 +68,20 @@ describe('YouTube API - extractVideoId', () => {
     it('returns null for empty string', () => {
       expect(extractVideoId('')).toBeNull();
     });
+
+    it('returns null for malicious URL with youtube.com in query', () => {
+      const url = 'https://evil.com?youtube.com';
+      expect(extractVideoId(url)).toBeNull();
+    });
+
+    it('returns null for malicious URL with youtube.com in path', () => {
+      const url = 'https://evil.com/youtube.com/watch?v=abc';
+      expect(extractVideoId(url)).toBeNull();
+    });
+
+    it('returns null for URL with youtube.com subdomain of evil domain', () => {
+      const url = 'https://youtube.com.evil.com/watch?v=abc';
+      expect(extractVideoId(url)).toBeNull();
+    });
   });
 });
