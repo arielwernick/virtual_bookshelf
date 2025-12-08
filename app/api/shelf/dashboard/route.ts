@@ -6,7 +6,7 @@ import { getShelfsByUserId, getItemsByShelfId } from '@/lib/db/queries';
  * Get user's dashboard data (all shelves with item counts)
  * Requires: user must be logged in with valid session
  */
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     // Check for valid session
     const session = await getSession();

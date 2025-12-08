@@ -19,6 +19,8 @@ Use this checklist to deploy to staging and production.
 ### Database Preparation
 - [ ] Database backup taken (if migrating existing data)
 - [ ] Review `MIGRATION_001_google_oauth.sql` if existing DB
+- [ ] Review `MIGRATION_002_top5_shelf.sql` if existing DB
+- [ ] Review `MIGRATION_003_podcast_episodes.sql` if existing DB
 - [ ] Review `schema.sql` if fresh DB
 - [ ] Test queries ready to verify migration
 
@@ -104,6 +106,8 @@ ORDER BY ordinal_position;
   - [ ] Verify tables created
 - [ ] If migrating from existing:
   - [ ] Run `MIGRATION_001_google_oauth.sql`
+  - [ ] Run `MIGRATION_002_top5_shelf.sql`
+  - [ ] Run `MIGRATION_003_podcast_episodes.sql`
   - [ ] Verify migration completed
   - [ ] Test queries pass
 
@@ -209,6 +213,8 @@ SELECT id, shelf_id, title FROM items LIMIT 1;
 - [ ] If migrating existing database:
   - [ ] Backup taken before migration
   - [ ] Run `MIGRATION_001_google_oauth.sql`
+  - [ ] Run `MIGRATION_002_top5_shelf.sql`
+  - [ ] Run `MIGRATION_003_podcast_episodes.sql`
   - [ ] Verify migration step-by-step:
     ```sql
     -- Users updated

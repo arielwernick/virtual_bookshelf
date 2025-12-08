@@ -155,7 +155,6 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
     }
 
     document.body.removeChild(tempContainer);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShelves(shelfMap);
   }, [items, containerWidth]);
 

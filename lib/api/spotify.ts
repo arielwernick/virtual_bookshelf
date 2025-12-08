@@ -17,6 +17,25 @@ interface SpotifySearchResult {
   type: string;
 }
 
+interface SpotifyEpisode {
+  id: string;
+  name: string;
+  description: string;
+  duration_ms: number;
+  release_date: string;
+  release_date_precision: string;
+  images: { url: string; height: number | null; width: number | null }[];
+  external_urls: { spotify: string };
+  type: 'episode';
+  uri: string;
+  is_externally_hosted: boolean;
+  is_playable: boolean;
+  show?: {
+    name: string;
+    id: string;
+  };
+}
+
 export interface SpotifyItem {
   id: string;
   title: string;
@@ -24,6 +43,23 @@ export interface SpotifyItem {
   imageUrl: string;
   externalUrl: string;
   type: 'music' | 'podcast';
+}
+
+export interface Episode {
+  id: string;
+  title: string;
+  description: string;
+  duration_ms: number;
+  release_date: string;
+  imageUrl: string;
+  externalUrl: string;
+  showName: string;
+}
+
+export interface EpisodesResponse {
+  episodes: Episode[];
+  total: number;
+  showName: string;
 }
 
 let cachedToken: string | null = null;
@@ -143,6 +179,178 @@ export async function searchPodcasts(query: string): Promise<SpotifyItem[]> {
     externalUrl: show.external_urls.spotify,
     type: 'podcast' as const,
   }));
+}
+
+/**
+ * Get episodes for a specific podcast show
+ */
+export async function getShowEpisodes(
+  showId: string,
+  options: { offset?: number; limit?: number } = {}
+): Promise<EpisodesResponse> {
+  const { offset = 0, limit = 20 } = options;
+  const token = await getAccessToken();
+
+  // First get the show info to get the show name
+  const showResponse = await fetch(
+    `https://api.spotify.com/v1/shows/${showId}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!showResponse.ok) {
+    const errorData = await showResponse.json().catch(() => ({}));
+    console.error('Failed to fetch show info:', errorData);
+    throw new Error(`Failed to fetch show information: ${showResponse.statusText}`);
+  }
+
+  const showData = await showResponse.json();
+  const showName = showData.name || 'Unknown Show';
+
+  // Then get the episodes
+  const episodesResponse = await fetch(
+    `https://api.spotify.com/v1/shows/${showId}/episodes?offset=${offset}&limit=${limit}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!episodesResponse.ok) {
+    const errorData = await episodesResponse.json().catch(() => ({}));
+    console.error('Failed to fetch episodes:', errorData);
+    throw new Error(`Failed to fetch episodes: ${episodesResponse.statusText}`);
+  }
+
+  const data = await episodesResponse.json();
+  const episodes = data.items || [];
+  const total = data.total || 0;
+
+  const formattedEpisodes: Episode[] = episodes.map((episode: SpotifyEpisode) => ({
+    id: episode.id,
+    title: episode.name,
+    description: episode.description,
+    duration_ms: episode.duration_ms,
+    release_date: episode.release_date,
+    imageUrl: episode.images?.[0]?.url || '',
+    externalUrl: episode.external_urls.spotify,
+    showName,
+  }));
+
+  return {
+    episodes: formattedEpisodes,
+    total,
+    showName,
+  };
+}
+
+/**
+ * Search episodes within a specific show by query
+ */
+export async function searchEpisodesInShow(
+  showId: string,
+  query: string,
+  offset: number = 0,
+  limit: number = 20
+): Promise<{ episodes: Episode[]; total: number }> {
+  const token = await getAccessToken();
+
+  // First get the show info to get the show name
+  const showResponse = await fetch(
+    `https://api.spotify.com/v1/shows/${showId}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!showResponse.ok) {
+    if (showResponse.status === 404) {
+      throw new Error('Show not found');
+    }
+    const errorData = await showResponse.json().catch(() => ({}));
+    console.error('Failed to fetch show info:', errorData);
+    throw new Error(`Failed to fetch show information: ${showResponse.statusText}`);
+  }
+
+  const showData = await showResponse.json();
+  const showName = showData.name || 'Unknown Show';
+
+  // Search through as many episodes as possible, but limit to prevent timeouts
+  // Most shows have < 5000 episodes, this should cover comprehensive search
+  const maxEpisodes = 5000;
+  
+  const response = await fetch(
+    `https://api.spotify.com/v1/shows/${showId}/episodes?market=US&limit=50&offset=0`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Show not found');
+    }
+    throw new Error(`Failed to fetch episodes: ${response.status}`);
+  }
+
+  const data = await response.json();
+  let allEpisodes: SpotifyEpisode[] = data.items || [];
+  let nextUrl = data.next;
+
+  // Fetch more episodes if available (up to reasonable limit for search)
+  while (nextUrl && allEpisodes.length < maxEpisodes) {
+    const nextResponse = await fetch(nextUrl, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (nextResponse.ok) {
+      const nextData = await nextResponse.json();
+      allEpisodes = [...allEpisodes, ...(nextData.items || [])];
+      nextUrl = nextData.next;
+    } else {
+      break;
+    }
+  }
+
+  // Filter episodes by query as we fetch them for better performance
+  const queryLower = query.toLowerCase();
+  const filteredEpisodes: SpotifyEpisode[] = [];
+  
+  for (const episode of allEpisodes) {
+    if (episode.name.toLowerCase().includes(queryLower) ||
+        episode.description.toLowerCase().includes(queryLower)) {
+      filteredEpisodes.push(episode);
+    }
+  }
+
+  // Apply pagination to filtered results
+  const paginatedEpisodes = filteredEpisodes.slice(offset, offset + limit);
+
+  const formattedEpisodes: Episode[] = paginatedEpisodes.map((episode: SpotifyEpisode) => ({
+    id: episode.id,
+    title: episode.name,
+    description: episode.description,
+    duration_ms: episode.duration_ms,
+    release_date: episode.release_date,
+    imageUrl: episode.images?.[0]?.url || '',
+    externalUrl: episode.external_urls.spotify,
+    showName,
+  }));
+
+  return {
+    episodes: formattedEpisodes,
+    total: filteredEpisodes.length,
+  };
 }
 
 /**

@@ -6,7 +6,7 @@ import {
   validateShelfType,
   TOP5_MAX_ITEMS,
 } from './top5';
-import { Shelf, Item, CreateItemData, ShelfType } from '../types/shelf';
+import { Shelf, Item, CreateItemData } from '../types/shelf';
 
 // Helper to create mock shelf
 function createMockShelf(overrides: Partial<Shelf> = {}): Shelf {
