@@ -41,9 +41,26 @@ export default function TalkToBookPage() {
       setError(null);
       
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm',
-      });
+      
+      // Try to use the best available audio format
+      let mimeType = 'audio/webm';
+      const supportedTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/mp4',
+      ];
+      
+      for (const type of supportedTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          mimeType = type;
+          break;
+        }
+      }
+      
+      console.log('Using MIME type:', mimeType);
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
 
       audioChunksRef.current = [];
 
@@ -54,7 +71,11 @@ export default function TalkToBookPage() {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        console.log('Audio recorded:', {
+          size: audioBlob.size,
+          type: audioBlob.type,
+        });
         stream.getTracks().forEach(track => track.stop());
         await processAudio(audioBlob);
       };
@@ -80,6 +101,11 @@ export default function TalkToBookPage() {
     try {
       setRecordingState('processing');
 
+      console.log('Sending audio to API:', {
+        size: audioBlob.size,
+        type: audioBlob.type,
+      });
+
       const formData = new FormData();
       formData.append('audio', audioBlob);
 
@@ -90,6 +116,7 @@ export default function TalkToBookPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('API Error:', errorData);
         throw new Error(errorData.error || 'Failed to process audio');
       }
 

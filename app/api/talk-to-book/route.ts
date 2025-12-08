@@ -56,21 +56,32 @@ export async function POST(request: Request) {
     
     // Provide more specific error messages
     let errorMessage = 'Failed to process voice request';
+    let statusCode = 500;
+    
     if (error instanceof Error) {
       if (error.message.includes('ASR failed')) {
         errorMessage = 'Failed to transcribe audio. Please try speaking again.';
+        // Include more details from the error for debugging
+        if (error.message.includes('401')) {
+          errorMessage = 'Failed to transcribe audio: Invalid API key. Please check HATHORA_API_KEY configuration.';
+          statusCode = 401;
+        } else if (error.message.includes('400')) {
+          errorMessage = 'Failed to transcribe audio: Invalid audio format. Please try again.';
+          statusCode = 400;
+        }
       } else if (error.message.includes('LLM failed')) {
         errorMessage = 'Failed to generate response. Please try again.';
       } else if (error.message.includes('TTS failed')) {
         errorMessage = 'Failed to generate speech. Please try again.';
       } else if (error.message.includes('HATHORA_API_KEY')) {
         errorMessage = 'Voice AI is not configured properly.';
+        statusCode = 503;
       }
     }
 
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { status: statusCode }
     );
   }
 }

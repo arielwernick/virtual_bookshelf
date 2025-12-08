@@ -18,7 +18,13 @@ export async function transcribeAudio(
   config: HathoraConfig
 ): Promise<string> {
   const formData = new FormData();
-  formData.append('audio', audioBlob);
+  
+  // Create a File object with proper metadata for better compatibility
+  const audioFile = new File([audioBlob], 'recording.webm', {
+    type: audioBlob.type || 'audio/webm',
+  });
+  
+  formData.append('file', audioFile);
   formData.append('model', 'nvidia/parakeet-tdt-0.6b-v3');
 
   const response = await fetch(`${HATHORA_API_BASE}/audio/transcriptions`, {
@@ -31,7 +37,14 @@ export async function transcribeAudio(
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`ASR failed: ${error}`);
+    console.error('ASR API Error:', {
+      status: response.status,
+      statusText: response.statusText,
+      error,
+      blobType: audioBlob.type,
+      blobSize: audioBlob.size,
+    });
+    throw new Error(`ASR failed (${response.status}): ${error}`);
   }
 
   const data = await response.json();
