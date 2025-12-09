@@ -272,6 +272,7 @@ function getTypeGradient(type: string): string {
     case 'book':
       return 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
     case 'podcast':
+    case 'podcast_episode':
       return 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)';
     case 'music':
       return 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
