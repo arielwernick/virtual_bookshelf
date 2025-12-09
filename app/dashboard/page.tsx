@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ShelfType } from '@/lib/types/shelf';
 import { EmptyState, BookshelfIcon } from '@/components/ui/EmptyState';
 import { SkeletonShelfGrid } from '@/components/ui/SkeletonLoader';
+import { AddItemModal } from '@/components/shelf/AddItemModal';
 
 interface Shelf {
   id: string;
@@ -36,6 +37,9 @@ export default function DashboardPage() {
   const [shelfDescription, setShelfDescription] = useState('');
   const [shelfType, setShelfType] = useState<ShelfType>('standard');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [newShelfId, setNewShelfId] = useState<string>('');
+  const [newShelfName, setNewShelfName] = useState<string>('');
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -86,14 +90,26 @@ export default function DashboardPage() {
         return;
       }
 
-      // Clear form and refresh dashboard
+      // Store new shelf info for modal
+      setNewShelfId(json.data.id);
+      setNewShelfName(shelfName);
+      
+      // Clear form
       setShelfName('');
       setShelfDescription('');
       setShelfType('standard');
       setShowCreateForm(false);
-
-      // Redirect to new shelf
-      router.push(`/shelf/${json.data.id}`);
+      setCreatingShelf(false);
+      
+      // Refresh dashboard data to include new shelf
+      const dashRes = await fetch('/api/shelf/dashboard');
+      const dashJson = await dashRes.json();
+      if (dashJson.success) {
+        setData(dashJson.data);
+      }
+      
+      // Show add item modal
+      setShowAddItemModal(true);
     } catch {
       setError('Something went wrong. Please try again.');
       setCreatingShelf(false);
@@ -320,6 +336,30 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Add Item Modal */}
+      <AddItemModal
+        isOpen={showAddItemModal}
+        onClose={() => {
+          setShowAddItemModal(false);
+          setNewShelfId('');
+          setNewShelfName('');
+        }}
+        shelfId={newShelfId}
+        shelfName={newShelfName}
+        onItemAdded={async () => {
+          // Refresh dashboard data to show updated item counts
+          try {
+            const res = await fetch('/api/shelf/dashboard');
+            const json = await res.json();
+            if (json.success) {
+              setData(json.data);
+            }
+          } catch (error) {
+            console.error('Failed to refresh dashboard:', error);
+          }
+        }}
+      />
     </div>
   );
 }
