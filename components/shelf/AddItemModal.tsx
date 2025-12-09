@@ -72,7 +72,6 @@ export function AddItemModal({
           <AddItemForm
             shelfId={shelfId}
             onItemAdded={handleItemAdded}
-            onClose={onClose}
           />
         </div>
 
