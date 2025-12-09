@@ -75,12 +75,22 @@ export default function TalkToBookPage() {
         console.log('Audio recorded:', {
           size: audioBlob.size,
           type: audioBlob.type,
+          chunks: audioChunksRef.current.length,
         });
         stream.getTracks().forEach(track => track.stop());
+        
+        // Validate audio size (must be at least 1KB)
+        if (audioBlob.size < 1000) {
+          setError('Recording too short. Please hold the button longer and speak clearly.');
+          setRecordingState('idle');
+          return;
+        }
+        
         await processAudio(audioBlob);
       };
 
-      mediaRecorder.start();
+      // Start recording with timeslice to ensure we get data chunks
+      mediaRecorder.start(100); // Request data every 100ms
       mediaRecorderRef.current = mediaRecorder;
       setRecordingState('recording');
     } catch (err) {

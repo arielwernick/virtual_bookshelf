@@ -17,15 +17,35 @@ export async function transcribeAudio(
   audioBlob: Blob,
   config: HathoraConfig
 ): Promise<string> {
+  // Determine file extension based on blob type
+  let filename = 'recording.webm';
+  const mimeType = audioBlob.type || 'audio/webm';
+  
+  if (mimeType.includes('ogg')) {
+    filename = 'recording.ogg';
+  } else if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
+    filename = 'recording.m4a';
+  } else if (mimeType.includes('wav')) {
+    filename = 'recording.wav';
+  }
+  
   const formData = new FormData();
   
   // Create a File object with proper metadata for better compatibility
-  const audioFile = new File([audioBlob], 'recording.webm', {
-    type: audioBlob.type || 'audio/webm',
+  const audioFile = new File([audioBlob], filename, {
+    type: mimeType,
   });
   
   formData.append('file', audioFile);
   formData.append('model', 'nvidia/parakeet-tdt-0.6b-v3');
+  
+  // Log request details for debugging
+  console.log('Hathora ASR Request:', {
+    filename,
+    mimeType,
+    size: audioBlob.size,
+    model: 'nvidia/parakeet-tdt-0.6b-v3',
+  });
 
   const response = await fetch(`${HATHORA_API_BASE}/audio/transcriptions`, {
     method: 'POST',
@@ -43,11 +63,13 @@ export async function transcribeAudio(
       error,
       blobType: audioBlob.type,
       blobSize: audioBlob.size,
+      filename,
     });
     throw new Error(`ASR failed (${response.status}): ${error}`);
   }
 
   const data = await response.json();
+  console.log('Hathora ASR Response:', data);
   return data.text || '';
 }
 
