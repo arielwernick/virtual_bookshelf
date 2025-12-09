@@ -27,6 +27,11 @@ export function AddItemModal({
   const handleItemAdded = () => {
     setHasAddedItems(true);
     onItemAdded();
+    
+    // Automatically navigate to shelf view after first item is added
+    setTimeout(() => {
+      router.push(`/shelf/${shelfId}`);
+    }, 1000); // Small delay to let the user see the success state
   };
 
   // Trigger entrance animation when modal opens
@@ -97,19 +102,22 @@ export function AddItemModal({
             onClick={handleViewShelf}
             className="flex-1 px-4 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-all duration-200 font-medium text-center transform hover:scale-105 active:scale-95"
           >
-            {hasAddedItems ? 'View My Shelf' : 'View Empty Shelf'}
+            {hasAddedItems ? 'View My Shelf Now' : 'View Empty Shelf'}
           </button>
           <button
             onClick={handleSkip}
             className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 font-medium text-center transform hover:scale-105 active:scale-95"
           >
-            {hasAddedItems ? 'Back to Dashboard' : 'Add Items Later'}
+            {hasAddedItems ? 'Add More Items' : 'Add Items Later'}
           </button>
         </div>
 
         {/* Helper Text */}
         <p className={`text-xs text-gray-500 dark:text-gray-400 text-center mt-3 transform transition-all duration-700 delay-600 ${isAnimating ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'}`}>
-          You can always add or edit items later from your shelf page
+          {hasAddedItems 
+            ? 'Redirecting to your shelf in a moment... or click above to go now' 
+            : 'You can always add or edit items later from your shelf page'
+          }
         </p>
       </div>
     </Modal>
