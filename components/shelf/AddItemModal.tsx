@@ -111,7 +111,7 @@ export function AddItemModal({
         </div>
 
         {/* Helper Text */}
-        <p className={`text-xs text-gray-500 dark:text-gray-400 text-center mt-3 transform transition-all duration-700 delay-600 ${isAnimating ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'}`}>
+        <p className={`text-xs text-gray-500 dark:text-gray-400 text-center mt-3 ${animationClasses.actions}`}>
           {hasAddedItems 
             ? 'Redirecting to your shelf in a moment... or click above to go now' 
             : 'You can always add or edit items later from your shelf page'
