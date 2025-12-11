@@ -5,6 +5,7 @@ import { getSession } from '@/lib/utils/session';
  * Debug endpoint - check session status
  * Remove in production
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: Request) {
   try {
     const session = await getSession();

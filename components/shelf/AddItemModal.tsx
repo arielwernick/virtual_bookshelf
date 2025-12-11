@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { AddItemForm } from '@/components/shelf/AddItemForm';
 import { useRouter } from 'next/navigation';
@@ -22,7 +22,7 @@ export function AddItemModal({
 }: AddItemModalProps) {
   const router = useRouter();
   const [hasAddedItems, setHasAddedItems] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
+
 
   const handleItemAdded = () => {
     setHasAddedItems(true);
@@ -34,16 +34,14 @@ export function AddItemModal({
     }, 1000); // Small delay to let the user see the success state
   };
 
-  // Trigger entrance animation when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setIsAnimating(true);
-      const timer = setTimeout(() => setIsAnimating(false), 100);
-      return () => clearTimeout(timer);
-    } else {
-      setIsAnimating(false);
-    }
-  }, [isOpen]);
+  // Handle animation state based on modal visibility
+  // Use isOpen directly in classes instead of separate animation state to avoid effect issues
+  const animationClasses = {
+    icon: `transform transition-all duration-500 ${isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`,
+    content: `transform transition-all duration-700 delay-200 ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`,
+    form: `transform transition-all duration-700 delay-400 ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`,
+    actions: `transform transition-all duration-700 delay-600 ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`
+  };
 
   const handleViewShelf = () => {
     router.push(`/shelf/${shelfId}`);
@@ -59,7 +57,7 @@ export function AddItemModal({
         {/* Success Header */}
         <div className="mb-6 text-center">
           <div className="mb-4">
-            <div className={`transform transition-all duration-500 ${isAnimating ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}>
+            <div className={animationClasses.icon}>
               <svg 
                 className="w-12 h-12 mx-auto text-green-500 animate-bounce" 
                 fill="none" 
@@ -75,21 +73,21 @@ export function AddItemModal({
               </svg>
             </div>
           </div>
-          <div className={`transform transition-all duration-700 delay-200 ${isAnimating ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'}`}>
+          <div className={animationClasses.content}>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
               Shelf Created Successfully!
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-1">
-              <span className="font-medium">"{shelfName}"</span> is ready to go
+              <span className="font-medium">&ldquo;{shelfName}&rdquo;</span> is ready to go
             </p>
             <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Let's add your first item ✨
+              Let&apos;s add your first item ✨
             </p>
           </div>
         </div>
 
         {/* Add Item Form */}
-        <div className={`mb-6 transform transition-all duration-700 delay-400 ${isAnimating ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'}`}>
+        <div className={`mb-6 ${animationClasses.form}`}>
           <AddItemForm
             shelfId={shelfId}
             onItemAdded={handleItemAdded}
@@ -97,7 +95,7 @@ export function AddItemModal({
         </div>
 
         {/* Action Buttons */}
-        <div className={`flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 transform transition-all duration-700 delay-500 ${isAnimating ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'}`}>
+        <div className={`flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 ${animationClasses.actions}`}>
           <button
             onClick={handleViewShelf}
             className="flex-1 px-4 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-all duration-200 font-medium text-center transform hover:scale-105 active:scale-95"
