@@ -185,13 +185,16 @@ interface ShelfGridProps {
 export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfGridProps) {
   const [selectedType, setSelectedType] = useState<ItemType | 'all'>('all');
 
-  const filteredItems =
-    selectedType === 'all' ? items : items.filter((item) => item.type === selectedType);
+  const filteredItems = selectedType === 'all' 
+    ? items 
+    : selectedType === 'podcast'
+    ? items.filter((item) => item.type === 'podcast' || item.type === 'podcast_episode')
+    : items.filter((item) => item.type === selectedType);
 
   const counts = {
     all: items.length,
     book: items.filter((i) => i.type === 'book').length,
-    podcast: items.filter((i) => i.type === 'podcast').length,
+    podcast: items.filter((i) => i.type === 'podcast' || i.type === 'podcast_episode').length,
     music: items.filter((i) => i.type === 'music').length,
   };
 
