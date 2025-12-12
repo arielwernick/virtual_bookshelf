@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ShelfType } from '@/lib/types/shelf';
 import { EmptyState, BookshelfIcon } from '@/components/ui/EmptyState';
 import { SkeletonShelfGrid } from '@/components/ui/SkeletonLoader';
+import { AddItemModal } from '@/components/shelf/AddItemModal';
 
 interface Shelf {
   id: string;
@@ -36,6 +37,9 @@ export default function DashboardPage() {
   const [shelfDescription, setShelfDescription] = useState('');
   const [shelfType, setShelfType] = useState<ShelfType>('standard');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [newShelfId, setNewShelfId] = useState<string>('');
+  const [newShelfName, setNewShelfName] = useState<string>('');
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -86,14 +90,26 @@ export default function DashboardPage() {
         return;
       }
 
-      // Clear form and refresh dashboard
+      // Store new shelf info for modal
+      setNewShelfId(json.data.id);
+      setNewShelfName(shelfName);
+      
+      // Clear form
       setShelfName('');
       setShelfDescription('');
       setShelfType('standard');
       setShowCreateForm(false);
-
-      // Redirect to new shelf
-      router.push(`/shelf/${json.data.id}`);
+      setCreatingShelf(false);
+      
+      // Refresh dashboard data to include new shelf
+      const dashRes = await fetch('/api/shelf/dashboard');
+      const dashJson = await dashRes.json();
+      if (dashJson.success) {
+        setData(dashJson.data);
+      }
+      
+      // Show add item modal
+      setShowAddItemModal(true);
     } catch {
       setError('Something went wrong. Please try again.');
       setCreatingShelf(false);
@@ -249,9 +265,19 @@ export default function DashboardPage() {
                 <button
                   type="submit"
                   disabled={creatingShelf || !shelfName.trim()}
-                  className="px-6 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
                 >
-                  {creatingShelf ? 'Creating...' : 'Create Shelf'}
+                  {creatingShelf ? (
+                    <div className="flex items-center gap-2">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white dark:text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creating...
+                    </div>
+                  ) : (
+                    'Create Shelf'
+                  )}
                 </button>
                 <button
                   type="button"
@@ -320,6 +346,30 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Add Item Modal */}
+      <AddItemModal
+        isOpen={showAddItemModal}
+        onClose={() => {
+          setShowAddItemModal(false);
+          setNewShelfId('');
+          setNewShelfName('');
+        }}
+        shelfId={newShelfId}
+        shelfName={newShelfName}
+        onItemAdded={async () => {
+          // Refresh dashboard data to show updated item counts
+          try {
+            const res = await fetch('/api/shelf/dashboard');
+            const json = await res.json();
+            if (json.success) {
+              setData(json.data);
+            }
+          } catch (error) {
+            console.error('Failed to refresh dashboard:', error);
+          }
+        }}
+      />
     </div>
   );
 }
