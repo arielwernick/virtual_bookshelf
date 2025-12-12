@@ -162,17 +162,6 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
                     </div>
                   )}
                 </div>
-
-            {/* Item Details */}
-            <div className="flex-1">
-              <div className="mb-3 sm:mb-4">
-                <span className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full ${
-                  item.type === 'book' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200' :
-                  item.type === 'podcast' || item.type === 'podcast_episode' ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200' :
-                  'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200'
-                }`}>
-                  {item.type === 'podcast_episode' ? 'podcast episode' : item.type}
-                </span>
               </div>
 
               {/* Item Details */}
