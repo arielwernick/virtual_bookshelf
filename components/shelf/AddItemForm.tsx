@@ -60,6 +60,10 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
     notes: '',
   });
 
+  // Video URL mode state
+  const [videoUrl, setVideoUrl] = useState('');
+  const [fetchingVideo, setFetchingVideo] = useState(false);
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
@@ -297,6 +301,41 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
     }
   };
 
+  const handleFetchVideo = async () => {
+    if (!videoUrl.trim()) {
+      alert('Please enter a YouTube URL');
+      return;
+    }
+
+    setFetchingVideo(true);
+
+    try {
+      const res = await fetch('/api/items/from-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: videoUrl,
+          shelf_id: shelfId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        // Item was created successfully, refresh the list
+        onItemAdded();
+        setVideoUrl('');
+      } else {
+        alert(data.error || 'Failed to fetch video details');
+      }
+    } catch (error) {
+      console.error('Fetch video error:', error);
+      alert('Failed to fetch video details');
+    } finally {
+      setFetchingVideo(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Add Item</h2>
@@ -334,6 +373,17 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
         >
           Music
         </button>
+
+        <button
+          onClick={() => setItemType('video')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            itemType === 'video'
+              ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+          }`}
+        >
+          Video
+        </button>
       </div>
 
       {/* Mode Toggle */}
@@ -364,26 +414,53 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
 
       {!manualMode ? (
         <>
-          {/* Search */}
+          {/* Search or Video URL Input */}
           {!browsingEpisodes && (
             <div className="mb-6">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder={`Search for ${itemType}s...`}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                />
-                <button
-                  onClick={handleSearch}
-                  disabled={loading}
-                  className="px-6 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
-                >
-                  {loading ? 'Searching...' : 'Search'}
-                </button>
-              </div>
+              {itemType === 'video' ? (
+                /* Video URL Input */
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={videoUrl}
+                      onChange={(e) => setVideoUrl(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleFetchVideo()}
+                      placeholder="Paste YouTube URL (e.g., https://youtube.com/watch?v=...)"
+                      className="flex-1 px-4 py-2 border border-red-300 dark:border-red-700 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                    />
+                    <button
+                      onClick={handleFetchVideo}
+                      disabled={fetchingVideo || !videoUrl.trim()}
+                      className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
+                    >
+                      {fetchingVideo ? 'Fetching...' : 'Add Video'}
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Supported formats: youtube.com/watch?v=xxx, youtu.be/xxx, youtube.com/shorts/xxx
+                  </p>
+                </div>
+              ) : (
+                /* Regular Search Input */
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    placeholder={`Search for ${itemType}s...`}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                  />
+                  <button
+                    onClick={handleSearch}
+                    disabled={loading}
+                    className="px-6 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
+                  >
+                    {loading ? 'Searching...' : 'Search'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
