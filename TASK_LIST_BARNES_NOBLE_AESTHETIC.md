@@ -1,11 +1,12 @@
-# Barnes & Noble Shelf Aesthetic - Task List
+# Warm Modern Shelf Aesthetic - Task List
+*Barnes & Noble Warmth + Lovable Sleekness*
 
 ## Overview
-Transform Virtual Bookshelf UI with Barnes & Noble inspired aesthetic - warm, inviting, shelf-like presentation with depth and natural materials feeling.
+Refine Virtual Bookshelf UI by blending Barnes & Noble's cozy warmth with Lovable's clean, modern aesthetic. Goal: Premium but approachable, warm but contemporary (avoiding "old newspaper" look).
 
 **Branch:** `feature/barnes-noble-shelf-aesthetic`  
 **GitHub Issue:** #67  
-**PRD:** `prds/BARNES_NOBLE_AESTHETIC_PRD.md`
+**PRD:** `prds/BARNES_NOBLE_AESTHETIC_PRD.md` (Updated)
 
 ---
 

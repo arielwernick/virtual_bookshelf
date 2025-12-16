@@ -46,11 +46,11 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
       
       {/* Modal - Centered */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-lg overflow-hidden transform transition-all duration-300 animate-in zoom-in-95 slide-in-from-bottom-4">
+        <div className="relative bg-gradient-to-b from-warm-white to-warm-cream/50 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all duration-300 animate-in zoom-in-95 slide-in-from-bottom-4 border border-warm-brown/10">
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 z-10 transition-colors duration-200 hover:scale-110"
+            className="absolute top-4 right-4 text-text-medium hover:text-warm-brown z-10 transition-colors duration-200 hover:scale-110"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

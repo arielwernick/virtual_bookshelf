@@ -27,17 +27,17 @@ export function Navigation() {
   };
 
   return (
-    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14">
+    <nav className="bg-white/95 backdrop-blur-md border-b border-warm-brown/10 sticky top-0 z-40 shadow-sm">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
           {/* Logo / Home link */}
           <Link
             href="/"
-            className="flex items-center gap-2 text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300 transition-colors font-medium"
+            className="flex items-center gap-3 text-text-dark hover:text-warm-brown transition-all duration-200 font-semibold"
             title="Virtual Bookshelf"
           >
             <svg
-              className="w-6 h-6"
+              className="w-8 h-8 drop-shadow-sm"
               fill="currentColor"
               viewBox="0 0 24 24"
             >
@@ -53,7 +53,7 @@ export function Navigation() {
               <line x1="1" y1="19" x2="23" y2="19" stroke="currentColor" strokeWidth="1.5" />
             </svg>
             {isHomePage && (
-              <span className="text-base font-semibold">Virtual Bookshelf</span>
+              <span className="text-xl font-bold tracking-tight">Virtual Bookshelf</span>
             )}
           </Link>
 
@@ -61,19 +61,19 @@ export function Navigation() {
           <div className="flex items-center gap-3">
             {isLoggedIn === null ? (
               // Loading state - show nothing to prevent flash
-              <div className="w-20 h-8" />
+              <div className="w-24 h-10" />
             ) : isLoggedIn ? (
               // Logged in
               <>
                 <Link
                   href="/dashboard"
-                  className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium"
+                  className="px-5 py-2.5 text-sm font-medium text-white bg-warm-brown hover:bg-warm-brown/90 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                   Dashboard
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  className="px-4 py-2 text-sm text-text-medium hover:text-warm-brown transition-all duration-200"
                 >
                   Sign Out
                 </button>
@@ -82,7 +82,7 @@ export function Navigation() {
               // Not logged in
               <Link
                 href="/login"
-                className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium"
+                className="px-5 py-2.5 text-sm font-medium text-white bg-warm-brown hover:bg-warm-brown/90 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Sign In
               </Link>

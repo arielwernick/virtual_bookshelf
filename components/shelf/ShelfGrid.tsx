@@ -17,17 +17,20 @@ interface ShelfRowProps {
  */
 function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfRowProps) {
   return (
-    <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-lg border border-gray-100 dark:border-gray-800 shadow-xs overflow-hidden">
-      {/* Shelf items */}
+    <div className="relative bg-gradient-to-b from-warm-white to-warm-cream rounded-2xl border border-warm-brown/10 shadow-sm shadow-card-shadow overflow-hidden">
+      {/* Clean, subtle background with warm undertone */}
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-warm-brown/3 to-warm-brown/5 pointer-events-none" />
+      
+      {/* Shelf items with modern spacing */}
       <div
-        className="px-3 py-3 sm:px-6 sm:py-5 flex flex-wrap"
+        className="relative px-6 py-6 sm:px-10 sm:py-8 flex flex-wrap"
         style={{
-          gap: '0.5rem',
+          gap: '1rem',
           alignItems: 'flex-end',
         }}
       >
         {items.map((item) => (
-          <div key={item.id} className="w-[100px] max-h-[180px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
+          <div key={item.id} className="w-[120px] max-h-[200px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
             <ItemCard
               item={item}
               onClick={onItemClick ? () => onItemClick(item) : undefined}
@@ -39,13 +42,14 @@ function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: Sh
         ))}
       </div>
 
-      {/* Shelf divider */}
+      {/* Clean, modern bottom accent */}
       <div
-        className="h-1.5 sm:h-2 bg-gradient-to-r from-gray-400 via-gray-600 to-gray-400"
+        className="h-1 bg-gradient-to-r from-warm-brown/20 via-warm-brown/30 to-warm-brown/20"
         style={{
-          boxShadow: '0 12px 24px rgba(0, 0, 0, 0.45), 0 8px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 2px 8px rgba(107, 78, 61, 0.15)',
         }}
-      />
+      >
+      </div>
     </div>
   );
 }
@@ -159,7 +163,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
   }, [items, containerWidth]);
 
   return (
-    <div ref={containerRef} className="space-y-4 sm:space-y-6">
+    <div ref={containerRef} className="space-y-8 sm:space-y-10 p-4 sm:p-6 bg-gradient-to-b from-warm-white via-warm-cream/50 to-warm-cream rounded-3xl border border-warm-brown/8 shadow-lg shadow-card-shadow">
       {shelves.map((shelfItems, index) => (
         <ShelfRow
           key={`shelf-${index}`}
@@ -201,10 +205,10 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
   const filterButton = (type: ItemType | 'all', label: string, count: number) => (
     <button
       onClick={() => setSelectedType(type)}
-      className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+      className={`px-6 py-3 font-medium text-sm rounded-xl transition-all duration-300 ${
         selectedType === type
-          ? `${type === 'all' ? 'border-gray-900 dark:border-gray-100 text-gray-900 dark:text-gray-100' : type === 'book' ? 'border-blue-600 text-blue-600' : type === 'podcast' ? 'border-purple-600 text-purple-600' : 'border-green-600 text-green-600'}`
-          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          ? `${type === 'all' ? 'bg-warm-brown text-warm-white shadow-lg shadow-warm-brown/20' : type === 'book' ? 'bg-muted-gold text-warm-white shadow-lg shadow-muted-gold/20' : type === 'podcast' ? 'bg-warm-brown text-warm-white shadow-lg shadow-warm-brown/20' : 'bg-warm-brown text-warm-white shadow-lg shadow-warm-brown/20'}`
+          : 'bg-white text-text-medium border border-warm-brown/15 hover:border-warm-brown/25 hover:bg-warm-cream hover:shadow-md shadow-sm'
       }`}
     >
       {label} ({count})
@@ -214,7 +218,7 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
   return (
     <div>
       {/* Filter tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex flex-wrap gap-4 mb-10 p-6 bg-gradient-to-r from-warm-white via-white to-warm-white rounded-2xl border border-warm-brown/10 shadow-sm">
         {filterButton('all', 'All', counts.all)}
         {filterButton('book', 'Books', counts.book)}
         {filterButton('podcast', 'Podcasts', counts.podcast)}
@@ -223,20 +227,20 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
 
       {/* Shelves or empty state */}
       {filteredItems.length === 0 ? (
-        <div className="text-center py-16">
-          <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center py-24 px-10 bg-gradient-to-b from-warm-white to-warm-cream rounded-3xl border border-warm-brown/8 shadow-sm">
+          <svg className="mx-auto h-20 w-20 text-warm-brown/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={2}
+              strokeWidth={1.5}
               d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No items</h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h3 className="mt-6 text-xl font-semibold text-text-dark">Your shelf is ready</h3>
+          <p className="mt-3 text-base text-text-medium opacity-80 max-w-md mx-auto">
             {selectedType === 'all'
-              ? 'This shelf is empty.'
-              : `No ${selectedType}s in this shelf.`}
+              ? 'Add your first book, podcast, or music to get started.'
+              : `Start adding ${selectedType}s to your collection.`}
           </p>
         </div>
       ) : (
