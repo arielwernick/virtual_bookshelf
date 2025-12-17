@@ -23,26 +23,23 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
   const hasNotes = Boolean(item.notes);
 
   const badgeColor = {
-    book: 'bg-muted-gold/90 text-white shadow-sm backdrop-blur-sm',
-    podcast: 'bg-warm-brown/90 text-white shadow-sm backdrop-blur-sm',
-    music: 'bg-warm-brown/90 text-white shadow-sm backdrop-blur-sm',
-    podcast_episode: 'bg-warm-brown/90 text-white shadow-sm backdrop-blur-sm',
-    video: 'bg-muted-gold/90 text-white shadow-sm backdrop-blur-sm',
+    book: 'bg-amber-600/90 text-white shadow-sm backdrop-blur-sm',
+    podcast: 'bg-amber-700/90 text-white shadow-sm backdrop-blur-sm',
+    music: 'bg-amber-800/90 text-white shadow-sm backdrop-blur-sm',
+    podcast_episode: 'bg-amber-700/90 text-white shadow-sm backdrop-blur-sm',
+    video: 'bg-amber-500/90 text-white shadow-sm backdrop-blur-sm',
   };
 
   return (
     <div
-      className={`group relative bg-white rounded-xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-warm-brown/8 ${
+      className={`group relative bg-white rounded overflow-hidden shadow-md transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${
         isClickable ? 'cursor-pointer' : ''
       }`}
       onClick={handleClick}
-      style={{
-        boxShadow: '0 2px 8px rgba(107, 78, 61, 0.08), 0 1px 3px rgba(107, 78, 61, 0.05)'
-      }}
     >
       {/* Clean Image Container */}
       <div
-        className="relative bg-gradient-to-br from-warm-cream/30 to-warm-cream/50"
+        className="relative bg-gray-100"
         style={{ aspectRatio }}
       >
         {/* Item Image */}
@@ -60,7 +57,7 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
 
         {/* Fallback Icon */}
         {!item.image_url && (
-          <div className="absolute inset-0 flex items-center justify-center text-warm-brown/40">
+          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
             <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"

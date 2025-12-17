@@ -455,7 +455,7 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
                   <button
                     onClick={handleSearch}
                     disabled={loading}
-                    className="px-6 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
+                    className="px-6 py-2 bg-amber-700 text-white rounded-lg hover:bg-amber-800 transition-colors font-medium disabled:opacity-50"
                   >
                     {loading ? 'Searching...' : 'Search'}
                   </button>
@@ -685,7 +685,7 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
                     <button
                       onClick={() => handleAddFromSearch(result)}
                       disabled={adding}
-                      className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium text-sm disabled:opacity-50"
+                      className="px-4 py-2 bg-amber-700 text-white rounded-lg hover:bg-amber-800 transition-colors font-medium text-sm disabled:opacity-50"
                     >
                       Add
                     </button>
@@ -759,7 +759,7 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
             <button
               onClick={handleManualAdd}
               disabled={adding}
-              className="w-full py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
+              className="w-full py-3 bg-amber-700 text-white rounded-lg hover:bg-amber-800 transition-colors font-medium disabled:opacity-50"
             >
               {adding ? 'Adding...' : 'Add to Shelf'}
             </button>

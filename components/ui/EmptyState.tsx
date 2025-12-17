@@ -3,7 +3,7 @@
 import React from 'react';
 
 // Common CTA button styles for both link and button variants
-const CTA_BUTTON_STYLES = 'px-6 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium';
+const CTA_BUTTON_STYLES = 'px-6 py-3 bg-amber-700 text-white rounded-lg hover:bg-amber-800 transition-colors font-medium';
 
 interface EmptyStateProps {
   /** Optional icon element to display above the heading */

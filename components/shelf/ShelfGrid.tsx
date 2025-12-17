@@ -17,38 +17,37 @@ interface ShelfRowProps {
  */
 function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfRowProps) {
   return (
-    <div className="relative bg-gradient-to-b from-warm-white to-warm-cream rounded-2xl border border-warm-brown/10 shadow-sm shadow-card-shadow overflow-hidden">
-      {/* Clean, subtle background with warm undertone */}
-      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-warm-brown/3 to-warm-brown/5 pointer-events-none" />
+    <div className="relative bg-white rounded-lg shadow-md overflow-hidden mb-4">
       
       {/* Shelf items with modern spacing */}
-      <div
-        className="relative px-6 py-6 sm:px-10 sm:py-8 flex flex-wrap"
-        style={{
-          gap: '1rem',
-          alignItems: 'flex-end',
-        }}
-      >
-        {items.map((item) => (
-          <div key={item.id} className="w-[120px] max-h-[200px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
-            <ItemCard
-              item={item}
-              onClick={onItemClick ? () => onItemClick(item) : undefined}
-              editMode={editMode}
-              onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}
-              onEditNote={onEditNote ? () => onEditNote(item) : undefined}
-            />
-          </div>
-        ))}
-      </div>
+      <div className="bg-white/50 backdrop-blur-sm">
+        <div
+          className="relative px-6 py-6 sm:px-10 sm:py-8 flex flex-wrap"
+          style={{
+            gap: '1rem',
+            alignItems: 'flex-end',
+          }}
+        >
+          {items.map((item) => (
+            <div key={item.id} className="w-[120px] max-h-[200px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
+              <ItemCard
+                item={item}
+                onClick={onItemClick ? () => onItemClick(item) : undefined}
+                editMode={editMode}
+                onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}
+                onEditNote={onEditNote ? () => onEditNote(item) : undefined}
+              />
+            </div>
+          ))}
+        </div>
 
-      {/* Clean, modern bottom accent */}
-      <div
-        className="h-1 bg-gradient-to-r from-warm-brown/20 via-warm-brown/30 to-warm-brown/20"
-        style={{
-          boxShadow: '0 2px 8px rgba(107, 78, 61, 0.15)',
-        }}
-      >
+        {/* Wood shelf divider - rich wood brown like homepage */}
+        <div
+          className="h-1.5 bg-gradient-to-r from-amber-600 via-amber-800 to-amber-600"
+          style={{
+            boxShadow: '0 8px 16px rgba(0, 0, 0, 0.35), 0 4px 8px rgba(0, 0, 0, 0.25)',
+          }}
+        />
       </div>
     </div>
   );
@@ -163,7 +162,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
   }, [items, containerWidth]);
 
   return (
-    <div ref={containerRef} className="space-y-8 sm:space-y-10 p-4 sm:p-6 bg-gradient-to-b from-warm-white via-warm-cream/50 to-warm-cream rounded-3xl border border-warm-brown/8 shadow-lg shadow-card-shadow">
+    <div ref={containerRef} className="space-y-8 sm:space-y-10">
       {shelves.map((shelfItems, index) => (
         <ShelfRow
           key={`shelf-${index}`}
@@ -205,10 +204,10 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
   const filterButton = (type: ItemType | 'all', label: string, count: number) => (
     <button
       onClick={() => setSelectedType(type)}
-      className={`px-6 py-3 font-medium text-sm rounded-xl transition-all duration-300 ${
+      className={`px-6 py-3 font-medium text-sm rounded-lg transition-all duration-300 ${
         selectedType === type
-          ? `${type === 'all' ? 'bg-warm-brown text-warm-white shadow-lg shadow-warm-brown/20' : type === 'book' ? 'bg-muted-gold text-warm-white shadow-lg shadow-muted-gold/20' : type === 'podcast' ? 'bg-warm-brown text-warm-white shadow-lg shadow-warm-brown/20' : 'bg-warm-brown text-warm-white shadow-lg shadow-warm-brown/20'}`
-          : 'bg-white text-text-medium border border-warm-brown/15 hover:border-warm-brown/25 hover:bg-warm-cream hover:shadow-md shadow-sm'
+          ? `${type === 'all' ? 'bg-amber-700 text-white shadow-lg' : type === 'book' ? 'bg-amber-600 text-white shadow-lg' : type === 'podcast' ? 'bg-amber-800 text-white shadow-lg' : 'bg-amber-700 text-white shadow-lg'}`
+          : 'bg-white text-gray-600 border border-gray-200 hover:border-amber-200 hover:bg-amber-50 hover:shadow-md shadow-sm'
       }`}
     >
       {label} ({count})
@@ -218,7 +217,7 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
   return (
     <div>
       {/* Filter tabs */}
-      <div className="flex flex-wrap gap-4 mb-10 p-6 bg-gradient-to-r from-warm-white via-white to-warm-white rounded-2xl border border-warm-brown/10 shadow-sm">
+      <div className="flex flex-wrap gap-4 mb-10 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
         {filterButton('all', 'All', counts.all)}
         {filterButton('book', 'Books', counts.book)}
         {filterButton('podcast', 'Podcasts', counts.podcast)}
@@ -227,8 +226,8 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
 
       {/* Shelves or empty state */}
       {filteredItems.length === 0 ? (
-        <div className="text-center py-24 px-10 bg-gradient-to-b from-warm-white to-warm-cream rounded-3xl border border-warm-brown/8 shadow-sm">
-          <svg className="mx-auto h-20 w-20 text-warm-brown/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center py-24 px-10 bg-white rounded-lg border border-gray-200 shadow-sm">
+          <svg className="mx-auto h-20 w-20 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -236,8 +235,8 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
               d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
             />
           </svg>
-          <h3 className="mt-6 text-xl font-semibold text-text-dark">Your shelf is ready</h3>
-          <p className="mt-3 text-base text-text-medium opacity-80 max-w-md mx-auto">
+          <h3 className="mt-6 text-xl font-semibold text-gray-900">Your shelf is ready</h3>
+          <p className="mt-3 text-base text-gray-600 max-w-md mx-auto">
             {selectedType === 'all'
               ? 'Add your first book, podcast, or music to get started.'
               : `Start adding ${selectedType}s to your collection.`}

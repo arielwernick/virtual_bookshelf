@@ -163,7 +163,7 @@ export default function DashboardPage() {
             {!showCreateForm && (
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="px-6 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium"
+                className="px-6 py-3 bg-amber-700 text-white rounded-lg hover:bg-amber-800 transition-colors font-medium"
               >
                 + Create Shelf
               </button>
@@ -265,7 +265,7 @@ export default function DashboardPage() {
                 <button
                   type="submit"
                   disabled={creatingShelf || !shelfName.trim()}
-                  className="px-6 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
+                  className="px-6 py-2 bg-amber-700 text-white rounded-lg hover:bg-amber-800 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
                 >
                   {creatingShelf ? (
                     <div className="flex items-center gap-2">

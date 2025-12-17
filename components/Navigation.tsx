@@ -27,13 +27,13 @@ export function Navigation() {
   };
 
   return (
-    <nav className="bg-white/95 backdrop-blur-md border-b border-warm-brown/10 sticky top-0 z-40 shadow-sm">
+    <nav className="bg-white/95 backdrop-blur-md border-b border-amber-200/50 sticky top-0 z-40 shadow-sm">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo / Home link */}
           <Link
             href="/"
-            className="flex items-center gap-3 text-text-dark hover:text-warm-brown transition-all duration-200 font-semibold"
+            className="flex items-center gap-3 text-gray-800 hover:text-amber-700 transition-all duration-200 font-semibold"
             title="Virtual Bookshelf"
           >
             <svg
@@ -67,13 +67,13 @@ export function Navigation() {
               <>
                 <Link
                   href="/dashboard"
-                  className="px-5 py-2.5 text-sm font-medium text-white bg-warm-brown hover:bg-warm-brown/90 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="px-5 py-2.5 text-sm font-medium text-white bg-amber-700 hover:bg-amber-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                   Dashboard
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="px-4 py-2 text-sm text-text-medium hover:text-warm-brown transition-all duration-200"
+                  className="px-4 py-2 text-sm text-gray-600 hover:text-amber-700 transition-all duration-200"
                 >
                   Sign Out
                 </button>
@@ -82,7 +82,7 @@ export function Navigation() {
               // Not logged in
               <Link
                 href="/login"
-                className="px-5 py-2.5 text-sm font-medium text-white bg-warm-brown hover:bg-warm-brown/90 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                className="px-5 py-2.5 text-sm font-medium text-white bg-amber-700 hover:bg-amber-800 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Sign In
               </Link>
