@@ -41,9 +41,9 @@ function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: Sh
 
       {/* Shelf divider */}
       <div
-        className="h-1.5 sm:h-2 bg-gradient-to-r from-gray-400 via-gray-600 to-gray-400"
+        className="h-1.5 sm:h-2 bg-gradient-to-r from-warm-brown via-muted-gold to-warm-brown"
         style={{
-          boxShadow: '0 12px 24px rgba(0, 0, 0, 0.45), 0 8px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 8px 16px rgba(139, 95, 71, 0.4), 0 4px 8px rgba(139, 95, 71, 0.3), inset 0 1px 0 rgba(212, 146, 26, 0.2)',
         }}
       />
     </div>
@@ -203,8 +203,8 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
       onClick={() => setSelectedType(type)}
       className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
         selectedType === type
-          ? `${type === 'all' ? 'border-gray-900 dark:border-gray-100 text-gray-900 dark:text-gray-100' : type === 'book' ? 'border-blue-600 text-blue-600' : type === 'podcast' ? 'border-purple-600 text-purple-600' : 'border-green-600 text-green-600'}`
-          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          ? `${type === 'all' ? 'border-gray-900 text-gray-900' : type === 'book' ? 'border-blue-600 text-blue-600' : type === 'podcast' ? 'border-purple-600 text-purple-600' : 'border-green-600 text-green-600'}`
+          : 'border-transparent text-gray-500 hover:text-gray-700'
       }`}
     >
       {label} ({count})
@@ -214,7 +214,7 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
   return (
     <div>
       {/* Filter tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-2 mb-6 border-b border-gray-200">
         {filterButton('all', 'All', counts.all)}
         {filterButton('book', 'Books', counts.book)}
         {filterButton('podcast', 'Podcasts', counts.podcast)}
