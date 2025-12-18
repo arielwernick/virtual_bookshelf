@@ -26,8 +26,7 @@ interface ShelfRowProps {
 /**
  * ShelfRow - A single shelf displaying items with a visual divider
  */
-import { useSortable, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+
 
 function SortableItem({ item, onItemClick, editMode, onDelete, onEditNote }: any) {
   const {
