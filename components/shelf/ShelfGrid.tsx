@@ -3,6 +3,17 @@
 import { Item, ItemType } from '@/lib/types/shelf';
 import { ItemCard } from './ItemCard';
 import { useState, useRef, useEffect } from 'react';
+import {
+  DndContext,
+  closestCenter,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ShelfRowProps {
   items: Item[];
@@ -15,10 +26,81 @@ interface ShelfRowProps {
 /**
  * ShelfRow - A single shelf displaying items with a visual divider
  */
+import { useSortable, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+
+function SortableItem({ item, onItemClick, editMode, onDelete, onEditNote }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.7 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} className="w-[100px] max-h-[180px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
+      {editMode && (
+        <button
+          type="button"
+          aria-label="Drag to reorder"
+          tabIndex={0}
+          {...listeners}
+          className="absolute left-1 top-1 z-10 p-1 rounded bg-white/80 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 shadow hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="4" cy="4" r="1.5" fill="currentColor"/><circle cx="4" cy="8" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="8" cy="4" r="1.5" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="4" r="1.5" fill="currentColor"/><circle cx="12" cy="8" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+        </button>
+      )}
+      <ItemCard
+        item={item}
+        onClick={onItemClick ? () => onItemClick(item) : undefined}
+        editMode={editMode}
+        onDelete={onDelete ? () => onDelete(item.id) : undefined}
+        onEditNote={onEditNote ? () => onEditNote(item) : undefined}
+      />
+    </div>
+  );
+}
+
 function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfRowProps) {
+  // Only enable SortableContext in edit mode
+  const content = editMode ? (
+    <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+      {items.map((item) => (
+        <SortableItem
+          key={item.id}
+          item={item}
+          onItemClick={onItemClick}
+          editMode={editMode}
+          onDelete={onDeleteItem}
+          onEditNote={onEditNote}
+        />
+      ))}
+    </SortableContext>
+  ) : (
+    items.map((item) => (
+      <div key={item.id} className="w-[100px] max-h-[180px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
+        <ItemCard
+          item={item}
+          onClick={onItemClick ? () => onItemClick(item) : undefined}
+          editMode={editMode}
+          onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}
+          onEditNote={onEditNote ? () => onEditNote(item) : undefined}
+        />
+      </div>
+    ))
+  );
+
   return (
     <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-lg border border-gray-100 dark:border-gray-800 shadow-xs overflow-hidden">
-      {/* Shelf items */}
       <div
         className="px-3 py-3 sm:px-6 sm:py-5 flex flex-wrap"
         style={{
@@ -26,20 +108,8 @@ function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: Sh
           alignItems: 'flex-end',
         }}
       >
-        {items.map((item) => (
-          <div key={item.id} className="w-[100px] max-h-[180px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
-            <ItemCard
-              item={item}
-              onClick={onItemClick ? () => onItemClick(item) : undefined}
-              editMode={editMode}
-              onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}
-              onEditNote={onEditNote ? () => onEditNote(item) : undefined}
-            />
-          </div>
-        ))}
+        {content}
       </div>
-
-      {/* Shelf divider */}
       <div
         className="h-1.5 sm:h-2 bg-gradient-to-r from-warm-brown via-muted-gold to-warm-brown"
         style={{
@@ -63,7 +133,15 @@ interface ShelfContainerProps {
  * Recalculates on window resize with debouncing
  */
 function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfContainerProps) {
+  // dnd-kit sensors for pointer and keyboard
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
   const containerRef = useRef<HTMLDivElement>(null);
+  const [orderedItems, setOrderedItems] = useState(items);
   const [shelves, setShelves] = useState<Item[][]>([]);
   const [containerWidth, setContainerWidth] = useState(0);
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -78,10 +156,8 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
       }
     };
 
-    // Initial measurement
     updateWidth();
 
-    // Debounced resize handler
     const handleResize = () => {
       if (resizeTimeoutRef.current) {
         clearTimeout(resizeTimeoutRef.current);
@@ -98,21 +174,18 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
     };
   }, []);
 
-  // Recalculate shelves when items or container width changes
+  // Recalculate shelves when items, order, or container width changes
   useEffect(() => {
-    if (!containerRef.current || items.length === 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setShelves([items]);
+    if (!containerRef.current || orderedItems.length === 0) {
+      setShelves([orderedItems]);
       return;
     }
 
-    // Determine if we're on mobile (small screen)
-    const isMobile = window.innerWidth < 640; // sm breakpoint
+    const isMobile = window.innerWidth < 640;
     const itemWidth = isMobile ? 100 : 140;
-    const gap = isMobile ? 8 : 16; // 0.5rem = 8px, 1rem = 16px
-    const padding = isMobile ? 12 : 24; // px-3 = 12px, px-6 = 24px
+    const gap = isMobile ? 8 : 16;
+    const padding = isMobile ? 12 : 24;
 
-    // Measure flex layout with temporary container
     const tempContainer = document.createElement('div');
     tempContainer.style.cssText = `
       display: flex;
@@ -124,8 +197,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
       width: ${containerRef.current.clientWidth}px;
     `;
 
-    // Create measurement items
-    items.forEach(() => {
+    orderedItems.forEach(() => {
       const item = document.createElement('div');
       item.style.cssText = `width: ${itemWidth}px; flex-shrink: 0; height: ${isMobile ? 150 : 200}px;`;
       tempContainer.appendChild(item);
@@ -133,20 +205,18 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
 
     document.body.appendChild(tempContainer);
 
-    // Determine which items belong to which shelf based on Y position
     const shelfMap: Item[][] = [];
     let currentShelf: Item[] = [];
     let currentY = (tempContainer.children[0] as HTMLElement)?.offsetTop ?? 0;
 
     Array.from(tempContainer.children).forEach((child, index) => {
       const childY = (child as HTMLElement).offsetTop;
-
       if (childY > currentY && currentShelf.length > 0) {
         shelfMap.push([...currentShelf]);
-        currentShelf = [items[index]];
+        currentShelf = [orderedItems[index]];
         currentY = childY;
       } else {
-        currentShelf.push(items[index]);
+        currentShelf.push(orderedItems[index]);
       }
     });
 
@@ -156,8 +226,64 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
 
     document.body.removeChild(tempContainer);
     setShelves(shelfMap);
-  }, [items, containerWidth]);
+  }, [orderedItems, containerWidth]);
 
+  useEffect(() => {
+    setOrderedItems(items);
+  }, [items]);
+
+  const handleDragEnd = async (event: any) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIndex = orderedItems.findIndex(i => i.id === active.id);
+      const newIndex = orderedItems.findIndex(i => i.id === over.id);
+      const newOrder = arrayMove(orderedItems, oldIndex, newIndex);
+      setOrderedItems(newOrder);
+      // Persist new order to backend
+      try {
+        const shelfId = newOrder[0]?.shelf_id;
+        if (shelfId) {
+          await fetch('/api/items/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              shelf_id: shelfId,
+              item_ids: newOrder.map(item => item.id),
+            }),
+          });
+        }
+      } catch (err) {
+        // Optionally show error to user
+        console.error('Failed to persist item order', err);
+      }
+    }
+  };
+
+  if (editMode) {
+    return (
+      <div ref={containerRef} className="space-y-4 sm:space-y-6">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={orderedItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
+            {shelves.map((shelfItems, index) => (
+              <ShelfRow
+                key={`shelf-${index}`}
+                items={shelfItems}
+                onItemClick={onItemClick}
+                editMode={editMode}
+                onDeleteItem={onDeleteItem}
+                onEditNote={onEditNote}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+      </div>
+    );
+  }
+  // Non-edit mode: preserve original layout
   return (
     <div ref={containerRef} className="space-y-4 sm:space-y-6">
       {shelves.map((shelfItems, index) => (
