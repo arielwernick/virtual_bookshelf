@@ -3,6 +3,8 @@ import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
 
 export const runtime = 'edge';
 
+// Uses warm amber palette (see app/globals.css):
+// warm-brown: #8b5f47, muted-gold: #d4921a, warm-cream: #fefcf8
 /**
  * Generate Open Graph image for shared shelves
  * 

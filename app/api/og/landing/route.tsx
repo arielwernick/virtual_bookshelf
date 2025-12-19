@@ -41,6 +41,8 @@ async function getDemoItems(): Promise<Item[]> {
   return [];
 }
 
+// Uses warm amber palette (see app/globals.css):
+// warm-brown: #8b5f47, muted-gold: #d4921a, warm-cream: #fefcf8
 /**
  * Generate Open Graph image for the landing page
  * 
