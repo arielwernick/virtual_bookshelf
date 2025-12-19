@@ -64,7 +64,7 @@ export async function GET() {
           flexDirection: 'column',
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)',
+          background: 'linear-gradient(180deg, #fefcf8 0%, #f9f7f4 100%)',
           fontFamily: 'system-ui, sans-serif',
           padding: '48px 60px',
           position: 'relative',
@@ -73,7 +73,7 @@ export async function GET() {
         {/* Header with logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', zIndex: 1 }}>
           <BookshelfIcon size={48} />
-          <span style={{ fontSize: '28px', fontWeight: '700', color: '#1f2937' }}>
+          <span style={{ fontSize: '28px', fontWeight: '700', color: '#8b5f47' }}>
             Virtual Bookshelf
           </span>
         </div>
@@ -84,7 +84,7 @@ export async function GET() {
             style={{
               fontSize: '56px',
               fontWeight: '800',
-              color: '#111827',
+              color: '#171717',
               margin: '0 0 12px 0',
               lineHeight: 1.1,
               maxWidth: '650px',
@@ -167,7 +167,7 @@ export async function GET() {
                 <BookSpine height={150} color="#3b82f6" />
                 <BookSpine height={170} color="#8b5cf6" />
                 <BookSpine height={140} color="#22c55e" />
-                <BookSpine height={165} color="#f59e0b" />
+                <BookSpine height={165} color="#d4921a" />
                 <BookSpine height={155} color="#ec4899" />
                 <BookSpine height={145} color="#6366f1" />
               </>
@@ -179,9 +179,9 @@ export async function GET() {
             display: 'flex',
             width: '100%',
             height: '14px',
-            background: 'linear-gradient(180deg, #78716c 0%, #57534e 50%, #44403c 100%)',
+            background: 'linear-gradient(180deg, #8b5f47 0%, #3d2518 100%)',
             borderRadius: '2px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.2)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.18), 0 4px 8px rgba(0,0,0,0.12)',
           }} />
         </div>
 
@@ -213,7 +213,7 @@ export async function GET() {
 // SVG Bookshelf Icon Component
 function BookshelfIcon({ size = 48 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="#1f2937">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#3d2518">
       <rect x="2" y="8" width="2" height="10" rx="0.5" />
       <rect x="4.5" y="6" width="2" height="12" rx="0.5" />
       <rect x="7" y="7" width="2" height="11" rx="0.5" />
@@ -222,7 +222,7 @@ function BookshelfIcon({ size = 48 }: { size?: number }) {
       <rect x="14.5" y="6" width="2" height="12" rx="0.5" />
       <rect x="17" y="8" width="2" height="10" rx="0.5" />
       <rect x="19.5" y="7" width="2" height="11" rx="0.5" />
-      <line x1="1" y1="19" x2="23" y2="19" stroke="#1f2937" strokeWidth="1.5" />
+      <line x1="1" y1="19" x2="23" y2="19" stroke="#3d2518" strokeWidth="1.5" />
     </svg>
   );
 }
