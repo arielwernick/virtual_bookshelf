@@ -12,9 +12,7 @@ import {
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
-  sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
-import { KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
 interface ShelfRowProps {
@@ -28,8 +26,6 @@ interface ShelfRowProps {
 /**
  * ShelfRow - A single shelf displaying items with a visual divider
  */
-
-
 function SortableItem({ item, onItemClick, editMode, onDelete, onEditNote }: any) {
   const {
     attributes,
@@ -48,18 +44,7 @@ function SortableItem({ item, onItemClick, editMode, onDelete, onEditNote }: any
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} className="w-[100px] max-h-[180px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
-      {editMode && (
-        <button
-          type="button"
-          aria-label="Drag to reorder"
-          tabIndex={0}
-          {...listeners}
-          className="absolute left-1 top-1 z-10 p-1 rounded bg-white/80 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 shadow hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="4" cy="4" r="1.5" fill="currentColor"/><circle cx="4" cy="8" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="8" cy="4" r="1.5" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="4" r="1.5" fill="currentColor"/><circle cx="12" cy="8" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
-        </button>
-      )}
+    <div ref={setNodeRef} style={style} {...attributes} {...(editMode ? listeners : {})} className="w-[100px] max-h-[180px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
       <ItemCard
         item={item}
         onClick={onItemClick ? () => onItemClick(item) : undefined}
@@ -134,13 +119,6 @@ interface ShelfContainerProps {
  * Recalculates on window resize with debouncing
  */
 function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfContainerProps) {
-  // dnd-kit sensors for pointer and keyboard
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
   const containerRef = useRef<HTMLDivElement>(null);
   const [orderedItems, setOrderedItems] = useState(items);
   const [shelves, setShelves] = useState<Item[][]>([]);
@@ -263,11 +241,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
   if (editMode) {
     return (
       <div ref={containerRef} className="space-y-4 sm:space-y-6">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
+        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={orderedItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
             {shelves.map((shelfItems, index) => (
               <ShelfRow
