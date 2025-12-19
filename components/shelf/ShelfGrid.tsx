@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   DndContext,
   closestCenter,
+  DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -26,7 +27,15 @@ interface ShelfRowProps {
 /**
  * ShelfRow - A single shelf displaying items with a visual divider
  */
-function SortableItem({ item, onItemClick, editMode, onDelete, onEditNote }: any) {
+interface SortableItemProps {
+  item: Item;
+  onItemClick?: (item: Item) => void;
+  editMode?: boolean;
+  onDelete?: (itemId: string) => void;
+  onEditNote?: (item: Item) => void;
+}
+
+function SortableItem({ item, onItemClick, editMode, onDelete, onEditNote }: SortableItemProps) {
   const {
     attributes,
     listeners,
@@ -211,29 +220,32 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
     setOrderedItems(items);
   }, [items]);
 
-  const handleDragEnd = async (event: any) => {
+  // ...existing code...
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    if (active.id !== over?.id) {
+    if (over && active.id !== over.id) {
       const oldIndex = orderedItems.findIndex(i => i.id === active.id);
       const newIndex = orderedItems.findIndex(i => i.id === over.id);
-      const newOrder = arrayMove(orderedItems, oldIndex, newIndex);
-      setOrderedItems(newOrder);
-      // Persist new order to backend
-      try {
-        const shelfId = newOrder[0]?.shelf_id;
-        if (shelfId) {
-          await fetch('/api/items/reorder', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              shelf_id: shelfId,
-              item_ids: newOrder.map(item => item.id),
-            }),
-          });
+      if (newIndex !== -1) {
+        const newOrder = arrayMove(orderedItems, oldIndex, newIndex);
+        setOrderedItems(newOrder);
+        // Persist new order to backend
+        try {
+          const shelfId = newOrder[0]?.shelf_id;
+          if (shelfId) {
+            await fetch('/api/items/reorder', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                shelf_id: shelfId,
+                item_ids: newOrder.map(item => item.id),
+              }),
+            });
+          }
+        } catch (err) {
+          // Optionally show error to user
+          console.error('Failed to persist item order', err);
         }
-      } catch (err) {
-        // Optionally show error to user
-        console.error('Failed to persist item order', err);
       }
     }
   };
