@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 
 import { Item } from '@/lib/types/shelf';
 import { useEffect } from 'react';
@@ -149,10 +150,13 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
               <div className="w-32 sm:w-48 md:w-64 flex-shrink-0 mx-auto md:mx-0">
                 <div className="aspect-[2/3] relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-lg overflow-hidden shadow-lg">
                   {item.image_url ? (
-                    <img
+                    <Image
                       src={item.image_url}
                       alt={item.title}
+                      fill
                       className="w-full h-full object-cover"
+                      style={{ objectFit: 'cover' }}
+                      unoptimized
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500">

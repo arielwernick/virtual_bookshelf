@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { ItemType } from '@/lib/types/shelf';
 
 interface SearchResult {
@@ -662,10 +663,13 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
                   className="flex items-center gap-4 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
                 >
                   {result.imageUrl && (
-                    <img
+                    <Image
                       src={result.imageUrl}
                       alt={result.title}
+                      width={64}
+                      height={64}
                       className="w-16 h-16 object-cover rounded"
+                      unoptimized
                     />
                   )}
                   <div className="flex-1 min-w-0">

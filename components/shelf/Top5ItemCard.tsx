@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 
 import { Item } from '@/lib/types/shelf';
 import { getAspectRatio } from '@/lib/constants/aspectRatios';
@@ -90,15 +91,17 @@ export function Top5ItemCard({
       >
         {/* Item Image */}
         {item.image_url && (
-          <img
+          <Image
             src={item.image_url}
             alt={item.title}
+            fill
             className="w-full h-full object-cover"
-            loading="lazy"
+            style={{ objectFit: 'cover' }}
             draggable={false}
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
             }}
+            unoptimized
           />
         )}
 
