@@ -86,6 +86,7 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
               e.stopPropagation();
               onDelete();
             }}
+            onPointerDown={e => e.stopPropagation()}
             className="absolute top-1 left-1 sm:top-2 sm:left-2 p-1.5 sm:p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
             title="Delete item"
           >
@@ -107,6 +108,7 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
               e.stopPropagation();
               onEditNote();
             }}
+            onPointerDown={e => e.stopPropagation()}
             className={`absolute bottom-1 left-1 sm:bottom-2 sm:left-2 flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium transition-colors ${
               hasNotes 
                 ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-900' 
