@@ -1,3 +1,4 @@
+import Image from 'next/image';
 'use client';
 
 import { Item } from '@/lib/types/shelf';
@@ -90,15 +91,17 @@ export function Top5ItemCard({
       >
         {/* Item Image */}
         {item.image_url && (
-          <img
+          <Image
             src={item.image_url}
             alt={item.title}
+            fill
             className="w-full h-full object-cover"
-            loading="lazy"
+            style={{ objectFit: 'cover' }}
             draggable={false}
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
             }}
+            unoptimized
           />
         )}
 

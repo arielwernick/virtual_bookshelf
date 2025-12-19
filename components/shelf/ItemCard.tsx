@@ -1,6 +1,7 @@
 'use client';
 
 import { Item } from '@/lib/types/shelf';
+import Image from 'next/image';
 import { getAspectRatio } from '@/lib/constants/aspectRatios';
 
 interface ItemCardProps {
@@ -44,14 +45,16 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
       >
         {/* Item Image */}
         {item.image_url && (
-          <img
+          <Image
             src={item.image_url}
             alt={item.title}
+            fill
             className="w-full h-full object-cover"
-            loading="lazy"
+            style={{ objectFit: 'cover' }}
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
             }}
+            unoptimized
           />
         )}
 
