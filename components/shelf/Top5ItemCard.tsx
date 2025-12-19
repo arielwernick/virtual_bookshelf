@@ -1,5 +1,5 @@
-import Image from 'next/image';
 'use client';
+import Image from 'next/image';
 
 import { Item } from '@/lib/types/shelf';
 import { getAspectRatio } from '@/lib/constants/aspectRatios';
