@@ -1,5 +1,6 @@
 import { ImageResponse } from '@vercel/og';
 import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
+import { mainBackground, fallbackGradient, shelfBarGradient, rankBadgeGradient, richBrown, mutedGold, warmBrown, warmCreamLight, foreground, errorFallback, amber700, amber800, neutralMuted } from '@/lib/constants/colors';
 
 export const runtime = 'edge';
 
@@ -36,7 +37,7 @@ export async function GET(
               justifyContent: 'center',
               width: '100%',
               height: '100%',
-              background: 'linear-gradient(135deg, #8b5f47 0%, #d4921a 100%)',
+              background: fallbackGradient,
               fontFamily: 'system-ui, sans-serif',
             }}
           >
@@ -68,7 +69,7 @@ export async function GET(
             flexDirection: 'column',
             width: '100%',
             height: '100%',
-            background: 'linear-gradient(180deg, #fefcf8 0%, #f9f7f4 100%)',
+            background: mainBackground,
             fontFamily: 'system-ui, sans-serif',
             padding: '48px',
           }}
@@ -77,14 +78,14 @@ export async function GET(
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <BookshelfIcon />
-              <span style={{ fontSize: '24px', fontWeight: '600', color: '#8b5f47' }}>
+              <span style={{ fontSize: '24px', fontWeight: '600', color: warmBrown }}>
                 Virtual Bookshelf
               </span>
             </div>
             {isTop5 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fef3c7', padding: '8px 16px', borderRadius: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: warmCreamLight, padding: '8px 16px', borderRadius: '20px' }}>
                 <TrophyIcon />
-                <span style={{ fontSize: '18px', fontWeight: '600', color: '#92400e' }}>Top 5</span>
+                <span style={{ fontSize: '18px', fontWeight: '600', color: amber800 }}>Top 5</span>
               </div>
             )}
           </div>
@@ -93,7 +94,7 @@ export async function GET(
           <h1 style={{ 
             fontSize: '56px', 
             fontWeight: 'bold', 
-            color: '#171717', 
+            color: foreground, 
             margin: '0 0 16px 0',
             lineHeight: 1.1,
           }}>
@@ -104,7 +105,7 @@ export async function GET(
           {shelf.description && (
             <p style={{ 
               fontSize: '24px', 
-              color: '#6b7280', 
+              color: neutralMuted, 
               margin: '0 0 32px 0',
               maxWidth: '800px',
               lineHeight: 1.4,
@@ -144,7 +145,7 @@ export async function GET(
                         justifyContent: 'center',
                         width: '36px',
                         height: '36px',
-                        background: 'linear-gradient(135deg, #d4921a 0%, #b45309 100%)',
+                        background: rankBadgeGradient,
                         borderRadius: '50%',
                         marginBottom: '-18px',
                         zIndex: 10,
@@ -202,7 +203,7 @@ export async function GET(
                   justifyContent: 'center',
                   width: '100%',
                   height: '200px',
-                  color: '#9ca3af',
+                  color: neutralMuted,
                   fontSize: '20px',
                 }}>
                   Empty shelf - add some items!
@@ -219,7 +220,7 @@ export async function GET(
                   height: '200px',
                   background: 'rgba(0,0,0,0.05)',
                   borderRadius: '4px',
-                  color: '#6b7280',
+                  color: neutralMuted,
                   fontSize: '20px',
                   fontWeight: '600',
                 }}>
@@ -233,7 +234,7 @@ export async function GET(
               display: 'flex',
               width: '100%',
               height: '12px',
-              background: 'linear-gradient(180deg, #8b5f47 0%, #3d2518 100%)',
+              background: shelfBarGradient,
               borderRadius: '2px',
               boxShadow: '0 8px 24px rgba(0,0,0,0.18), 0 4px 8px rgba(0,0,0,0.12)',
             }} />
@@ -249,7 +250,7 @@ export async function GET(
             <span style={{ fontSize: '18px', color: '#9ca3af' }}>
               {items.length} {items.length === 1 ? 'item' : 'items'}
             </span>
-            <span style={{ fontSize: '18px', color: '#8b5f47', fontWeight: '500' }}>
+            <span style={{ fontSize: '18px', color: warmBrown, fontWeight: '500' }}>
               virtualbookshelf.app
             </span>
           </div>
@@ -271,7 +272,7 @@ export async function GET(
             justifyContent: 'center',
             width: '100%',
             height: '100%',
-            background: 'linear-gradient(135deg, #3d2518 0%, #171717 100%)',
+            background: errorFallback,
             fontFamily: 'system-ui, sans-serif',
           }}
         >
@@ -309,7 +310,7 @@ function getTypeGradient(type: string): string {
 // SVG Components for the OG image
 function BookshelfIcon() {
   return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="#3d2518">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill={richBrown}>
       <rect x="2" y="8" width="2" height="10" />
       <rect x="4.5" y="6" width="2" height="12" />
       <rect x="7" y="7" width="2" height="11" />
@@ -318,14 +319,14 @@ function BookshelfIcon() {
       <rect x="14.5" y="6" width="2" height="12" />
       <rect x="17" y="8" width="2" height="10" />
       <rect x="19.5" y="7" width="2" height="11" />
-      <line x1="1" y1="19" x2="23" y2="19" stroke="#3d2518" strokeWidth="1.5" />
+      <line x1="1" y1="19" x2="23" y2="19" stroke={richBrown} strokeWidth="1.5" />
     </svg>
   );
 }
 
 function TrophyIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="#d4921a">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill={mutedGold}>
       <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z" />
     </svg>
   );
