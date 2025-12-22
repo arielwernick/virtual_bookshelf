@@ -53,7 +53,7 @@ function SortableItem({ item, onItemClick, editMode, onDelete, onEditNote }: Sor
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...(editMode ? listeners : {})} className="w-[100px] max-h-[180px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
+    <div ref={setNodeRef} style={style} {...attributes} {...(editMode ? listeners : {})} className="w-[100px] sm:w-[140px] flex-shrink-0">
       <ItemCard
         item={item}
         onClick={onItemClick ? () => onItemClick(item) : undefined}
@@ -82,7 +82,7 @@ function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: Sh
     </SortableContext>
   ) : (
     items.map((item) => (
-      <div key={item.id} className="w-[100px] max-h-[180px] sm:w-[140px] sm:max-h-[240px] flex-shrink-0">
+      <div key={item.id} className="w-[100px] sm:w-[140px] flex-shrink-0">
         <ItemCard
           item={item}
           onClick={onItemClick ? () => onItemClick(item) : undefined}
