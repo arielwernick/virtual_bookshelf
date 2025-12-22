@@ -3,6 +3,7 @@
 import { Item } from '@/lib/types/shelf';
 import Image from 'next/image';
 import { getAspectRatio } from '@/lib/constants/aspectRatios';
+import { StarDisplay } from '@/components/ui/StarDisplay';
 
 interface ItemCardProps {
   item: Item;
@@ -136,6 +137,13 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
           {item.title}
         </h3>
         <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-1">{item.creator}</p>
+        
+        {/* Rating display */}
+        {item.rating && (
+          <div className="mt-0.5 sm:mt-1">
+            <StarDisplay rating={item.rating} size="sm" />
+          </div>
+        )}
         
         {/* Display note text preview if exists (non-edit mode) */}
         {!editMode && hasNotes && (

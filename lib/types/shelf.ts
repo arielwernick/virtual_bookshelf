@@ -39,6 +39,7 @@ export interface Item {
   image_url: string | null;
   external_url: string | null;
   notes: string | null;
+  rating: number | null;
   order_index: number;
   created_at: Date;
   updated_at: Date;
@@ -61,6 +62,7 @@ export interface CreateItemData {
   image_url?: string;
   external_url?: string;
   notes?: string;
+  rating?: number;
   order_index?: number;
 }
 
@@ -71,6 +73,7 @@ export interface UpdateItemData {
   image_url?: string;
   external_url?: string;
   notes?: string;
+  rating?: number;
   order_index?: number;
 }
 

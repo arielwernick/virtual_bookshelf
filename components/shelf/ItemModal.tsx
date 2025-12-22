@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { Item } from '@/lib/types/shelf';
 import { useEffect } from 'react';
 import { extractVideoId } from '@/lib/api/youtube';
+import { StarDisplay } from '@/components/ui/StarDisplay';
 
 interface ItemModalProps {
   item: Item | null;
@@ -106,6 +107,13 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
                   by {item.creator}
                 </p>
 
+                {/* Rating display */}
+                {item.rating && (
+                  <div className="mb-4">
+                    <StarDisplay rating={item.rating} size="md" />
+                  </div>
+                )}
+
                 {/* Notes Section */}
                 {item.notes && (
                   <div className="mb-4" data-testid="notes-section">
@@ -189,6 +197,13 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
                 <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
                   by {item.creator}
                 </p>
+
+                {/* Rating display */}
+                {item.rating && (
+                  <div className="mb-4 sm:mb-6">
+                    <StarDisplay rating={item.rating} size="md" />
+                  </div>
+                )}
 
                 {/* Notes Section - Display directly without collapse */}
                 {item.notes && (

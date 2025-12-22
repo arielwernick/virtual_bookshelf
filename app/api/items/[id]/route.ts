@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { getItemById, updateItem, deleteItem, getShelfById } from '@/lib/db/queries';
-import { validateText, validateUrl, validateNotes } from '@/lib/utils/validation';
+import { validateText, validateUrl, validateNotes, validateRating } from '@/lib/utils/validation';
 import { UpdateItemData } from '@/lib/types/shelf';
 
 /**
@@ -105,6 +105,19 @@ export async function PATCH(
         }
       }
       updateData.notes = body.notes;
+    }
+
+    if (body.rating !== undefined) {
+      if (body.rating !== null) {
+        const ratingValidation = validateRating(body.rating);
+        if (!ratingValidation.valid) {
+          return NextResponse.json(
+            { success: false, error: ratingValidation.error },
+            { status: 400 }
+          );
+        }
+      }
+      updateData.rating = body.rating;
     }
 
     if (body.order_index !== undefined) {

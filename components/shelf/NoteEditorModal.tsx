@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
+import { StarInput } from '@/components/ui/StarInput';
 
 const MAX_NOTES_LENGTH = 500;
 
@@ -10,7 +11,8 @@ interface NoteEditorModalProps {
   onClose: () => void;
   itemTitle: string;
   initialNotes: string | null;
-  onSave: (notes: string | null) => Promise<void>;
+  initialRating: number | null;
+  onSave: (notes: string | null, rating: number | null) => Promise<void>;
 }
 
 export function NoteEditorModal({
@@ -18,29 +20,32 @@ export function NoteEditorModal({
   onClose,
   itemTitle,
   initialNotes,
+  initialRating,
   onSave,
 }: NoteEditorModalProps) {
   const [notes, setNotes] = useState(initialNotes || '');
+  const [rating, setRating] = useState<number | null>(initialRating);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset notes when modal opens with new initial value
+  // Reset notes and rating when modal opens with new initial values
   useEffect(() => {
     if (isOpen) {
       setNotes(initialNotes || '');
+      setRating(initialRating);
       setError(null);
     }
-  }, [isOpen, initialNotes]);
+  }, [isOpen, initialNotes, initialRating]);
 
   const handleSave = async () => {
     setSaving(true);
     setError(null);
     try {
       // Save empty string as null
-      await onSave(notes.trim() || null);
+      await onSave(notes.trim() || null, rating);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save notes');
+      setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setSaving(false);
     }
@@ -48,7 +53,7 @@ export function NoteEditorModal({
 
   const handleCancel = () => {
     setNotes(initialNotes || '');
-    setError(null);
+    setRating(initialRating);
     onClose();
   };
 
@@ -57,7 +62,7 @@ export function NoteEditorModal({
     setSaving(true);
     setError(null);
     try {
-      await onSave(null);
+      await onSave(null, rating);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove note');
@@ -83,7 +88,7 @@ export function NoteEditorModal({
           </div>
           <div className="flex-1 min-w-0 pr-8">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {initialNotes ? 'Edit Note' : 'Add Note'}
+              {initialNotes ? 'Edit Note & Rating' : 'Add Note & Rating'}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 truncate" title={itemTitle}>
               {itemTitle}
@@ -99,6 +104,15 @@ export function NoteEditorModal({
             {error}
           </div>
         )}
+
+        <div>
+          <StarInput
+            value={rating}
+            onChange={setRating}
+            label="Rating"
+            size="md"
+          />
+        </div>
 
         <div className="space-y-3">
           <textarea
@@ -136,7 +150,7 @@ export function NoteEditorModal({
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || notes.trim() === (initialNotes?.trim() || '')}
+            disabled={saving || (notes.trim() === (initialNotes?.trim() || '') && rating === initialRating)}
             className="px-5 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
           >
             {saving ? (
@@ -147,7 +161,7 @@ export function NoteEditorModal({
                 </svg>
                 Saving
               </span>
-            ) : 'Save Note'}
+            ) : 'Save Changes'}
           </button>
         </div>
       </div>

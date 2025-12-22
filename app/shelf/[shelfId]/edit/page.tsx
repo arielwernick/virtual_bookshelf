@@ -169,18 +169,18 @@ export default function EditShelfPage() {
         }
     };
 
-    const handleSaveNote = async (notes: string | null) => {
+    const handleSaveNote = async (notes: string | null, rating: number | null) => {
         if (!noteEditItem) return;
         
         const res = await fetch(`/api/items/${noteEditItem.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ notes }),
+            body: JSON.stringify({ notes, rating }),
         });
         
         if (!res.ok) {
             const json = await res.json();
-            throw new Error(json.error || 'Failed to save notes');
+            throw new Error(json.error || 'Failed to save changes');
         }
         
         // Update local state
@@ -189,7 +189,7 @@ export default function EditShelfPage() {
             return {
                 ...prev,
                 items: prev.items.map(item => 
-                    item.id === noteEditItem.id ? { ...item, notes } : item
+                    item.id === noteEditItem.id ? { ...item, notes, rating } : item
                 )
             };
         });
@@ -465,6 +465,7 @@ export default function EditShelfPage() {
                     onClose={() => setNoteEditItem(null)}
                     itemTitle={noteEditItem.title}
                     initialNotes={noteEditItem.notes}
+                    initialRating={noteEditItem.rating}
                     onSave={handleSaveNote}
                 />
             )}

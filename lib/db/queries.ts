@@ -282,12 +282,13 @@ export async function createItem(shelfId: string, itemData: CreateItemData, user
     image_url = null,
     external_url = null,
     notes = null,
+    rating = null,
     order_index = 0,
   } = itemData;
 
   const result = await sql`
-    INSERT INTO items (shelf_id, user_id, type, title, creator, image_url, external_url, notes, order_index)
-    VALUES (${shelfId}, ${userId || null}, ${type}, ${title}, ${creator}, ${image_url}, ${external_url}, ${notes}, ${order_index})
+    INSERT INTO items (shelf_id, user_id, type, title, creator, image_url, external_url, notes, rating, order_index)
+    VALUES (${shelfId}, ${userId || null}, ${type}, ${title}, ${creator}, ${image_url}, ${external_url}, ${notes}, ${rating}, ${order_index})
     RETURNING *
   `;
 
@@ -383,6 +384,9 @@ export async function updateItem(itemId: string, itemData: UpdateItemData): Prom
   }
   if (itemData.notes !== undefined) {
     result = await sql`UPDATE items SET notes = ${itemData.notes} WHERE id = ${itemId} RETURNING *` as Item[];
+  }
+  if (itemData.rating !== undefined) {
+    result = await sql`UPDATE items SET rating = ${itemData.rating} WHERE id = ${itemId} RETURNING *` as Item[];
   }
   if (itemData.order_index !== undefined) {
     result = await sql`UPDATE items SET order_index = ${itemData.order_index} WHERE id = ${itemId} RETURNING *` as Item[];

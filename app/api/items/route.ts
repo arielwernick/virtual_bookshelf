@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { createItem, getNextOrderIndex, getShelfById, getItemsByShelfId } from '@/lib/db/queries';
-import { validateItemType, validateText, validateUrl, validateNotes } from '@/lib/utils/validation';
+import { validateItemType, validateText, validateUrl, validateNotes, validateRating } from '@/lib/utils/validation';
 import { isTop5Shelf, validateTop5Capacity, validateNoDuplicateItems, TOP5_MAX_ITEMS } from '@/lib/utils/top5';
 import { CreateItemData } from '@/lib/types/shelf';
 
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { shelf_id, type, title, creator, image_url, external_url, notes } = body;
+    const { shelf_id, type, title, creator, image_url, external_url, notes, rating } = body;
 
     // Validate shelf_id
     if (!shelf_id || typeof shelf_id !== 'string') {
@@ -108,6 +108,17 @@ export async function POST(request: Request) {
       }
     }
 
+    // Validate rating if provided
+    if (rating !== undefined && rating !== null) {
+      const ratingValidation = validateRating(rating);
+      if (!ratingValidation.valid) {
+        return NextResponse.json(
+          { success: false, error: ratingValidation.error },
+          { status: 400 }
+        );
+      }
+    }
+
     // Top 5 shelf specific validations
     if (isTop5Shelf(shelf)) {
       // Get existing items (also gives us the count)
@@ -144,6 +155,7 @@ export async function POST(request: Request) {
       image_url: image_url || undefined,
       external_url: external_url || undefined,
       notes: notes || undefined,
+      rating: rating || undefined,
       order_index: orderIndex,
     };
 

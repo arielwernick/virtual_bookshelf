@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS items (
   image_url TEXT,
   external_url TEXT,
   notes TEXT,
+  rating INTEGER CHECK (rating >= 0 AND rating <= 5),
   order_index INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

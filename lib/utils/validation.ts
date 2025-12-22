@@ -134,3 +134,18 @@ export function validateNotes(notes: string): { valid: boolean; error?: string }
   
   return { valid: true };
 }
+
+/**
+ * Validate rating
+ */
+export function validateRating(rating: number): { valid: boolean; error?: string } {
+  if (!Number.isInteger(rating)) {
+    return { valid: false, error: 'Rating must be a whole number' };
+  }
+  
+  if (rating < 0 || rating > 5) {
+    return { valid: false, error: 'Rating must be between 0 and 5 stars' };
+  }
+  
+  return { valid: true };
+}
