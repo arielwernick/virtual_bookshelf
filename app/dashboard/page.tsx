@@ -160,7 +160,8 @@ export default function DashboardPage() {
                   : `You have ${data.shelves.length} shelf${data.shelves.length !== 1 ? 'es' : ''}`}
               </p>
             </div>
-            {!showCreateForm && (
+            {/* Only show header button when user has shelves - empty state has its own CTA */}
+            {!showCreateForm && data.shelves.length > 0 && (
               <button
                 onClick={() => setShowCreateForm(true)}
                 className="px-6 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium"
