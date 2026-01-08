@@ -118,6 +118,37 @@ describe('logger utility', () => {
         ApiKey: '[REDACTED]',
       });
     });
+
+    it('does not over-redact fields that contain but do not end with sensitive words', () => {
+      const data = { 
+        password_reset_sent: 'true',
+        token_count: 5,
+        api_key_enabled: 'yes',
+      };
+      const result = redactSensitiveData(data);
+      // These should NOT be redacted because they don't end with the sensitive field
+      expect(result).toEqual({
+        password_reset_sent: 'true',
+        token_count: 5,
+        api_key_enabled: 'yes',
+      });
+    });
+
+    it('redacts fields that end with sensitive field names', () => {
+      const data = { 
+        user_password: 'secret',
+        refresh_token: 'abc123',
+        client_secret: 'xyz789',
+        has_password: 'yes', // This is redacted because it ends with 'password'
+      };
+      const result = redactSensitiveData(data);
+      expect(result).toEqual({
+        user_password: '[REDACTED]',
+        refresh_token: '[REDACTED]',
+        client_secret: '[REDACTED]',
+        has_password: '[REDACTED]', // Correctly redacted for safety
+      });
+    });
   });
 
   describe('formatMessage', () => {
