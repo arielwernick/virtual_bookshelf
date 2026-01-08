@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET, PATCH, DELETE } from './route';
-import { Shelf, ShelfType } from '@/lib/types/shelf';
+import { createMockRequest, createParams, createMockShelf } from '@/test/utils/mocks';
 
 // Mock dependencies
 vi.mock('@/lib/utils/session', () => ({
@@ -22,35 +22,7 @@ import { getShelfById, getItemsByShelfId, updateShelf, deleteShelf } from '@/lib
 
 // Helper to create a mock request
 function createRequest(method: string, body?: object): Request {
-  const options: RequestInit = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
-  if (body) {
-    options.body = JSON.stringify(body);
-  }
-  return new Request('http://localhost:3000/api/shelf/shelf-1', options);
-}
-
-// Helper to create mock params
-function createParams(shelfId: string = 'shelf-1') {
-  return { params: Promise.resolve({ shelfId }) };
-}
-
-// Helper to create a mock shelf
-function createMockShelf(overrides: Partial<Shelf> = {}): Shelf {
-  return {
-    id: 'shelf-1',
-    user_id: 'user-1',
-    name: 'Test Shelf',
-    description: null,
-    share_token: 'test-token',
-    is_public: false,
-    shelf_type: 'standard' as ShelfType,
-    created_at: new Date(),
-    updated_at: new Date(),
-    ...overrides,
-  };
+  return createMockRequest(method, body, 'http://localhost:3000/api/shelf/shelf-1');
 }
 
 describe('PATCH /api/shelf/[shelfId]', () => {

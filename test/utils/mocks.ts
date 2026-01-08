@@ -101,6 +101,17 @@ export function createMockRequest(
 }
 
 /**
+ * Simple helper to create a POST request (common pattern in tests)
+ * 
+ * @param body - Request body
+ * @param url - Optional URL
+ * @returns Request object
+ */
+export function createRequest(body: object, url: string = 'http://localhost:3000/api/test'): Request {
+  return createMockRequest('POST', body, url);
+}
+
+/**
  * Creates a mock params object for Next.js dynamic routes
  * 
  * @param params - Key-value pairs for route parameters
@@ -108,4 +119,11 @@ export function createMockRequest(
  */
 export function createMockParams<T extends Record<string, string>>(params: T): Promise<T> {
   return Promise.resolve(params);
+}
+
+/**
+ * Simple helper to create params (common pattern in tests)
+ */
+export function createParams(shelfId: string = 'shelf-1') {
+  return { params: Promise.resolve({ shelfId }) };
 }

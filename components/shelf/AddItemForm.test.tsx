@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AddItemForm } from './AddItemForm';
+import { setupFetchMock, resetFetchMock, mockFetchSuccess, mockFetchError } from '@/test/utils/api';
 
 describe('AddItemForm', () => {
   const mockOnItemAdded = vi.fn();
@@ -9,7 +10,7 @@ describe('AddItemForm', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    global.fetch = vi.fn();
+    setupFetchMock();
   });
 
   describe('Rendering', () => {
@@ -217,10 +218,7 @@ describe('AddItemForm', () => {
   describe('Manual Form Submission', () => {
     it('submits manual entry with valid data', async () => {
       const user = userEvent.setup();
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true }),
-      } as Response);
+      mockFetchSuccess();
 
       render(
         <AddItemForm
@@ -302,10 +300,7 @@ describe('AddItemForm', () => {
   describe('Search Functionality', () => {
     it('calls search API when search button clicked', async () => {
       const user = userEvent.setup();
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true, data: [] }),
-      } as Response);
+      mockFetchSuccess([]);
 
       render(
         <AddItemForm
@@ -327,10 +322,7 @@ describe('AddItemForm', () => {
 
     it('calls search on Enter key', async () => {
       const user = userEvent.setup();
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true, data: [] }),
-      } as Response);
+      mockFetchSuccess([]);
 
       render(
         <AddItemForm
@@ -366,10 +358,7 @@ describe('AddItemForm', () => {
 
     it('uses correct endpoint for music type', async () => {
       const user = userEvent.setup();
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true, data: [] }),
-      } as Response);
+      mockFetchSuccess([]);
 
       render(
         <AddItemForm
@@ -455,17 +444,11 @@ describe('AddItemForm', () => {
 
     it('calls from-url API when Add Video clicked', async () => {
       const user = userEvent.setup();
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ 
-          success: true, 
-          data: { 
-            id: 'item-1',
-            title: 'Test Video',
-            creator: 'Test Channel'
-          } 
-        }),
-      } as Response);
+      mockFetchSuccess({ 
+        id: 'item-1',
+        title: 'Test Video',
+        creator: 'Test Channel'
+      });
 
       render(
         <AddItemForm
@@ -495,17 +478,11 @@ describe('AddItemForm', () => {
 
     it('calls onItemAdded after successful video fetch', async () => {
       const user = userEvent.setup();
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ 
-          success: true, 
-          data: { 
-            id: 'item-1',
-            title: 'Test Video',
-            creator: 'Test Channel'
-          } 
-        }),
-      } as Response);
+      mockFetchSuccess({ 
+        id: 'item-1',
+        title: 'Test Video',
+        creator: 'Test Channel'
+      });
 
       render(
         <AddItemForm
@@ -547,13 +524,7 @@ describe('AddItemForm', () => {
       const user = userEvent.setup();
       const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
       
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ 
-          success: false, 
-          error: 'Invalid YouTube URL' 
-        }),
-      } as Response);
+      mockFetchError('Invalid YouTube URL');
 
       render(
         <AddItemForm
