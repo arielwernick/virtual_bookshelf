@@ -72,10 +72,12 @@ function redactSensitiveData(data: unknown): unknown {
   for (const [key, value] of Object.entries(data)) {
     const lowerKey = key.toLowerCase();
     
-    // Check if key is sensitive
-    const isSensitiveKey = SENSITIVE_FIELDS.some(field => 
-      lowerKey.includes(field.toLowerCase())
-    );
+    // Check if key exactly matches or is a variant of sensitive fields
+    const isSensitiveKey = SENSITIVE_FIELDS.some(field => {
+      const lowerField = field.toLowerCase();
+      // Exact match or key ends with the sensitive field name (e.g., 'user_password' matches 'password')
+      return lowerKey === lowerField || lowerKey.endsWith('_' + lowerField) || lowerKey.endsWith(lowerField);
+    });
 
     if (isSensitiveKey) {
       redacted[key] = '[REDACTED]';
@@ -115,14 +117,26 @@ function log(
 
   switch (level) {
     case LogLevel.ERROR:
-      console.error(formattedMessage, redactedData || '');
+      if (redactedData !== undefined) {
+        console.error(formattedMessage, redactedData);
+      } else {
+        console.error(formattedMessage);
+      }
       break;
     case LogLevel.WARN:
-      console.warn(formattedMessage, redactedData || '');
+      if (redactedData !== undefined) {
+        console.warn(formattedMessage, redactedData);
+      } else {
+        console.warn(formattedMessage);
+      }
       break;
     case LogLevel.INFO:
     case LogLevel.DEBUG:
-      console.log(formattedMessage, redactedData || '');
+      if (redactedData !== undefined) {
+        console.log(formattedMessage, redactedData);
+      } else {
+        console.log(formattedMessage);
+      }
       break;
   }
 }
