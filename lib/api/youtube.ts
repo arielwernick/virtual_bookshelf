@@ -76,7 +76,6 @@ export async function getVideoDetails(videoId: string): Promise<YouTubeVideo> {
   );
   
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
     logger.error('YouTube API error', { 
       videoId, 
       status: response.status,
