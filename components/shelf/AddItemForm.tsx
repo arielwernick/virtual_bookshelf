@@ -1,29 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { ItemType } from '@/lib/types/shelf';
-import { StarInput } from '@/components/ui/StarInput';
-
-interface SearchResult {
-  id: string;
-  title: string;
-  creator: string;
-  imageUrl: string;
-  externalUrl: string;
-  type: 'book' | 'music' | 'podcast';
-}
-
-interface EpisodeResult {
-  id: string;
-  title: string;
-  description: string;
-  release_date: string;
-  duration_ms: number;
-  imageUrl: string;
-  externalUrl: string;
-  showName: string;
-}
+import { useSearch, SearchResult } from '@/lib/hooks/useSearch';
+import { useEpisodes, EpisodeResult } from '@/lib/hooks/useEpisodes';
+import { useManualEntry } from '@/lib/hooks/useManualEntry';
+import { SearchForm } from './forms/SearchForm';
+import { EpisodeBrowser } from './forms/EpisodeBrowser';
+import { ManualEntryForm } from './forms/ManualEntryForm';
+import { VideoUrlForm } from './forms/VideoUrlForm';
 
 interface AddItemFormProps {
   shelfId: string;
@@ -33,172 +18,13 @@ interface AddItemFormProps {
 
 export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'onClose'>) {
   const [itemType, setItemType] = useState<ItemType>('book');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
-
-  // Episode browsing state
-  const [browsingEpisodes, setBrowsingEpisodes] = useState(false);
-  const [selectedShow, setSelectedShow] = useState<SearchResult | null>(null);
-  const [episodes, setEpisodes] = useState<EpisodeResult[]>([]);
-  const [episodeOffset, setEpisodeOffset] = useState(0);
-  const [hasMoreEpisodes, setHasMoreEpisodes] = useState(true);
-  
-  // Episode search state (search through all episodes in show via API)
-  const [searchingInShow, setSearchingInShow] = useState(false);
-  const [episodeSearchQuery, setEpisodeSearchQuery] = useState('');
-  const [searchedEpisodes, setSearchedEpisodes] = useState<EpisodeResult[]>([]);
-  const [hasMoreSearchResults, setHasMoreSearchResults] = useState(false);
-  const [searchOffset, setSearchOffset] = useState(0);
-
-  // Manual entry
-  const [manualMode, setManualMode] = useState(false);
-  const [manualData, setManualData] = useState({
-    title: '',
-    creator: '',
-    image_url: '',
-    external_url: '',
-    notes: '',
-    rating: null as number | null,
-  });
-
-  // Video URL mode state
   const [videoUrl, setVideoUrl] = useState('');
   const [fetchingVideo, setFetchingVideo] = useState(false);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-
-    setLoading(true);
-    try {
-      const endpoint = itemType === 'book'
-        ? `/api/search/books?q=${encodeURIComponent(searchQuery)}`
-        : `/api/search/music?q=${encodeURIComponent(searchQuery)}&type=${itemType === 'podcast' ? 'podcast' : 'music'}`;
-
-      const res = await fetch(endpoint);
-      const data = await res.json();
-
-      if (data.success) {
-        setSearchResults(data.data);
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBrowseEpisodes = async (show: SearchResult) => {
-    setSelectedShow(show);
-    setBrowsingEpisodes(true);
-    setSearchingInShow(false);
-    setEpisodes([]);
-    setEpisodeOffset(0);
-    setHasMoreEpisodes(true);
-    setEpisodeSearchQuery('');
-    setSearchedEpisodes([]);
-    setLoading(true);
-
-    try {
-      const res = await fetch(`/api/search/episodes?showId=${show.id}&offset=0&limit=50`);
-      const data = await res.json();
-
-      if (data.success) {
-        const episodeList = data.data.episodes || [];
-        setEpisodes(episodeList);
-        setHasMoreEpisodes(episodeList && episodeList.length >= 50);
-        setEpisodeOffset(50);
-      } else {
-        console.error('Episodes API error:', data.error);
-        setEpisodes([]);
-      }
-    } catch (error) {
-      console.error('Episodes fetch error:', error);
-      setEpisodes([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle episode search within show
-  const handleEpisodeSearch = async () => {
-    if (!selectedShow || !episodeSearchQuery.trim()) return;
-
-    setSearchingInShow(true);
-    setLoading(true);
-    setSearchedEpisodes([]);
-    setSearchOffset(0);
-
-    try {
-      const res = await fetch(
-        `/api/search/episodes/in-show?showId=${selectedShow.id}&q=${encodeURIComponent(episodeSearchQuery)}&offset=0&limit=20`
-      );
-      const data = await res.json();
-
-      if (data.success) {
-        setSearchedEpisodes(data.data.episodes || []);
-        setHasMoreSearchResults(data.data.hasMore || false);
-        setSearchOffset(20);
-      } else {
-        console.error('Episode search API error:', data.error);
-        setSearchedEpisodes([]);
-      }
-    } catch (error) {
-      console.error('Episode search fetch error:', error);
-      setSearchedEpisodes([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadMoreSearchResults = async () => {
-    if (!selectedShow || !episodeSearchQuery.trim() || loading) return;
-
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/search/episodes/in-show?showId=${selectedShow.id}&q=${encodeURIComponent(episodeSearchQuery)}&offset=${searchOffset}&limit=20`
-      );
-      const data = await res.json();
-
-      if (data.success) {
-        setSearchedEpisodes(prev => [...(prev || []), ...(data.data.episodes || [])]);
-        setHasMoreSearchResults(data.data.hasMore || false);
-        setSearchOffset(searchOffset + 20);
-      } else {
-        console.error('Load more search results API error:', data.error);
-      }
-    } catch (error) {
-      console.error('Load more search results fetch error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadMoreEpisodes = async () => {
-    if (!selectedShow || loading) return;
-
-    setLoading(true);
-    try {
-      const newOffset = episodeOffset;
-      const res = await fetch(`/api/search/episodes?showId=${selectedShow.id}&offset=${newOffset}&limit=20`);
-      const data = await res.json();
-
-      if (data.success) {
-        const newEpisodes = data.data.episodes || [];
-        setEpisodes(prev => [...(prev || []), ...(newEpisodes || [])]);
-        setEpisodeOffset(newOffset + 20);
-        setHasMoreEpisodes(newEpisodes && newEpisodes.length >= 20);
-      } else {
-        console.error('Load more episodes API error:', data.error);
-      }
-    } catch (error) {
-      console.error('Load more episodes fetch error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const search = useSearch();
+  const episodes = useEpisodes();
+  const manual = useManualEntry();
 
   const handleAddFromSearch = async (result: SearchResult) => {
     setAdding(true);
@@ -241,7 +67,7 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
           type: 'podcast_episode',
           title: episode.title,
           creator: episode.showName,
-          image_url: episode.imageUrl || (selectedShow?.imageUrl),
+          image_url: episode.imageUrl || episodes.selectedShow?.imageUrl,
           external_url: episode.externalUrl,
         }),
       });
@@ -255,50 +81,6 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
     } catch (error) {
       console.error('Add episode error:', error);
       alert('Failed to add episode');
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  const formatDuration = (ms: number): string => {
-    const minutes = Math.floor(ms / 60000);
-    const hours = Math.floor(minutes / 60);
-    
-    if (hours > 0) {
-      const remainingMinutes = minutes % 60;
-      return `${hours}h ${remainingMinutes}m`;
-    }
-    
-    return `${minutes}m`;
-  };
-
-  const handleManualAdd = async () => {
-    if (!manualData.title || !manualData.creator) {
-      alert('Title and creator are required');
-      return;
-    }
-
-    setAdding(true);
-    try {
-      const res = await fetch('/api/items', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shelf_id: shelfId,
-          type: itemType,
-          ...manualData,
-        }),
-      });
-
-      if (res.ok) {
-        onItemAdded();
-      } else {
-        const data = await res.json();
-        alert(data.error || 'Failed to add item');
-      }
-    } catch (error) {
-      console.error('Add error:', error);
-      alert('Failed to add item');
     } finally {
       setAdding(false);
     }
@@ -325,7 +107,6 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
       const data = await res.json();
 
       if (res.ok && data.success) {
-        // Item was created successfully, refresh the list
         onItemAdded();
         setVideoUrl('');
       } else {
@@ -392,22 +173,15 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
       {/* Mode Toggle */}
       <div className="mb-6 flex justify-between items-center">
         <button
-          onClick={() => setManualMode(!manualMode)}
+          onClick={() => manual.setManualMode(!manual.manualMode)}
           className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
         >
-          {manualMode ? '← Back to Search' : 'Or add manually →'}
+          {manual.manualMode ? '← Back to Search' : 'Or add manually →'}
         </button>
         
-        {browsingEpisodes && selectedShow ? (
+        {episodes.browsingEpisodes && episodes.selectedShow ? (
           <button
-            onClick={() => {
-              setBrowsingEpisodes(false);
-              setSelectedShow(null);
-              setEpisodes([]);
-              setSearchingInShow(false);
-              setEpisodeSearchQuery('');
-              setSearchedEpisodes([]);
-            }}
+            onClick={episodes.resetEpisodeBrowsing}
             className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
           >
             ← Back to Search Results
@@ -415,371 +189,61 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
         ) : null}
       </div>
 
-      {!manualMode ? (
+      {!manual.manualMode ? (
         <>
-          {/* Search or Video URL Input */}
-          {!browsingEpisodes && (
+          {!episodes.browsingEpisodes && (
             <div className="mb-6">
               {itemType === 'video' ? (
-                /* Video URL Input */
-                <div className="space-y-4">
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={videoUrl}
-                      onChange={(e) => setVideoUrl(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleFetchVideo()}
-                      placeholder="Paste YouTube URL (e.g., https://youtube.com/watch?v=...)"
-                      className="flex-1 px-4 py-2 border border-red-300 dark:border-red-700 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                    />
-                    <button
-                      onClick={handleFetchVideo}
-                      disabled={fetchingVideo || !videoUrl.trim()}
-                      className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
-                    >
-                      {fetchingVideo ? 'Fetching...' : 'Add Video'}
-                    </button>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Supported formats: youtube.com/watch?v=xxx, youtu.be/xxx, youtube.com/shorts/xxx
-                  </p>
-                </div>
+                <VideoUrlForm
+                  videoUrl={videoUrl}
+                  setVideoUrl={setVideoUrl}
+                  onSubmit={handleFetchVideo}
+                  fetching={fetchingVideo}
+                />
               ) : (
-                /* Regular Search Input */
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    placeholder={`Search for ${itemType}s...`}
-                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                  />
-                  <button
-                    onClick={handleSearch}
-                    disabled={loading}
-                    className="px-6 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
-                  >
-                    {loading ? 'Searching...' : 'Search'}
-                  </button>
-                </div>
+                <SearchForm
+                  itemType={itemType}
+                  searchQuery={search.searchQuery}
+                  setSearchQuery={search.setSearchQuery}
+                  searchResults={search.searchResults}
+                  loading={search.loading}
+                  onSearch={() => search.handleSearch(itemType)}
+                  onAddResult={handleAddFromSearch}
+                  onBrowseEpisodes={(result) => episodes.handleBrowseEpisodes(result)}
+                  adding={adding}
+                />
               )}
             </div>
           )}
 
-          {/* Results */}
-          {browsingEpisodes && selectedShow ? (
-            /* Episode Browser */
-            <div className="space-y-4">
-              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
-                <h3 className="font-medium text-gray-900 dark:text-gray-100">
-                  Episodes from &ldquo;{selectedShow.title}&rdquo;
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Browse recent episodes or search through all episodes
-                </p>
-              </div>
-              
-              {/* Mode Toggle and Search */}
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setSearchingInShow(false);
-                      setEpisodeSearchQuery('');
-                      setSearchedEpisodes([]);
-                    }}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      !searchingInShow
-                        ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    Browse Recent
-                  </button>
-                  <button
-                    onClick={() => setSearchingInShow(true)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      searchingInShow
-                        ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    Search All Episodes
-                  </button>
-                </div>
-                
-                {/* Search Input (only shown in search mode) */}
-                {searchingInShow && (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={episodeSearchQuery}
-                      onChange={(e) => setEpisodeSearchQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleEpisodeSearch()}
-                      placeholder="Search episodes by name or description..."
-                      className="flex-1 px-3 py-2 border border-purple-300 dark:border-purple-700 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                    />
-                    <button
-                      onClick={handleEpisodeSearch}
-                      disabled={loading || !episodeSearchQuery.trim()}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
-                    >
-                      {loading ? 'Searching...' : 'Search'}
-                    </button>
-                  </div>
-                )}
-              </div>
-              
-              <div className="max-h-96 overflow-y-auto space-y-3">
-                {loading ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 dark:text-gray-400">
-                      {searchingInShow ? 'Searching episodes...' : 'Loading episodes...'}
-                    </p>
-                  </div>
-                ) : searchingInShow ? (
-                  /* Search Results */
-                  searchedEpisodes && searchedEpisodes.length > 0 ? (
-                    searchedEpisodes.map((episode) => (
-                      <div
-                        key={episode.id}
-                        className="flex items-start gap-4 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
-                      >
-                      {episode.imageUrl && (
-                        <img
-                          src={episode.imageUrl}
-                          alt={episode.title}
-                          className="w-16 h-16 object-cover rounded flex-shrink-0"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100 line-clamp-2">
-                          {episode.title}
-                        </h4>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {formatDuration(episode.duration_ms)} • {new Date(episode.release_date).toLocaleDateString()}
-                        </p>
-                        {episode.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
-                            {episode.description.replace(/<[^>]*>/g, '').slice(0, 120)}...
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleAddEpisode(episode)}
-                        disabled={adding}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm disabled:opacity-50 flex-shrink-0"
-                      >
-                        Add Episode
-                      </button>
-                      </div>
-                    ))
-                  ) : episodeSearchQuery && !loading ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500 dark:text-gray-400">No episodes found for &ldquo;{episodeSearchQuery}&rdquo;.</p>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500 dark:text-gray-400">Enter a search term to find episodes.</p>
-                    </div>
-                  )
-                ) : (
-                  /* Browse Results */
-                  episodes && episodes.length > 0 ? (
-                    episodes.map((episode) => (
-                    <div
-                      key={episode.id}
-                      className="flex items-start gap-4 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
-                    >
-                    {episode.imageUrl && (
-                      <img
-                        src={episode.imageUrl}
-                        alt={episode.title}
-                        className="w-16 h-16 object-cover rounded flex-shrink-0"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-gray-900 dark:text-gray-100 line-clamp-2">
-                        {episode.title}
-                      </h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {formatDuration(episode.duration_ms)} • {new Date(episode.release_date).toLocaleDateString()}
-                      </p>
-                      {episode.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
-                          {episode.description.replace(/<[^>]*>/g, '').slice(0, 120)}...
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => handleAddEpisode(episode)}
-                      disabled={adding}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm disabled:opacity-50 flex-shrink-0"
-                    >
-                      Add Episode
-                    </button>
-                  </div>
-                  ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500 dark:text-gray-400">No episodes found for this podcast.</p>
-                    </div>
-                  )
-                )}
-                
-                {/* Load More Buttons */}
-                {!loading && (
-                  searchingInShow ? (
-                    /* Load More Search Results */
-                    searchedEpisodes && searchedEpisodes.length > 0 && hasMoreSearchResults && (
-                      <button
-                        onClick={loadMoreSearchResults}
-                        disabled={loading}
-                        className="w-full py-2 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 border border-purple-200 dark:border-purple-700 rounded-lg hover:border-purple-300 dark:hover:border-purple-600 transition-colors disabled:opacity-50"
-                      >
-                        {loading ? 'Loading...' : 'Load More Search Results'}
-                      </button>
-                    )
-                  ) : (
-                    /* Load More Browse Results */
-                    episodes && episodes.length > 0 && hasMoreEpisodes && (
-                      <button
-                        onClick={loadMoreEpisodes}
-                        disabled={loading}
-                        className="w-full py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors disabled:opacity-50"
-                      >
-                        {loading ? 'Loading...' : 'Load More Episodes'}
-                      </button>
-                    )
-                  )
-                )}
-              </div>
-            </div>
-          ) : (
-            /* Regular Search Results */
-            <div className="max-h-96 overflow-y-auto space-y-3">
-              {searchResults && searchResults.map((result) => (
-                <div
-                  key={result.id}
-                  className="flex items-center gap-4 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
-                >
-                  {result.imageUrl && (
-                    <Image
-                      src={result.imageUrl}
-                      alt={result.title}
-                      width={64}
-                      height={64}
-                      className="w-16 h-16 object-cover rounded"
-                      unoptimized
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate">{result.title}</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{result.creator}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    {result.type === 'podcast' && (
-                      <button
-                        onClick={() => handleBrowseEpisodes(result)}
-                        disabled={loading}
-                        className="px-4 py-2 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/70 transition-colors font-medium text-sm disabled:opacity-50"
-                      >
-                        Browse Episodes →
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleAddFromSearch(result)}
-                      disabled={adding}
-                      className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium text-sm disabled:opacity-50"
-                    >
-                      Add
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {episodes.browsingEpisodes && episodes.selectedShow ? (
+            <EpisodeBrowser
+              selectedShow={episodes.selectedShow}
+              episodes={episodes.episodes}
+              searchedEpisodes={episodes.searchedEpisodes}
+              searchingInShow={episodes.searchingInShow}
+              setSearchingInShow={episodes.setSearchingInShow}
+              episodeSearchQuery={episodes.episodeSearchQuery}
+              setEpisodeSearchQuery={episodes.setEpisodeSearchQuery}
+              hasMoreEpisodes={episodes.hasMoreEpisodes}
+              hasMoreSearchResults={episodes.hasMoreSearchResults}
+              loading={episodes.loading}
+              onSearch={episodes.handleEpisodeSearch}
+              onLoadMoreEpisodes={episodes.loadMoreEpisodes}
+              onLoadMoreSearchResults={episodes.loadMoreSearchResults}
+              onAddEpisode={handleAddEpisode}
+              adding={adding}
+            />
+          ) : null}
         </>
       ) : (
-        <>
-          {/* Manual Entry */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title *</label>
-              <input
-                type="text"
-                value={manualData.title}
-                onChange={(e) => setManualData({ ...manualData, title: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {itemType === 'book' ? 'Author' : itemType === 'podcast' ? 'Host' : 'Artist'} *
-              </label>
-              <input
-                type="text"
-                value={manualData.creator}
-                onChange={(e) => setManualData({ ...manualData, creator: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image URL</label>
-              <input
-                type="url"
-                value={manualData.image_url}
-                onChange={(e) => setManualData({ ...manualData, image_url: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                placeholder="https://..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">External URL</label>
-              <input
-                type="url"
-                value={manualData.external_url}
-                onChange={(e) => setManualData({ ...manualData, external_url: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                placeholder="https://..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-              <textarea
-                value={manualData.notes}
-                onChange={(e) => setManualData({ ...manualData, notes: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                rows={3}
-                placeholder="Why do you like this?"
-              />
-            </div>
-
-            <div>
-              <StarInput
-                value={manualData.rating}
-                onChange={(rating) => setManualData({ ...manualData, rating })}
-                label="Rating"
-                size="md"
-              />
-            </div>
-
-            <button
-              onClick={handleManualAdd}
-              disabled={adding}
-              className="w-full py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium disabled:opacity-50"
-            >
-              {adding ? 'Adding...' : 'Add to Shelf'}
-            </button>
-          </div>
-        </>
+        <ManualEntryForm
+          itemType={itemType}
+          manualData={manual.manualData}
+          setManualData={manual.setManualData}
+          onSubmit={() => manual.handleManualAdd(shelfId, itemType, onItemAdded)}
+          adding={manual.adding}
+        />
       )}
     </div>
   );
