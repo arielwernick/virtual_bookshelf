@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
-import { createMockRequest, createRequest } from '@/test/utils/mocks';
+import { createRequest } from '@/test/utils/mocks';
 
 // Mock dependencies
 vi.mock('@/lib/db/queries', () => ({
@@ -35,11 +35,11 @@ describe('POST /api/auth/signup', () => {
 
   describe('Validation', () => {
     it('returns 400 for empty username', async () => {
-      const req = createMockRequest('POST', {
+      const req = createRequest({
         username: '',
         email: 'test@example.com',
         password: 'password123',
-      }, 'http://localhost:3000/api/auth/signup');
+      });
 
       const res = await POST(req);
       const data = await res.json();
