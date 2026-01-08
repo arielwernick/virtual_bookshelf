@@ -1,5 +1,8 @@
 import { ImageResponse } from '@vercel/og';
 import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('OGImage');
 
 export const runtime = 'edge';
 
@@ -256,7 +259,7 @@ export async function GET(
       { width: 1200, height: 630 }
     );
   } catch (error) {
-    console.error('Error generating OG image:', error);
+    logger.errorWithException('Failed to generate OG image', error);
     
     // Return fallback image on error
     return new ImageResponse(

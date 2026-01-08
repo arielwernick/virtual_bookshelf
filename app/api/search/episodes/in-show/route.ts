@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchEpisodesInShow } from '@/lib/api/spotify';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('SearchEpisodesInShow');
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,7 +37,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Episode search error:', error);
+    logger.errorWithException('Episode search error', error);
     
     if (error instanceof Error) {
       if (error.message.includes('Show not found')) {

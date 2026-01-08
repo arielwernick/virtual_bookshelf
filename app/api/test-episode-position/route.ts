@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('TestEpisodePosition');
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
@@ -110,7 +113,7 @@ export async function GET(_request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Episode lookup error:', error);
+    logger.errorWithException('Episode lookup failed', error);
     return NextResponse.json(
       { success: false, error: 'Failed to lookup episode' },
       { status: 500 }
