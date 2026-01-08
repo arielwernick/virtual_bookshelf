@@ -1,4 +1,7 @@
 import { neon, NeonQueryFunction } from '@neondatabase/serverless';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('Database');
 
 // Lazy initialization - only create connection when first used (runtime)
 let _sql: NeonQueryFunction<false, false> | null = null;
@@ -26,10 +29,12 @@ export const sql = ((strings: TemplateStringsArray, ...values: unknown[]) => {
 export async function testConnection() {
   try {
     const result = await sql`SELECT NOW() as current_time`;
-    console.log('Database connected successfully:', result[0].current_time);
+    logger.info('Database connected successfully', { 
+      currentTime: result[0].current_time 
+    });
     return true;
   } catch (error) {
-    console.error('Database connection failed:', error);
+    logger.errorWithException('Database connection failed', error);
     return false;
   }
 }
