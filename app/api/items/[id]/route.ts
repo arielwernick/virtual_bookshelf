@@ -3,6 +3,9 @@ import { getSession } from '@/lib/utils/session';
 import { getItemById, updateItem, deleteItem, getShelfById } from '@/lib/db/queries';
 import { validateText, validateUrl, validateNotes, validateRating } from '@/lib/utils/validation';
 import { UpdateItemData } from '@/lib/types/shelf';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('ItemById');
 
 /**
  * PATCH: Update an item
@@ -132,7 +135,7 @@ export async function PATCH(
       data: updatedItem,
     });
   } catch (error) {
-    console.error('Error updating item:', error);
+    logger.errorWithException('Failed to update item', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update item' },
       { status: 500 }
@@ -186,7 +189,7 @@ export async function DELETE(
       message: 'Item deleted successfully',
     });
   } catch (error) {
-    console.error('Error deleting item:', error);
+    logger.errorWithException('Failed to delete item', error);
     return NextResponse.json(
       { success: false, error: 'Failed to delete item' },
       { status: 500 }

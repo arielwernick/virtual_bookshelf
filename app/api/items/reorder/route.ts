@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { updateItemOrder, getShelfById, getItemById } from '@/lib/db/queries';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('ItemsReorder');
 
 /**
  * Reorder items within a shelf
@@ -71,7 +74,7 @@ export async function POST(request: Request) {
       message: 'Items reordered successfully',
     });
   } catch (error) {
-    console.error('Error reordering items:', error);
+    logger.errorWithException('Failed to reorder items', error);
     return NextResponse.json(
       { success: false, error: 'Failed to reorder items' },
       { status: 500 }

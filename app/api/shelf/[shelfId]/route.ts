@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { getShelfById, getItemsByShelfId, updateShelf, deleteShelf } from '@/lib/db/queries';
 import type { Shelf } from '@/lib/types/shelf';
+import { createLogger } from '@/lib/utils/logger';
 
+const logger = createLogger('ShelfById');
 type ShelfUpdateData = Partial<Pick<Shelf, 'name' | 'description' | 'is_public'>>;
 
 /**
@@ -52,7 +54,7 @@ export async function GET(
             },
         });
     } catch (error) {
-        console.error('Error fetching shelf:', error);
+        logger.errorWithException('Failed to fetch shelf', error);
         return NextResponse.json(
             { success: false, error: 'Failed to fetch shelf' },
             { status: 500 }
@@ -165,7 +167,7 @@ export async function PATCH(
             },
         });
     } catch (error) {
-        console.error('Error updating shelf:', error);
+        logger.errorWithException('Failed to update shelf', error);
         return NextResponse.json(
             { success: false, error: 'Failed to update shelf' },
             { status: 500 }
@@ -217,7 +219,7 @@ export async function DELETE(
             message: 'Shelf deleted successfully',
         });
     } catch (error) {
-        console.error('Error deleting shelf:', error);
+        logger.errorWithException('Failed to delete shelf', error);
         return NextResponse.json(
             { success: false, error: 'Failed to delete shelf' },
             { status: 500 }
