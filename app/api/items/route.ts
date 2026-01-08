@@ -4,6 +4,9 @@ import { createItem, getNextOrderIndex, getShelfById, getItemsByShelfId } from '
 import { validateItemType, validateText, validateUrl, validateNotes, validateRating } from '@/lib/utils/validation';
 import { isTop5Shelf, validateTop5Capacity, validateNoDuplicateItems, TOP5_MAX_ITEMS } from '@/lib/utils/top5';
 import { CreateItemData } from '@/lib/types/shelf';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('ItemsCreate');
 
 /**
  * Create a new item in a shelf
@@ -166,7 +169,7 @@ export async function POST(request: Request) {
       data: item,
     });
   } catch (error) {
-    console.error('Error creating item:', error);
+    logger.errorWithException('Failed to create item', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create item' },
       { status: 500 }

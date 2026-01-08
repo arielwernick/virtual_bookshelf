@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('ShelfShare');
 
 /**
  * GET: Fetch a public shelf by share token
@@ -36,7 +39,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error fetching shared shelf:', error);
+    logger.errorWithException('Failed to fetch shared shelf', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch shelf' },
       { status: 500 }

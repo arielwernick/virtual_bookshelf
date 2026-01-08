@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { extractVideoId, getVideoDetails } from '@/lib/api/youtube';
 import { sql } from '@/lib/db/client';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('ItemsFromUrl');
 
 export const runtime = 'edge';
 
@@ -68,7 +71,7 @@ export async function POST(request: Request) {
     try {
       videoDetails = await getVideoDetails(videoId);
     } catch (error) {
-      console.error('YouTube API error:', error);
+      logger.errorWithException('YouTube API error', error);
       return NextResponse.json(
         { 
           success: false, 
@@ -116,7 +119,7 @@ export async function POST(request: Request) {
       data: result[0],
     });
   } catch (error) {
-    console.error('Error creating item from URL:', error);
+    logger.errorWithException('Failed to create item from URL', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create item' },
       { status: 500 }

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { getShelfsByUserId, getItemsByShelfId } from '@/lib/db/queries';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('ShelfDashboard');
 
 /**
  * Get user's dashboard data (all shelves with item counts)
@@ -48,7 +51,7 @@ export async function GET(_request: Request) {
       },
     });
   } catch (error) {
-    console.error('Error fetching dashboard:', error);
+    logger.errorWithException('Failed to fetch dashboard', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch dashboard' },
       { status: 500 }

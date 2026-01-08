@@ -3,6 +3,9 @@ import { getSession } from '@/lib/utils/session';
 import { createShelf } from '@/lib/db/queries';
 import { validateShelfType } from '@/lib/utils/top5';
 import { ShelfType } from '@/lib/types/shelf';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('ShelfCreate');
 
 /**
  * Create a new shelf for the authenticated user
@@ -86,7 +89,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Error creating shelf:', error);
+    logger.errorWithException('Failed to create shelf', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create shelf' },
       { status: 500 }

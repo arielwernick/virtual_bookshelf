@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { updateUserTitle } from '@/lib/db/queries';
+import { createLogger } from '@/lib/utils/logger';
 
+const logger = createLogger('ShelfUpdateTitle');
 const MAX_TITLE_LENGTH = 100;
 
 export async function PATCH(request: Request) {
@@ -38,7 +40,7 @@ export async function PATCH(request: Request) {
             },
         });
     } catch (error) {
-        console.error('Error updating shelf title:', error);
+        logger.errorWithException('Failed to update shelf title', error);
         return NextResponse.json({ success: false, error: 'Failed to update shelf title' }, { status: 500 });
     }
 }
