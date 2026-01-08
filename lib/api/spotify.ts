@@ -210,7 +210,6 @@ export async function getShowEpisodes(
   );
 
   if (!showResponse.ok) {
-    const errorData = await showResponse.json().catch(() => ({}));
     logger.error('Failed to fetch show info', { 
       showId, 
       status: showResponse.status,
@@ -233,7 +232,6 @@ export async function getShowEpisodes(
   );
 
   if (!episodesResponse.ok) {
-    const errorData = await episodesResponse.json().catch(() => ({}));
     logger.error('Failed to fetch episodes', { 
       showId, 
       offset, 
@@ -291,7 +289,6 @@ export async function searchEpisodesInShow(
     if (showResponse.status === 404) {
       throw new Error('Show not found');
     }
-    const errorData = await showResponse.json().catch(() => ({}));
     logger.error('Failed to fetch show info', { 
       showId, 
       status: showResponse.status,
