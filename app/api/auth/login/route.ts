@@ -9,6 +9,9 @@ import {
   checkRateLimit, 
   isRateLimitingEnabled 
 } from '@/lib/utils/rateLimit';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('AuthLogin');
 
 export async function POST(request: Request) {
   try {
@@ -83,7 +86,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Error during login:', error);
+    logger.errorWithException('Login failed', error);
     return NextResponse.json(
       { success: false, error: 'Login failed' },
       { status: 500 }

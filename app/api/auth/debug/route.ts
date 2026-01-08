@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('AuthDebug');
 
 /**
  * Debug endpoint - check session status
@@ -20,7 +23,7 @@ export async function GET(_request: Request) {
       authenticated: !!session,
     });
   } catch (error) {
-    console.error('Error in debug endpoint:', error);
+    logger.errorWithException('Debug endpoint failed', error);
     return NextResponse.json(
       { success: false, error: 'Debug failed' },
       { status: 500 }

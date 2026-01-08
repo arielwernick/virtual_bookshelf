@@ -9,6 +9,9 @@ import {
   checkRateLimit, 
   isRateLimitingEnabled 
 } from '@/lib/utils/rateLimit';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('AuthSignup');
 
 export async function POST(request: Request) {
   try {
@@ -80,10 +83,7 @@ export async function POST(request: Request) {
       passwordHash: passwordHash,
     });
 
-    // SAFE: Only log non-sensitive info in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('New user created:', { userId: user.id, username: user.username });
-    }
+    logger.debug('New user created', { userId: user.id, username: user.username });
 
     // Set session cookie
     await setSessionCookie({
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Error during signup:', error);
+    logger.errorWithException('Signup failed', error);
     return NextResponse.json(
       { success: false, error: 'Signup failed' },
       { status: 500 }
