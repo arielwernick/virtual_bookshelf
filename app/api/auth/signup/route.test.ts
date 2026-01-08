@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
-import { createMockRequest, createMockUser, createRequest } from '@/test/utils/mocks';
+import { createMockRequest, createRequest } from '@/test/utils/mocks';
 
 // Mock dependencies
 vi.mock('@/lib/db/queries', () => ({

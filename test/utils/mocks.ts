@@ -112,17 +112,27 @@ export function createRequest(body: object, url: string = 'http://localhost:3000
 }
 
 /**
- * Creates a mock params object for Next.js dynamic routes
+ * Creates a mock params object for Next.js dynamic routes (generic)
+ * Returns just the params object wrapped in a Promise
  * 
  * @param params - Key-value pairs for route parameters
  * @returns Promise resolving to params object
+ * @example
+ * const params = await createMockParams({ id: '123' });
  */
 export function createMockParams<T extends Record<string, string>>(params: T): Promise<T> {
   return Promise.resolve(params);
 }
 
 /**
- * Simple helper to create params (common pattern in tests)
+ * Creates Next.js route context with params for shelf routes
+ * Returns the full context object structure expected by Next.js route handlers
+ * This is a convenience wrapper around createMockParams for the common shelf ID pattern
+ * 
+ * @param shelfId - Shelf ID for the route parameter (default: 'shelf-1')
+ * @returns Object with params Promise (for use as second arg to route handlers)
+ * @example
+ * await GET(request, createParams('my-shelf'));
  */
 export function createParams(shelfId: string = 'shelf-1') {
   return { params: Promise.resolve({ shelfId }) };
