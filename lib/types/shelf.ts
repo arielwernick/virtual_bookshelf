@@ -45,6 +45,12 @@ export interface Item {
   updated_at: Date;
 }
 
+// Shelf with associated items (for optimized queries)
+export interface ShelfWithItems {
+  shelf: Shelf;
+  items: Item[];
+}
+
 // Public-facing shelf data (without sensitive user info)
 export interface ShelfData {
   username: string | null;

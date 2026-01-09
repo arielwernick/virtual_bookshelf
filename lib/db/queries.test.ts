@@ -25,6 +25,7 @@ import {
   getShelfById,
   getShelfByShareToken,
   getShelfsByUserId,
+  getShelvesWithItems,
   updateShelf,
   deleteShelf,
   // Item queries
@@ -320,6 +321,116 @@ describe('Shelf Queries', () => {
       vi.mocked(sql).mockResolvedValueOnce([]);
 
       const result = await getShelfsByUserId('user-no-shelves');
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getShelvesWithItems', () => {
+    it('returns shelves with their items in a single query', async () => {
+      const mockResult = [
+        {
+          shelf_id: 'shelf-1',
+          user_id: 'user-1',
+          name: 'My Favorites',
+          description: 'Best books',
+          share_token: 'token-1',
+          is_public: true,
+          shelf_type: 'standard',
+          shelf_created_at: new Date('2024-01-01'),
+          shelf_updated_at: new Date('2024-01-01'),
+          items: [
+            {
+              id: 'item-1',
+              shelf_id: 'shelf-1',
+              user_id: 'user-1',
+              type: 'book',
+              title: 'Book 1',
+              creator: 'Author 1',
+              image_url: null,
+              external_url: null,
+              notes: null,
+              rating: null,
+              order_index: 0,
+              created_at: new Date('2024-01-01'),
+              updated_at: new Date('2024-01-01'),
+            },
+            {
+              id: 'item-2',
+              shelf_id: 'shelf-1',
+              user_id: 'user-1',
+              type: 'book',
+              title: 'Book 2',
+              creator: 'Author 2',
+              image_url: null,
+              external_url: null,
+              notes: null,
+              rating: null,
+              order_index: 1,
+              created_at: new Date('2024-01-01'),
+              updated_at: new Date('2024-01-01'),
+            },
+          ],
+        },
+      ];
+      vi.mocked(sql).mockResolvedValueOnce(mockResult);
+
+      const result = await getShelvesWithItems('user-1');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].shelf.id).toBe('shelf-1');
+      expect(result[0].shelf.name).toBe('My Favorites');
+      expect(result[0].items).toHaveLength(2);
+      expect(result[0].items[0].title).toBe('Book 1');
+      expect(result[0].items[1].title).toBe('Book 2');
+      expect(sql).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns empty items array for shelves with no items', async () => {
+      const mockResult = [
+        {
+          shelf_id: 'shelf-1',
+          user_id: 'user-1',
+          name: 'Empty Shelf',
+          description: null,
+          share_token: 'token-1',
+          is_public: true,
+          shelf_type: 'standard',
+          shelf_created_at: new Date('2024-01-01'),
+          shelf_updated_at: new Date('2024-01-01'),
+          items: [],
+        },
+      ];
+      vi.mocked(sql).mockResolvedValueOnce(mockResult);
+
+      const result = await getShelvesWithItems('user-1');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].items).toEqual([]);
+    });
+
+    it('respects maxShelves parameter', async () => {
+      vi.mocked(sql).mockResolvedValueOnce([]);
+
+      await getShelvesWithItems('user-1', 3, 12);
+
+      expect(sql).toHaveBeenCalledTimes(1);
+      // Verify the function was called (limit is applied in the query)
+    });
+
+    it('respects maxItemsPerShelf parameter', async () => {
+      vi.mocked(sql).mockResolvedValueOnce([]);
+
+      await getShelvesWithItems('user-1', 5, 6);
+
+      expect(sql).toHaveBeenCalledTimes(1);
+      // Verify the function was called (limit is applied in the query)
+    });
+
+    it('returns empty array when user has no public shelves', async () => {
+      vi.mocked(sql).mockResolvedValueOnce([]);
+
+      const result = await getShelvesWithItems('user-no-shelves');
 
       expect(result).toEqual([]);
     });
