@@ -1,0 +1,31 @@
+-- Migration 005: N+1 Query Optimization for Home Page
+-- Date: 2026-01-09
+-- Purpose: Document optimization of home page demo shelf loading
+--
+-- CHANGES:
+-- 1. Created getShelvesWithItems() function in queries.ts that uses
+--    JOIN with LATERAL subquery to fetch shelves and items in a single query
+-- 2. Verified that idx_items_order index exists (created in initial schema)
+--
+-- PERFORMANCE IMPACT:
+-- - Reduces home page queries from N+1 to 1 query (where N = number of demo shelves)
+-- - For 5 demo shelves, reduces from 6 queries to 1 query
+--
+-- INDEX VERIFICATION:
+-- This migration requires the following index (already exists in schema.sql):
+-- CREATE INDEX IF NOT EXISTS idx_items_order ON items(shelf_id, order_index);
+--
+-- This index is critical for:
+-- - Efficient filtering by shelf_id in the JOIN
+-- - Ordered retrieval by order_index
+--
+-- To verify the index exists, run:
+-- SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'items' AND indexname = 'idx_items_order';
+--
+-- Expected output:
+--    indexname    |                                        indexdef
+-- ----------------+----------------------------------------------------------------------------------------
+--  idx_items_order | CREATE INDEX idx_items_order ON items USING btree (shelf_id, order_index)
+--
+-- NO SQL CHANGES REQUIRED - This file is for documentation only.
+-- All necessary indexes already exist in the schema.

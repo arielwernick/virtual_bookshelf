@@ -1,36 +1,30 @@
 import Link from 'next/link';
-import { getShelfByShareToken, getItemsByShelfId, getPublicShelvesByUserId } from '@/lib/db/queries';
+import { getShelfByShareToken, getItemsByShelfId, getShelvesWithItems } from '@/lib/db/queries';
 import { getDemoShelfToken, getDemoUserId } from '@/lib/utils/env';
 import { DemoShelf } from '@/components/home/DemoShelf';
 import { RotatingDemoShelf, ShelfPreview } from '@/components/home/RotatingDemoShelf';
 
 const MAX_DEMO_SHELVES = 5;
+const MAX_ITEMS_PER_SHELF = 12;
 
 /**
  * Fetch demo shelves for the home page
  * 
  * Supports two modes:
- * 1. DEMO_USER_ID (preferred): Fetches all public shelves from admin user
+ * 1. DEMO_USER_ID (preferred): Fetches all public shelves from admin user with optimized query
  * 2. DEMO_SHELF_TOKEN (legacy): Fetches a single shelf by token
  * 
  * See docs/ADMIN_DEMO_SETUP.md for setup instructions.
  */
 async function getDemoShelvesData(): Promise<ShelfPreview[] | null> {
-  // Try new approach first: fetch all public shelves from demo user
+  // Try new approach first: fetch all public shelves from demo user using optimized query
   const userId = getDemoUserId();
   if (userId) {
     try {
-      const shelves = await getPublicShelvesByUserId(userId);
-      if (shelves.length === 0) return null;
-
-      // Limit to MAX_DEMO_SHELVES and fetch items for each
-      const limitedShelves = shelves.slice(0, MAX_DEMO_SHELVES);
-      const shelfPreviews: ShelfPreview[] = await Promise.all(
-        limitedShelves.map(async (shelf) => {
-          const items = await getItemsByShelfId(shelf.id);
-          return { shelf, items: items.slice(0, 12) };
-        })
-      );
+      // Use optimized query that fetches shelves and items in a single database call
+      const shelfPreviews = await getShelvesWithItems(userId, MAX_DEMO_SHELVES, MAX_ITEMS_PER_SHELF);
+      
+      if (shelfPreviews.length === 0) return null;
 
       return shelfPreviews;
     } catch {
