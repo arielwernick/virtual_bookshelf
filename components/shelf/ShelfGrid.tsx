@@ -2,7 +2,7 @@
 
 import { Item, ItemType } from '@/lib/types/shelf';
 import { ItemCard } from './ItemCard';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -297,7 +297,6 @@ interface ShelfGridProps {
 
 export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfGridProps) {
   const [selectedType, setSelectedType] = useState<ItemType | 'all'>('all');
-  const gridRef = useRef<HTMLDivElement>(null);
 
   const filteredItems = selectedType === 'all' 
     ? items 
@@ -326,7 +325,7 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
   );
 
   return (
-    <div ref={gridRef}>
+    <div>
       {/* Filter tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-200">
         {filterButton('all', 'All', counts.all)}
