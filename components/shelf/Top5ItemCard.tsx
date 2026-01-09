@@ -49,6 +49,7 @@ export function Top5ItemCard({
     music: 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200',
     podcast_episode: 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200',
     video: 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200',
+    link: 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200',
   };
 
   // Gold gradient for rank badge
