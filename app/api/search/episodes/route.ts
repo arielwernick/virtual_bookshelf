@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getShowEpisodes } from '@/lib/api/spotify';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('SearchEpisodes');
 
 /**
  * GET /api/search/episodes
@@ -57,7 +60,7 @@ export async function GET(request: Request) {
       data: result,
     });
   } catch (error) {
-    console.error('Error fetching podcast episodes:', error);
+    logger.errorWithException('Failed to fetch podcast episodes', error);
     
     // Handle specific Spotify API errors
     if (error instanceof Error) {

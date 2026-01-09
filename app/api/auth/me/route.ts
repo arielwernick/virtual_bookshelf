@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('AuthMe');
 
 export async function GET() {
   try {
@@ -20,7 +23,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('Error getting session:', error);
+    logger.errorWithException('Failed to get session', error);
     return NextResponse.json(
       { success: false, error: 'Failed to get session' },
       { status: 500 }

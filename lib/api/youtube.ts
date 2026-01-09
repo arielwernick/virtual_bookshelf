@@ -1,5 +1,9 @@
 // YouTube API integration for video metadata fetching
 
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('YouTubeAPI');
+
 export interface YouTubeVideo {
   id: string;
   title: string;
@@ -72,8 +76,11 @@ export async function getVideoDetails(videoId: string): Promise<YouTubeVideo> {
   );
   
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    console.error('YouTube API error:', errorData);
+    logger.error('YouTube API error', { 
+      videoId, 
+      status: response.status,
+      statusText: response.statusText 
+    });
     throw new Error(`Failed to fetch video details: ${response.statusText}`);
   }
   

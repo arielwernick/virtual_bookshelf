@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { updateUserDescription } from '@/lib/db/queries';
+import { createLogger } from '@/lib/utils/logger';
 
+const logger = createLogger('ShelfUpdateDescription');
 const MAX_DESCRIPTION_LENGTH = 500;
 
 export async function POST(request: Request) {
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Error updating shelf description:', error);
+    logger.errorWithException('Failed to update shelf description', error);
     return NextResponse.json({ success: false, error: 'Failed to update shelf description' }, { status: 500 });
   }
 }

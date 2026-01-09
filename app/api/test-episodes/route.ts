@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getShowEpisodes } from '@/lib/api/spotify';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('TestEpisodes');
 
 export async function GET(request: Request) {
   try {
@@ -15,12 +18,14 @@ export async function GET(request: Request) {
       );
     }
 
-    console.log(`Testing getShowEpisodes with showId: ${showId}, offset: ${offset}, limit: ${limit}`);
+    logger.debug('Testing getShowEpisodes', { showId, offset, limit });
 
     const result = await getShowEpisodes(showId, { offset, limit });
 
-    console.log(`Successfully fetched ${result.episodes.length} episodes for show "${result.showName}"`);
-    console.log('Sample episode data:', result.episodes[0]);
+    logger.debug('Successfully fetched episodes', { 
+      count: result.episodes.length, 
+      showName: result.showName 
+    });
 
     return NextResponse.json({
       success: true,
@@ -32,7 +37,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Error testing getShowEpisodes:', error);
+    logger.errorWithException('Failed to test getShowEpisodes', error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

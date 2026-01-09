@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { getShelfById, getItemsByShelfId, updateItemOrder } from '@/lib/db/queries';
 import { isTop5Shelf } from '@/lib/utils/top5';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('ShelfReorder');
 
 interface RouteParams {
   params: Promise<{ shelfId: string }>;
@@ -111,7 +114,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       },
     });
   } catch (error) {
-    console.error('Error reordering items:', error);
+    logger.errorWithException('Failed to reorder items', error);
     return NextResponse.json(
       { success: false, error: 'Failed to reorder items' },
       { status: 500 }

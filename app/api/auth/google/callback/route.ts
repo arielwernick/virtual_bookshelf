@@ -7,15 +7,9 @@ import {
   updateUserGoogleId,
 } from '@/lib/db/queries';
 import { setSessionCookie } from '@/lib/utils/session';
+import { createLogger } from '@/lib/utils/logger';
 
-const isDev = process.env.NODE_ENV === 'development';
-
-// Helper for safe logging - only logs in development
-function safeLog(message: string, data?: Record<string, unknown>) {
-  if (isDev) {
-    console.log(`[OAuth Callback] ${message}`, data || '');
-  }
-}
+const logger = createLogger('OAuthCallback');
 
 /**
  * Google OAuth callback handler
@@ -28,8 +22,7 @@ export async function GET(request: Request) {
     const state = url.searchParams.get('state');
     const error = url.searchParams.get('error');
 
-    // Log only that callback was received, not the actual values
-    safeLog('Callback received', { 
+    logger.debug('Callback received', { 
       hasCode: !!code, 
       hasState: !!state, 
       hasError: !!error 
@@ -37,8 +30,7 @@ export async function GET(request: Request) {
 
     // If Google returned an error
     if (error) {
-      // SAFE: Error type from Google is not sensitive
-      console.error('[OAuth Callback] Google returned error:', error);
+      logger.error('Google returned error', { error });
       return NextResponse.json(
         { success: false, error: `Authentication failed: ${error}` },
         { status: 400 }
@@ -57,11 +49,10 @@ export async function GET(request: Request) {
     const cookieStore = await cookies();
     const storedState = cookieStore.get('oauth_state')?.value;
     
-    // SAFE: Only log whether match succeeded, not the actual values
-    safeLog('State verification', { stateMatch: state === storedState });
+    logger.debug('State verification', { stateMatch: state === storedState });
     
     if (state !== storedState) {
-      console.error('[OAuth Callback] State mismatch - possible CSRF attempt');
+      logger.error('State mismatch - possible CSRF attempt');
       return NextResponse.json(
         { success: false, error: 'Invalid state token' },
         { status: 403 }
@@ -82,7 +73,7 @@ export async function GET(request: Request) {
     });
 
     if (!tokenResponse.ok) {
-      console.error('[OAuth Callback] Token exchange failed');
+      logger.error('Token exchange failed');
       return NextResponse.json(
         { success: false, error: 'Failed to exchange token' },
         { status: 500 }
@@ -97,7 +88,7 @@ export async function GET(request: Request) {
     });
 
     if (!userInfoResponse.ok) {
-      console.error('[OAuth Callback] User info fetch failed');
+      logger.error('User info fetch failed');
       return NextResponse.json(
         { success: false, error: 'Failed to fetch user info' },
         { status: 500 }
@@ -130,7 +121,7 @@ export async function GET(request: Request) {
         counter++;
       }
 
-      safeLog('Creating new user');
+      logger.debug('Creating new user');
       user = await createUser({
         email,
         username,
@@ -139,7 +130,7 @@ export async function GET(request: Request) {
       });
     } else if (!user.google_id) {
       // Link Google to existing account
-      safeLog('Linking Google account to existing user');
+      logger.debug('Linking Google account to existing user');
       user = await updateUserGoogleId(user.id, googleId);
     }
 
@@ -155,14 +146,11 @@ export async function GET(request: Request) {
     const response = NextResponse.redirect(dashboardUrl);
     response.cookies.delete('oauth_state');
 
-    // SAFE: Only log success, not user details
-    safeLog('Authentication successful');
+    logger.debug('Authentication successful');
 
     return response;
   } catch (error) {
-    console.error('[OAuth Callback] Authentication failed:', 
-      error instanceof Error ? error.message : 'Unknown error'
-    );
+    logger.errorWithException('Authentication failed', error);
     return NextResponse.json(
       { success: false, error: 'Authentication failed' },
       { status: 500 }

@@ -6,8 +6,10 @@ import {
   checkRateLimit, 
   isRateLimitingEnabled 
 } from '@/lib/utils/rateLimit';
+import { createLogger } from '@/lib/utils/logger';
 
 const isProduction = process.env.NODE_ENV === 'production';
+const logger = createLogger('OAuth');
 
 /**
  * Google OAuth initiation route
@@ -36,13 +38,10 @@ export async function GET(request: Request) {
     googleAuthUrl.searchParams.append('state', state);
     googleAuthUrl.searchParams.append('access_type', 'offline');
 
-    // SAFE: Only log non-sensitive info, and only in development
-    if (!isProduction) {
-      console.log('[OAuth] Initiating Google OAuth flow', {
-        redirectUri: process.env.GOOGLE_REDIRECT_URI,
-        timestamp: new Date().toISOString(),
-      });
-    }
+    logger.debug('Initiating Google OAuth flow', {
+      redirectUri: process.env.GOOGLE_REDIRECT_URI,
+      timestamp: new Date().toISOString(),
+    });
 
     // Create response with redirect
     const response = NextResponse.redirect(googleAuthUrl.toString());
@@ -59,10 +58,7 @@ export async function GET(request: Request) {
 
     return response;
   } catch (error) {
-    // SAFE: Log error type, not full error which may contain sensitive data
-    console.error('[OAuth] Failed to initiate OAuth flow:', 
-      error instanceof Error ? error.message : 'Unknown error'
-    );
+    logger.errorWithException('Failed to initiate OAuth flow', error);
     return NextResponse.json(
       { success: false, error: 'Failed to initiate OAuth flow' },
       { status: 500 }

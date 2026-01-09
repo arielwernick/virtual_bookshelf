@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { searchMusic } from '@/lib/api/spotify';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('SearchMusic');
 
 export async function GET(request: Request) {
   try {
@@ -22,7 +25,7 @@ export async function GET(request: Request) {
       data: results,
     });
   } catch (error) {
-    console.error('Error searching music/podcasts:', error);
+    logger.errorWithException('Failed to search music/podcasts', error);
     return NextResponse.json(
       { success: false, error: 'Failed to search music/podcasts' },
       { status: 500 }

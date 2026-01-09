@@ -1,5 +1,9 @@
 // Spotify API integration for music and podcast search
 
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('SpotifyAPI');
+
 interface SpotifyTokenResponse {
   access_token: string;
   token_type: string;
@@ -104,7 +108,11 @@ async function getAccessToken(): Promise<string> {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error('Spotify token error:', errorData);
+    logger.error('Spotify token error', { 
+      error: errorData.error,
+      description: errorData.error_description,
+      status: response.status 
+    });
     throw new Error(`Failed to get Spotify access token: ${errorData.error_description || errorData.error || response.statusText}`);
   }
 
@@ -202,8 +210,11 @@ export async function getShowEpisodes(
   );
 
   if (!showResponse.ok) {
-    const errorData = await showResponse.json().catch(() => ({}));
-    console.error('Failed to fetch show info:', errorData);
+    logger.error('Failed to fetch show info', { 
+      showId, 
+      status: showResponse.status,
+      statusText: showResponse.statusText 
+    });
     throw new Error(`Failed to fetch show information: ${showResponse.statusText}`);
   }
 
@@ -221,8 +232,13 @@ export async function getShowEpisodes(
   );
 
   if (!episodesResponse.ok) {
-    const errorData = await episodesResponse.json().catch(() => ({}));
-    console.error('Failed to fetch episodes:', errorData);
+    logger.error('Failed to fetch episodes', { 
+      showId, 
+      offset, 
+      limit, 
+      status: episodesResponse.status,
+      statusText: episodesResponse.statusText 
+    });
     throw new Error(`Failed to fetch episodes: ${episodesResponse.statusText}`);
   }
 
@@ -273,8 +289,11 @@ export async function searchEpisodesInShow(
     if (showResponse.status === 404) {
       throw new Error('Show not found');
     }
-    const errorData = await showResponse.json().catch(() => ({}));
-    console.error('Failed to fetch show info:', errorData);
+    logger.error('Failed to fetch show info', { 
+      showId, 
+      status: showResponse.status,
+      statusText: showResponse.statusText 
+    });
     throw new Error(`Failed to fetch show information: ${showResponse.statusText}`);
   }
 

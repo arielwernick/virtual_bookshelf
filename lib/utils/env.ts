@@ -1,6 +1,11 @@
 /**
  * Validate required environment variables on boot
  */
+
+import { createLogger } from './logger';
+
+const logger = createLogger('Environment');
+
 export function validateEnv() {
   const required = [
     'DATABASE_URL',
@@ -28,7 +33,7 @@ export function validateEnv() {
     process.env.NODE_ENV === 'production' &&
     (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'your-secret-key-change-in-production')
   ) {
-    console.warn('WARNING: Using default SESSION_SECRET in production. Please set a secure random value.');
+    logger.warn('Using default SESSION_SECRET in production. Please set a secure random value.');
   }
 }
 
