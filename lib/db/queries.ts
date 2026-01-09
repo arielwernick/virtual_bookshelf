@@ -321,35 +321,7 @@ export async function getItemsByShelfIdAndType(shelfId: string, type: string): P
   return result as Item[];
 }
 
-/**
- * Get all items for a user (across all shelves)
- * @deprecated Use getItemsByShelfId instead
- */
-export async function getItemsByUserId(userId: string): Promise<Item[]> {
-  const result = await sql`
-    SELECT items.* FROM items
-    JOIN shelves ON items.shelf_id = shelves.id
-    WHERE shelves.user_id = ${userId}
-    ORDER BY items.created_at DESC
-  `;
 
-  return result as Item[];
-}
-
-/**
- * Get items by user ID and type (across all shelves)
- * @deprecated Use getItemsByShelfIdAndType instead
- */
-export async function getItemsByUserIdAndType(userId: string, type: string): Promise<Item[]> {
-  const result = await sql`
-    SELECT items.* FROM items
-    JOIN shelves ON items.shelf_id = shelves.id
-    WHERE shelves.user_id = ${userId} AND items.type = ${type}
-    ORDER BY items.created_at DESC
-  `;
-
-  return result as Item[];
-}
 
 /**
  * Get a single item by ID
