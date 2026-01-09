@@ -321,8 +321,6 @@ export async function getItemsByShelfIdAndType(shelfId: string, type: string): P
   return result as Item[];
 }
 
-
-
 /**
  * Get a single item by ID
  */
