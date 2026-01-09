@@ -145,4 +145,121 @@ describe('Modal', () => {
       expect(document.body.style.overflow).toBe('unset');
     });
   });
+
+  describe('Focus Trap', () => {
+    it('focuses first focusable element when modal opens', () => {
+      render(
+        <Modal isOpen={true} onClose={() => {}}>
+          <button>First</button>
+          <button>Second</button>
+        </Modal>
+      );
+
+      // Close button is the first focusable element
+      expect(screen.getByLabelText('Close modal')).toHaveFocus();
+    });
+
+    it('traps focus on Tab at last element', () => {
+      render(
+        <Modal isOpen={true} onClose={() => {}}>
+          <button>First</button>
+          <button>Second</button>
+        </Modal>
+      );
+
+      // Focus on second button (last focusable element)
+      screen.getByText('Second').focus();
+      expect(screen.getByText('Second')).toHaveFocus();
+
+      // Press Tab - should wrap to first button (close button)
+      fireEvent.keyDown(document, { key: 'Tab' });
+      expect(screen.getByLabelText('Close modal')).toHaveFocus();
+    });
+
+    it('traps focus on Shift+Tab at first element', () => {
+      render(
+        <Modal isOpen={true} onClose={() => {}}>
+          <button>First</button>
+          <button>Second</button>
+        </Modal>
+      );
+
+      // Close button is focused by default
+      expect(screen.getByLabelText('Close modal')).toHaveFocus();
+
+      // Press Shift+Tab - should wrap to last focusable element (Second)
+      fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+
+      expect(screen.getByText('Second')).toHaveFocus();
+    });
+
+    it('restores focus to previous element when modal closes', () => {
+      const triggerButton = document.createElement('button');
+      triggerButton.textContent = 'Open Modal';
+      document.body.appendChild(triggerButton);
+      triggerButton.focus();
+
+      const { rerender } = render(
+        <Modal isOpen={true} onClose={() => {}}>
+          <button>Modal Button</button>
+        </Modal>
+      );
+
+      // Close button should be focused (first focusable element)
+      expect(screen.getByLabelText('Close modal')).toHaveFocus();
+
+      // Close modal
+      rerender(
+        <Modal isOpen={false} onClose={() => {}}>
+          <button>Modal Button</button>
+        </Modal>
+      );
+
+      // Focus should return to trigger button
+      expect(triggerButton).toHaveFocus();
+
+      // Cleanup
+      document.body.removeChild(triggerButton);
+    });
+
+    it('includes close button in focus trap', () => {
+      render(
+        <Modal isOpen={true} onClose={() => {}}>
+          <div>Content</div>
+        </Modal>
+      );
+
+      const closeButton = screen.getByLabelText('Close modal');
+      expect(closeButton).toBeInTheDocument();
+    });
+
+    it('allows keyboard navigation through all focusable elements', () => {
+      render(
+        <Modal isOpen={true} onClose={() => {}}>
+          <button>Button 1</button>
+          <button>Button 2</button>
+          <input type="text" placeholder="Input field" />
+        </Modal>
+      );
+
+      // All elements should be focusable
+      const closeButton = screen.getByLabelText('Close modal');
+      const button1 = screen.getByText('Button 1');
+      const button2 = screen.getByText('Button 2');
+      const input = screen.getByPlaceholderText('Input field');
+
+      // Verify all elements can be focused
+      closeButton.focus();
+      expect(closeButton).toHaveFocus();
+
+      button1.focus();
+      expect(button1).toHaveFocus();
+
+      button2.focus();
+      expect(button2).toHaveFocus();
+
+      input.focus();
+      expect(input).toHaveFocus();
+    });
+  });
 });
