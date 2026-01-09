@@ -1,26 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Top5ItemCard } from './Top5ItemCard';
-import { Item } from '@/lib/types/shelf';
-
-// Helper to create mock item
-function createMockItem(overrides: Partial<Item> = {}): Item {
-  return {
-    id: 'item-1',
-    shelf_id: 'shelf-1',
-    user_id: 'user-1',
-    type: 'book',
-    title: 'The Great Gatsby',
-    creator: 'F. Scott Fitzgerald',
-    image_url: null,
-    external_url: null,
-    notes: null,
-    order_index: 0,
-    created_at: new Date(),
-    updated_at: new Date(),
-    ...overrides,
-  };
-}
+import { createMockItem } from '@/test/utils/mocks';
 
 describe('Top5ItemCard', () => {
   describe('Rendering', () => {

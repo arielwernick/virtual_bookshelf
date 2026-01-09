@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
+import { createMockRequest, createMockUser } from '@/test/utils/mocks';
 
 // Mock dependencies
 vi.mock('@/lib/db/queries', () => ({
@@ -21,15 +22,6 @@ import { getUserByUsername } from '@/lib/db/queries';
 import { verifyPassword } from '@/lib/utils/password';
 import { setSessionCookie } from '@/lib/utils/session';
 
-// Helper to create request
-function createRequest(body: object): Request {
-  return new Request('http://localhost:3000/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-}
-
 describe('POST /api/auth/login', () => {
   beforeEach(() => {
     vi.mocked(getUserByUsername).mockReset();
@@ -39,7 +31,7 @@ describe('POST /api/auth/login', () => {
 
   describe('Validation', () => {
     it('returns 400 for empty username', async () => {
-      const req = createRequest({ username: '', password: 'password123' });
+      const req = createMockRequest('POST', { username: '', password: 'password123' }, 'http://localhost:3000/api/auth/login');
 
       const res = await POST(req);
       const data = await res.json();
@@ -50,7 +42,7 @@ describe('POST /api/auth/login', () => {
     });
 
     it('returns 400 for short username', async () => {
-      const req = createRequest({ username: 'ab', password: 'password123' });
+      const req = createMockRequest('POST', { username: 'ab', password: 'password123' }, 'http://localhost:3000/api/auth/login');
 
       const res = await POST(req);
       await res.json();
@@ -59,7 +51,7 @@ describe('POST /api/auth/login', () => {
     });
 
     it('returns 400 for empty password', async () => {
-      const req = createRequest({ username: 'testuser', password: '' });
+      const req = createMockRequest('POST', { username: 'testuser', password: '' }, 'http://localhost:3000/api/auth/login');
 
       const res = await POST(req);
       const data = await res.json();
@@ -69,7 +61,7 @@ describe('POST /api/auth/login', () => {
     });
 
     it('returns 400 for short password', async () => {
-      const req = createRequest({ username: 'testuser', password: '12345' });
+      const req = createMockRequest('POST', { username: 'testuser', password: '12345' }, 'http://localhost:3000/api/auth/login');
 
       const res = await POST(req);
 
@@ -81,7 +73,7 @@ describe('POST /api/auth/login', () => {
     it('returns 401 when user not found', async () => {
       vi.mocked(getUserByUsername).mockResolvedValue(null);
 
-      const req = createRequest({ username: 'nonexistent', password: 'password123' });
+      const req = createMockRequest('POST', { username: 'nonexistent', password: 'password123' }, 'http://localhost:3000/api/auth/login');
 
       const res = await POST(req);
       const data = await res.json();
@@ -91,20 +83,15 @@ describe('POST /api/auth/login', () => {
     });
 
     it('returns 401 for Google-only account', async () => {
-      vi.mocked(getUserByUsername).mockResolvedValue({
-        id: 'user-1',
-        username: 'testuser',
-        email: 'test@example.com',
-        password_hash: null, // No password - Google auth only
-        google_id: 'google-123',
-        share_token: 'token',
-        description: null,
-        title: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-      });
+      vi.mocked(getUserByUsername).mockResolvedValue(
+        createMockUser({
+          username: 'testuser',
+          password_hash: null,
+          google_id: 'google-123',
+        })
+      );
 
-      const req = createRequest({ username: 'testuser', password: 'password123' });
+      const req = createMockRequest('POST', { username: 'testuser', password: 'password123' }, 'http://localhost:3000/api/auth/login');
 
       const res = await POST(req);
       const data = await res.json();
@@ -114,21 +101,15 @@ describe('POST /api/auth/login', () => {
     });
 
     it('returns 401 for incorrect password', async () => {
-      vi.mocked(getUserByUsername).mockResolvedValue({
-        id: 'user-1',
-        username: 'testuser',
-        email: 'test@example.com',
-        password_hash: 'hashed_password',
-        google_id: null,
-        share_token: 'token',
-        description: null,
-        title: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-      });
+      vi.mocked(getUserByUsername).mockResolvedValue(
+        createMockUser({
+          username: 'testuser',
+          password_hash: 'hashed_password',
+        })
+      );
       vi.mocked(verifyPassword).mockResolvedValue(false);
 
-      const req = createRequest({ username: 'testuser', password: 'wrongpassword' });
+      const req = createMockRequest('POST', { username: 'testuser', password: 'wrongpassword' }, 'http://localhost:3000/api/auth/login');
 
       const res = await POST(req);
       const data = await res.json();
@@ -140,23 +121,16 @@ describe('POST /api/auth/login', () => {
 
   describe('Success', () => {
     it('logs in user with correct credentials', async () => {
-      const mockUser = {
-        id: 'user-1',
+      const mockUser = createMockUser({
         username: 'testuser',
         email: 'test@example.com',
         password_hash: 'hashed_password',
-        google_id: null,
-        share_token: 'token',
-        description: null,
-        title: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
+      });
       vi.mocked(getUserByUsername).mockResolvedValue(mockUser);
       vi.mocked(verifyPassword).mockResolvedValue(true);
       vi.mocked(setSessionCookie).mockResolvedValue(undefined);
 
-      const req = createRequest({ username: 'testuser', password: 'password123' });
+      const req = createMockRequest('POST', { username: 'testuser', password: 'password123' }, 'http://localhost:3000/api/auth/login');
 
       const res = await POST(req);
       const data = await res.json();
@@ -167,22 +141,13 @@ describe('POST /api/auth/login', () => {
     });
 
     it('normalizes username to lowercase', async () => {
-      const mockUser = {
-        id: 'user-1',
+      const mockUser = createMockUser({
         username: 'testuser',
-        email: 'test@example.com',
-        password_hash: 'hashed_password',
-        google_id: null,
-        share_token: 'token',
-        description: null,
-        title: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
+      });
       vi.mocked(getUserByUsername).mockResolvedValue(mockUser);
       vi.mocked(verifyPassword).mockResolvedValue(true);
 
-      const req = createRequest({ username: 'TestUser', password: 'password123' });
+      const req = createMockRequest('POST', { username: 'TestUser', password: 'password123' }, 'http://localhost:3000/api/auth/login');
 
       await POST(req);
 
@@ -190,22 +155,15 @@ describe('POST /api/auth/login', () => {
     });
 
     it('sets session cookie on successful login', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         id: 'user-1',
         username: 'testuser',
         email: 'test@example.com',
-        password_hash: 'hashed_password',
-        google_id: null,
-        share_token: 'token',
-        description: null,
-        title: null,
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
+      });
       vi.mocked(getUserByUsername).mockResolvedValue(mockUser);
       vi.mocked(verifyPassword).mockResolvedValue(true);
 
-      const req = createRequest({ username: 'testuser', password: 'password123' });
+      const req = createMockRequest('POST', { username: 'testuser', password: 'password123' }, 'http://localhost:3000/api/auth/login');
 
       await POST(req);
 

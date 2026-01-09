@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
-import { Shelf, ShelfType } from '@/lib/types/shelf';
+import { createRequest, createMockShelf } from '@/test/utils/mocks';
 
 // Mock dependencies
 vi.mock('@/lib/utils/session', () => ({
@@ -19,31 +19,6 @@ vi.mock('@/lib/db/queries', () => ({
 
 import { getSession } from '@/lib/utils/session';
 import { getShelfById, createItem, getNextOrderIndex, getItemsByShelfId } from '@/lib/db/queries';
-
-// Helper to create a mock request
-function createRequest(body: object): Request {
-  return new Request('http://localhost:3000/api/items', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-}
-
-// Helper to create a mock shelf
-function createMockShelf(overrides: Partial<Shelf> = {}): Shelf {
-  return {
-    id: 'shelf-1',
-    user_id: 'user-1',
-    name: 'Test',
-    description: null,
-    share_token: 'token',
-    is_public: false,
-    shelf_type: 'standard' as ShelfType,
-    created_at: new Date(),
-    updated_at: new Date(),
-    ...overrides,
-  };
-}
 
 describe('POST /api/items', () => {
   beforeEach(() => {

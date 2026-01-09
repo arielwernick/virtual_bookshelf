@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
+import { createRequest } from '@/test/utils/mocks';
 
 // Mock dependencies
 vi.mock('@/lib/db/queries', () => ({
@@ -22,15 +23,6 @@ vi.mock('@/lib/utils/session', () => ({
 import { getUserByUsername, getUserByEmail, createUser } from '@/lib/db/queries';
 import { hashPassword } from '@/lib/utils/password';
 import { setSessionCookie } from '@/lib/utils/session';
-
-// Helper to create request
-function createRequest(body: object): Request {
-  return new Request('http://localhost:3000/api/auth/signup', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-}
 
 describe('POST /api/auth/signup', () => {
   beforeEach(() => {

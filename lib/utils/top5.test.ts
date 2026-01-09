@@ -7,41 +7,7 @@ import {
   TOP5_MAX_ITEMS,
 } from './top5';
 import { Shelf, Item, CreateItemData } from '../types/shelf';
-
-// Helper to create mock shelf
-function createMockShelf(overrides: Partial<Shelf> = {}): Shelf {
-  return {
-    id: 'shelf-1',
-    user_id: 'user-1',
-    name: 'Test Shelf',
-    description: null,
-    share_token: 'token-123',
-    is_public: false,
-    shelf_type: 'standard',
-    created_at: new Date(),
-    updated_at: new Date(),
-    ...overrides,
-  };
-}
-
-// Helper to create mock item
-function createMockItem(overrides: Partial<Item> = {}): Item {
-  return {
-    id: 'item-1',
-    shelf_id: 'shelf-1',
-    user_id: 'user-1',
-    type: 'book',
-    title: 'Test Book',
-    creator: 'Test Author',
-    image_url: null,
-    external_url: null,
-    notes: null,
-    order_index: 0,
-    created_at: new Date(),
-    updated_at: new Date(),
-    ...overrides,
-  };
-}
+import { createMockShelf, createMockItem } from '@/test/utils/mocks';
 
 // ============================================================================
 // validateTop5Capacity Tests
