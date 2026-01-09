@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -9,6 +9,9 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, children }: ModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -37,10 +40,81 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
     };
   }, [isOpen, onClose]);
 
+  // Focus trap implementation
+  useEffect(() => {
+    if (!isOpen || !modalRef.current) return;
+
+    // Store the currently focused element to restore later
+    previousActiveElement.current = document.activeElement as HTMLElement;
+
+    // Get all focusable elements within the modal
+    const getFocusableElements = (): HTMLElement[] => {
+      if (!modalRef.current) return [];
+      
+      const focusableSelectors = [
+        'a[href]',
+        'button:not([disabled])',
+        'textarea:not([disabled])',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(',');
+      
+      return Array.from(modalRef.current.querySelectorAll<HTMLElement>(focusableSelectors));
+    };
+
+    // Focus the first focusable element
+    const focusableElements = getFocusableElements();
+    if (focusableElements.length > 0) {
+      focusableElements[0].focus();
+    }
+
+    // Handle Tab key to trap focus within modal
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      const focusableElements = getFocusableElements();
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        // Shift + Tab
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        // Tab
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleTab);
+
+    return () => {
+      document.removeEventListener('keydown', handleTab);
+      
+      // Restore focus to the previously focused element
+      if (previousActiveElement.current) {
+        previousActiveElement.current.focus();
+      }
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto animate-in fade-in duration-200" role="dialog" aria-modal="true">
+    <div 
+      ref={modalRef}
+      className="fixed inset-0 z-50 overflow-y-auto animate-in fade-in duration-200" 
+      role="dialog" 
+      aria-modal="true"
+    >
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/50 transition-opacity animate-in fade-in duration-300" onClick={onClose} />
       
@@ -50,7 +124,8 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 z-10 transition-colors duration-200 hover:scale-110"
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 z-10 transition-colors duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 rounded"
+            aria-label="Close modal"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
