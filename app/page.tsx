@@ -58,7 +58,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
           {/* Hero */}
           <div className="text-center mb-16">

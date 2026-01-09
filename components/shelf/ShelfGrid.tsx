@@ -297,6 +297,8 @@ interface ShelfGridProps {
 
 export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfGridProps) {
   const [selectedType, setSelectedType] = useState<ItemType | 'all'>('all');
+  const [focusedItemIndex, setFocusedItemIndex] = useState<number>(-1);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const filteredItems = selectedType === 'all' 
     ? items 
@@ -309,6 +311,58 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
     book: items.filter((i) => i.type === 'book').length,
     podcast: items.filter((i) => i.type === 'podcast' || i.type === 'podcast_episode').length,
     music: items.filter((i) => i.type === 'music').length,
+  };
+
+  // Handle arrow key navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (editMode || filteredItems.length === 0 || focusedItemIndex === -1) return;
+      
+      const itemsPerRow = window.innerWidth < 640 ? 3 : 5; // Approximate based on layout
+      const totalItems = filteredItems.length;
+      let newIndex = focusedItemIndex;
+
+      switch (e.key) {
+        case 'ArrowRight':
+          e.preventDefault();
+          newIndex = (focusedItemIndex + 1) % totalItems;
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          newIndex = (focusedItemIndex - 1 + totalItems) % totalItems;
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          newIndex = Math.min(focusedItemIndex + itemsPerRow, totalItems - 1);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          newIndex = Math.max(focusedItemIndex - itemsPerRow, 0);
+          break;
+        default:
+          return;
+      }
+
+      setFocusedItemIndex(newIndex);
+
+      // Focus the corresponding element
+      const itemCards = gridRef.current?.querySelectorAll('[role="button"]');
+      if (itemCards && itemCards[newIndex]) {
+        (itemCards[newIndex] as HTMLElement).focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [focusedItemIndex, filteredItems.length, editMode]);
+
+  // Reset focus index when filter changes
+  useEffect(() => {
+    setFocusedItemIndex(-1);
+  }, [selectedType]);
+
+  const handleItemFocus = (index: number) => {
+    setFocusedItemIndex(index);
   };
 
   const filterButton = (type: ItemType | 'all', label: string, count: number) => (
@@ -325,7 +379,7 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
   );
 
   return (
-    <div>
+    <div ref={gridRef}>
       {/* Filter tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-200">
         {filterButton('all', 'All', counts.all)}
