@@ -20,10 +20,6 @@ describe('POST /api/auth/logout', () => {
     it('clears session and returns success', async () => {
       vi.mocked(clearSession).mockResolvedValue(undefined);
 
-      const req = new Request('http://localhost:3000/api/auth/logout', {
-        method: 'POST',
-      });
-
       const res = await POST();
       const data = await res.json();
 
@@ -37,10 +33,6 @@ describe('POST /api/auth/logout', () => {
   describe('Error Handling', () => {
     it('returns 500 when clearSession fails', async () => {
       vi.mocked(clearSession).mockRejectedValue(new Error('Session clear failed'));
-
-      const req = new Request('http://localhost:3000/api/auth/logout', {
-        method: 'POST',
-      });
 
       const res = await POST();
       const data = await res.json();

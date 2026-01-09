@@ -247,7 +247,6 @@ describe('PATCH /api/items/[id]', () => {
       });
 
       const res = await PATCH(req, { params: Promise.resolve({ id: 'item-1' }) });
-      const data = await res.json();
 
       expect(res.status).toBe(200);
       expect(updateItem).toHaveBeenCalledWith('item-1', {
@@ -424,9 +423,9 @@ describe('DELETE /api/items/[id]', () => {
       const req = createDeleteRequest();
 
       const res = await DELETE(req, { params: Promise.resolve({ id: 'item-1' }) });
-      const data = await res.json();
 
       expect(res.status).toBe(200);
+      const data = await res.json();
       expect(data.success).toBe(true);
       expect(data.message).toBe('Item deleted successfully');
       expect(deleteItem).toHaveBeenCalledWith('item-1');
