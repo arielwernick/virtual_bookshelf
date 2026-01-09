@@ -5,6 +5,7 @@ import { DemoShelf } from '@/components/home/DemoShelf';
 import { RotatingDemoShelf, ShelfPreview } from '@/components/home/RotatingDemoShelf';
 
 const MAX_DEMO_SHELVES = 5;
+const MAX_ITEMS_PER_SHELF = 12;
 
 /**
  * Fetch demo shelves for the home page
@@ -21,7 +22,7 @@ async function getDemoShelvesData(): Promise<ShelfPreview[] | null> {
   if (userId) {
     try {
       // Use optimized query that fetches shelves and items in a single database call
-      const shelfPreviews = await getShelvesWithItems(userId, MAX_DEMO_SHELVES, 12);
+      const shelfPreviews = await getShelvesWithItems(userId, MAX_DEMO_SHELVES, MAX_ITEMS_PER_SHELF);
       
       if (shelfPreviews.length === 0) return null;
 

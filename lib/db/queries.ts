@@ -303,8 +303,8 @@ export async function getShelvesWithItems(
       shelf_type: row.shelf_type,
       created_at: row.shelf_created_at,
       updated_at: row.shelf_updated_at,
-    } as Shelf,
-    items: (row.items || []) as Item[],
+    },
+    items: row.items,
   }));
 }
 
