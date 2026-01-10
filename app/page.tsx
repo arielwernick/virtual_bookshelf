@@ -87,6 +87,31 @@ export default async function Home() {
             </div>
           )}
 
+          {/* Voice AI Demo Banner */}
+          <div className="mb-12">
+            <Link
+              href="/demo/talk-to-book"
+              className="block bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-6 hover:shadow-lg transition-all group"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="text-5xl">📖</div>
+                  <div className="text-left">
+                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-amber-700 transition-colors">
+                      ✨ NEW: Talk to This Book
+                    </h3>
+                    <p className="text-gray-600 mt-1">
+                      Have a voice conversation with Winnie-the-Pooh using AI
+                    </p>
+                  </div>
+                </div>
+                <div className="hidden sm:block text-2xl group-hover:translate-x-1 transition-transform">
+                  →
+                </div>
+              </div>
+            </Link>
+          </div>
+
           {/* Value prop */}
           <div className="text-center mb-12">
             <p className="text-gray-600 font-medium">
