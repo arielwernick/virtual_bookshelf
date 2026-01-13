@@ -30,8 +30,10 @@ interface MicrolinkResponse {
 /**
  * Fetch metadata for any URL using Microlink API
  * Free tier: 50 requests/day
+ * @param url - The URL to fetch metadata for
+ * @param timeoutMs - Request timeout in milliseconds (default: 10000)
  */
-export async function fetchLinkMetadata(url: string): Promise<MicrolinkData> {
+export async function fetchLinkMetadata(url: string, timeoutMs: number = 10000): Promise<MicrolinkData> {
   // Validate URL format
   let parsedUrl: URL;
   try {
@@ -49,40 +51,71 @@ export async function fetchLinkMetadata(url: string): Promise<MicrolinkData> {
   
   logger.info('Fetching link metadata', { url });
 
-  const response = await fetch(apiUrl, {
-    headers: {
-      'Accept': 'application/json',
-    },
-  });
+  // Create abort controller for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!response.ok) {
-    logger.error('Microlink API error', { 
-      url, 
-      status: response.status,
-      statusText: response.statusText 
+  try {
+    const response = await fetch(apiUrl, {
+      headers: {
+        'Accept': 'application/json',
+      },
+      signal: controller.signal,
     });
-    throw new Error(`Failed to fetch link metadata: ${response.statusText}`);
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      logger.error('Microlink API error', { 
+        url, 
+        status: response.status,
+        statusText: response.statusText 
+      });
+      
+      // Handle rate limiting / quota exceeded
+      if (response.status === 429) {
+        throw new Error('Daily API request limit reached. Please try again tomorrow or upgrade to a paid plan.');
+      }
+      
+      // Handle other client errors
+      if (response.status >= 400 && response.status < 500) {
+        throw new Error('Unable to fetch link preview. The URL may be invalid or inaccessible.');
+      }
+      
+      throw new Error(`Failed to fetch link metadata: ${response.statusText}`);
+    }
+
+    const result: MicrolinkResponse = await response.json();
+
+    if (result.status !== 'success') {
+      logger.warn('Microlink returned non-success status', { url, message: result.message });
+      throw new Error(result.message || 'Failed to extract metadata from URL');
+    }
+
+    const { data } = result;
+
+    // Extract domain for fallback publisher name
+    const domain = parsedUrl.hostname.replace(/^www\./, '');
+
+    return {
+      title: data.title || domain,
+      image: data.image?.url || null,
+      publisher: data.publisher || domain,
+      description: data.description || null,
+      url: data.url || url,
+    };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    
+    // Handle timeout
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.warn('Microlink API request timeout', { url, timeoutMs });
+      throw new Error('Request timed out while fetching link preview. Please try again.');
+    }
+    
+    // Re-throw other errors
+    throw error;
   }
-
-  const result: MicrolinkResponse = await response.json();
-
-  if (result.status !== 'success') {
-    logger.warn('Microlink returned non-success status', { url, message: result.message });
-    throw new Error(result.message || 'Failed to extract metadata from URL');
-  }
-
-  const { data } = result;
-
-  // Extract domain for fallback publisher name
-  const domain = parsedUrl.hostname.replace(/^www\./, '');
-
-  return {
-    title: data.title || domain,
-    image: data.image?.url || null,
-    publisher: data.publisher || domain,
-    description: data.description || null,
-    url: data.url || url,
-  };
 }
 
 /**
