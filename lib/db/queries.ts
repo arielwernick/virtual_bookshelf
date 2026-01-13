@@ -1,5 +1,5 @@
 import { sql } from './client';
-import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfType } from '../types/shelf';
+import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfType, ShelfWithItems } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
 
 // ============================================================================
@@ -209,6 +209,103 @@ export async function getPublicShelvesByUserId(userId: string): Promise<Shelf[]>
   `;
 
   return result as Shelf[];
+}
+
+/**
+ * Get public shelves with their items in a single optimized query
+ * Eliminates N+1 query pattern by using JOIN with LATERAL subquery
+ * 
+ * @param userId - User ID to fetch shelves for
+ * @param maxShelves - Maximum number of shelves to return
+ * @param maxItemsPerShelf - Maximum number of items to return per shelf
+ * @returns Array of shelves with their associated items
+ */
+export async function getShelvesWithItems(
+  userId: string,
+  maxShelves: number = 5,
+  maxItemsPerShelf: number = 12
+): Promise<ShelfWithItems[]> {
+  // Define the shape of the raw database result
+  interface RawShelfWithItems {
+    shelf_id: string;
+    user_id: string;
+    name: string;
+    description: string | null;
+    share_token: string;
+    is_public: boolean;
+    shelf_type: ShelfType;
+    shelf_created_at: Date;
+    shelf_updated_at: Date;
+    items: Item[];
+  }
+
+  const result = await sql`
+    SELECT 
+      s.id as shelf_id,
+      s.user_id,
+      s.name,
+      s.description,
+      s.share_token,
+      s.is_public,
+      s.shelf_type,
+      s.created_at as shelf_created_at,
+      s.updated_at as shelf_updated_at,
+      COALESCE(
+        json_agg(
+          CASE WHEN i.id IS NOT NULL THEN
+            json_build_object(
+              'id', i.id,
+              'shelf_id', i.shelf_id,
+              'user_id', i.user_id,
+              'type', i.type,
+              'title', i.title,
+              'creator', i.creator,
+              'image_url', i.image_url,
+              'external_url', i.external_url,
+              'notes', i.notes,
+              'rating', i.rating,
+              'order_index', i.order_index,
+              'created_at', i.created_at,
+              'updated_at', i.updated_at
+            )
+          END
+          ORDER BY i.order_index ASC
+        ) FILTER (WHERE i.id IS NOT NULL),
+        '[]'::json
+      ) as items
+    FROM (
+      SELECT * FROM shelves
+      WHERE user_id = ${userId}
+      AND is_public = true
+      ORDER BY created_at DESC
+      LIMIT ${maxShelves}
+    ) s
+    LEFT JOIN LATERAL (
+      SELECT * FROM items
+      WHERE shelf_id = s.id
+      ORDER BY order_index ASC
+      LIMIT ${maxItemsPerShelf}
+    ) i ON true
+    GROUP BY s.id, s.user_id, s.name, s.description, s.share_token, 
+             s.is_public, s.shelf_type, s.created_at, s.updated_at
+    ORDER BY s.created_at DESC
+  `;
+
+  // Transform the flat result into the ShelfWithItems structure
+  return (result as RawShelfWithItems[]).map((row) => ({
+    shelf: {
+      id: row.shelf_id,
+      user_id: row.user_id,
+      name: row.name,
+      description: row.description,
+      share_token: row.share_token,
+      is_public: row.is_public,
+      shelf_type: row.shelf_type,
+      created_at: row.shelf_created_at,
+      updated_at: row.shelf_updated_at,
+    },
+    items: row.items,
+  }));
 }
 
 /**
