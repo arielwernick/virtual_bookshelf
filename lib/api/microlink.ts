@@ -5,6 +5,16 @@ import { createLogger } from '@/lib/utils/logger';
 
 const logger = createLogger('MicrolinkAPI');
 
+/**
+ * Custom error for when Microlink API quota is exhausted
+ */
+export class MicrolinkQuotaExceededError extends Error {
+  constructor(message: string = 'Microlink API quota exceeded') {
+    super(message);
+    this.name = 'MicrolinkQuotaExceededError';
+  }
+}
+
 export interface MicrolinkData {
   title: string;
   image: string | null;
@@ -74,7 +84,7 @@ export async function fetchLinkMetadata(url: string, timeoutMs: number = 10000):
       
       // Handle rate limiting / quota exceeded
       if (response.status === 429) {
-        throw new Error('Daily API request limit reached. Please try again tomorrow or upgrade to a paid plan.');
+        throw new MicrolinkQuotaExceededError();
       }
       
       // Handle other client errors

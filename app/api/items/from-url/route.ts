@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { extractVideoId, getVideoDetails } from '@/lib/api/youtube';
-import { fetchLinkMetadata, isYouTubeUrl } from '@/lib/api/microlink';
+import { fetchLinkMetadata, isYouTubeUrl, MicrolinkQuotaExceededError } from '@/lib/api/microlink';
 import { sql } from '@/lib/db/client';
 import { createLogger } from '@/lib/utils/logger';
 
@@ -128,6 +128,19 @@ export async function POST(request: Request) {
       linkMetadata = await fetchLinkMetadata(url);
     } catch (error) {
       logger.errorWithException('Microlink API error', error);
+      
+      // Return 503 for quota exceeded to signal UI to disable feature
+      if (error instanceof MicrolinkQuotaExceededError) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'quota_exceeded',
+            message: 'Link preview service temporarily unavailable'
+          },
+          { status: 503 }
+        );
+      }
+      
       return NextResponse.json(
         { 
           success: false, 

@@ -5,6 +5,7 @@ interface LinkUrlFormProps {
   setLinkUrl: (url: string) => void;
   onSubmit: () => void;
   fetching: boolean;
+  quotaExceeded?: boolean;
 }
 
 export function LinkUrlForm({
@@ -12,7 +13,20 @@ export function LinkUrlForm({
   setLinkUrl,
   onSubmit,
   fetching,
+  quotaExceeded = false,
 }: LinkUrlFormProps) {
+  if (quotaExceeded) {
+    return (
+      <div className="space-y-4">
+        <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+          <p className="text-sm text-orange-800 dark:text-orange-300">
+            Link preview service is temporarily unavailable. You can still add links manually using the &quot;Or add manually&quot; option.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
