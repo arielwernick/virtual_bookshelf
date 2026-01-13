@@ -4,15 +4,14 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ShelfGrid } from '@/components/shelf/ShelfGrid';
-import { Top5ShelfGrid } from '@/components/shelf/Top5ShelfGrid';
 import { ItemModal } from '@/components/shelf/ItemModal';
-import { Item, ShelfType } from '@/lib/types/shelf';
+import { Item } from '@/lib/types/shelf';
 
 export default function EmbedShelfPage() {
   const params = useParams();
   const shareToken = params?.shareToken as string;
   
-  const [shelfData, setShelfData] = useState<{ username: string; items: Item[]; shelf_type?: ShelfType } | null>(null);
+  const [shelfData, setShelfData] = useState<{ username: string; items: Item[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
@@ -70,11 +69,7 @@ export default function EmbedShelfPage() {
 
       {/* Shelf content */}
       <div className="p-4">
-        {shelfData.shelf_type === 'top5' ? (
-          <Top5ShelfGrid items={shelfData.items} onItemClick={setSelectedItem} />
-        ) : (
-          <ShelfGrid items={shelfData.items} onItemClick={setSelectedItem} />
-        )}
+        <ShelfGrid items={shelfData.items} onItemClick={setSelectedItem} />
       </div>
 
       {/* Item Modal */}

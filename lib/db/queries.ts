@@ -1,5 +1,5 @@
 import { sql } from './client';
-import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfType, ShelfWithItems } from '../types/shelf';
+import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
 
 // ============================================================================
@@ -144,14 +144,13 @@ export async function updateUserTitle(userId: string, title: string | null): Pro
 export async function createShelf(
   userId: string,
   name: string,
-  description?: string | null,
-  shelfType: ShelfType = 'standard'
+  description?: string | null
 ): Promise<Shelf> {
   const shareToken = generateShortToken();
   
   const result = await sql`
-    INSERT INTO shelves (user_id, name, description, shelf_type, share_token)
-    VALUES (${userId}, ${name}, ${description || null}, ${shelfType}, ${shareToken})
+    INSERT INTO shelves (user_id, name, description, share_token)
+    VALUES (${userId}, ${name}, ${description || null}, ${shareToken})
     RETURNING *
   `;
 
@@ -233,7 +232,6 @@ export async function getShelvesWithItems(
     description: string | null;
     share_token: string;
     is_public: boolean;
-    shelf_type: ShelfType;
     shelf_created_at: Date;
     shelf_updated_at: Date;
     items: Item[];
@@ -247,7 +245,6 @@ export async function getShelvesWithItems(
       s.description,
       s.share_token,
       s.is_public,
-      s.shelf_type,
       s.created_at as shelf_created_at,
       s.updated_at as shelf_updated_at,
       COALESCE(
@@ -287,7 +284,7 @@ export async function getShelvesWithItems(
       LIMIT ${maxItemsPerShelf}
     ) i ON true
     GROUP BY s.id, s.user_id, s.name, s.description, s.share_token, 
-             s.is_public, s.shelf_type, s.created_at, s.updated_at
+             s.is_public, s.created_at, s.updated_at
     ORDER BY s.created_at DESC
   `;
 
@@ -300,7 +297,6 @@ export async function getShelvesWithItems(
       description: row.description,
       share_token: row.share_token,
       is_public: row.is_public,
-      shelf_type: row.shelf_type,
       created_at: row.shelf_created_at,
       updated_at: row.shelf_updated_at,
     },

@@ -5,7 +5,7 @@
  * that are commonly used across multiple test files.
  */
 
-import { Item, Shelf, User, ShelfType, ItemType } from '@/lib/types/shelf';
+import { Item, Shelf, User, ItemType } from '@/lib/types/shelf';
 
 /**
  * Creates a mock Item with default values that can be overridden
@@ -46,7 +46,6 @@ export function createMockShelf(overrides: Partial<Shelf> = {}): Shelf {
     description: null,
     share_token: 'share-token-123',
     is_public: false,
-    shelf_type: 'standard' as ShelfType,
     created_at: new Date(),
     updated_at: new Date(),
     ...overrides,

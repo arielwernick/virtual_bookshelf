@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { createShelf } from '@/lib/db/queries';
-import { validateShelfType } from '@/lib/utils/top5';
-import { ShelfType } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
 
 const logger = createLogger('ShelfCreate');
@@ -10,7 +8,7 @@ const logger = createLogger('ShelfCreate');
 /**
  * Create a new shelf for the authenticated user
  * Requires: user must be logged in with valid session
- * Request body: { name: string, description?: string, shelf_type?: 'standard' | 'top5' }
+ * Request body: { name: string, description?: string }
  */
 export async function POST(request: Request) {
   try {
@@ -24,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, description, shelf_type } = body;
+    const { name, description } = body;
 
     // Validate shelf name
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -56,25 +54,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate optional shelf_type
-    let shelfType: ShelfType = 'standard';
-    if (shelf_type !== undefined) {
-      const typeValidation = validateShelfType(shelf_type);
-      if (!typeValidation.valid) {
-        return NextResponse.json(
-          { success: false, error: typeValidation.error },
-          { status: 400 }
-        );
-      }
-      shelfType = shelf_type as ShelfType;
-    }
-
     // Create shelf
     const shelf = await createShelf(
       session.userId,
       name.trim(),
-      description?.trim() || null,
-      shelfType
+      description?.trim() || null
     );
 
     return NextResponse.json({
@@ -84,7 +68,6 @@ export async function POST(request: Request) {
         name: shelf.name,
         description: shelf.description,
         share_token: shelf.share_token,
-        shelf_type: shelf.shelf_type,
         created_at: shelf.created_at,
       },
     });
