@@ -147,6 +147,8 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
       if (res.ok && data.success) {
         onItemAdded();
         setLinkUrl('');
+        // Reset quota state on successful request
+        setLinkQuotaExceeded(false);
       } else {
         // Check if quota is exceeded (503 status)
         if (res.status === 503 && data.error === 'quota_exceeded') {
