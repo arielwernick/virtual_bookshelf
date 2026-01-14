@@ -2,10 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AddItemForm } from './AddItemForm';
 
-// Mock fetch
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
-
 // Mock data
 const mockPodcastResult = {
   id: 'podcast-123',
@@ -55,12 +51,13 @@ describe('AddItemForm - Episode Browsing', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetch.mockClear();
+    // Set up global.fetch mock in beforeEach to ensure it's fresh for each test
+    global.fetch = vi.fn();
   });
 
   it('shows Browse Episodes button for podcast results', async () => {
     // Mock podcast search response
-    mockFetch.mockResolvedValueOnce({
+    vi.mocked(global.fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         success: true,
@@ -90,7 +87,7 @@ describe('AddItemForm - Episode Browsing', () => {
 
   it('displays episodes when Browse Episodes is clicked', async () => {
     // Mock podcast search response
-    mockFetch
+    vi.mocked(global.fetch)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -137,7 +134,7 @@ describe('AddItemForm - Episode Browsing', () => {
 
   it('can add a podcast episode', async () => {
     // Mock responses
-    mockFetch
+    vi.mocked(global.fetch)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -181,7 +178,7 @@ describe('AddItemForm - Episode Browsing', () => {
     });
 
     // Verify the correct API call was made
-    expect(mockFetch).toHaveBeenLastCalledWith('/api/items', {
+    expect(vi.mocked(global.fetch)).toHaveBeenLastCalledWith('/api/items', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -197,7 +194,7 @@ describe('AddItemForm - Episode Browsing', () => {
 
   it('shows back button when browsing episodes', async () => {
     // Mock responses
-    mockFetch
+    vi.mocked(global.fetch)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
