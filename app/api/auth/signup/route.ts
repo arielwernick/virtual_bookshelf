@@ -12,7 +12,7 @@ import {
 import { createLogger } from '@/lib/utils/logger';
 import {
   validationError,
-  alreadyExistsError,
+  duplicateEntryError,
   internalError,
 } from '@/lib/utils/errors';
 
@@ -54,13 +54,13 @@ export async function POST(request: Request) {
     // Check if username already exists
     const existingUsername = await getUserByUsername(normalizedUsername);
     if (existingUsername) {
-      return alreadyExistsError('Username already taken');
+      return duplicateEntryError('Username already taken');
     }
 
     // Check if email already exists
     const existingEmail = await getUserByEmail(normalizedEmail);
     if (existingEmail) {
-      return alreadyExistsError('Email already registered');
+      return duplicateEntryError('Email already registered');
     }
 
     // Hash password

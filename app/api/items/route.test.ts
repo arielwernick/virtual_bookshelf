@@ -45,7 +45,9 @@ describe('POST /api/items', () => {
 
       expect(res.status).toBe(401);
       expect(data.success).toBe(false);
-      expect(data.error).toBe('Not authenticated');
+      expect(data.error).toBeDefined();
+      expect(data.error.code).toBe('AUTH_REQUIRED');
+      expect(data.error.message).toContain('Authentication required');
     });
 
     it('returns 401 when session has no userId', async () => {
@@ -80,7 +82,8 @@ describe('POST /api/items', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toBe('Shelf ID is required');
+      expect(data.error.code).toBe('MISSING_FIELD');
+      expect(data.error.message).toContain('shelf_id');
     });
 
     it('returns 400 for invalid item type', async () => {
@@ -97,7 +100,8 @@ describe('POST /api/items', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('Type must be one of');
+      expect(data.error.code).toBe('VALIDATION_FAILED');
+      expect(data.error.message).toContain('Type must be one of');
     });
 
     it('accepts podcast_episode as valid item type', async () => {
@@ -152,7 +156,8 @@ describe('POST /api/items', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('Title');
+      expect(data.error.code).toBe('VALIDATION_FAILED');
+      expect(data.error.message).toContain('Title');
     });
 
     it('returns 400 for empty creator', async () => {
@@ -169,7 +174,8 @@ describe('POST /api/items', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('Creator');
+      expect(data.error.code).toBe('VALIDATION_FAILED');
+      expect(data.error.message).toContain('Creator');
     });
 
     it('returns 400 for invalid image URL', async () => {
@@ -187,7 +193,8 @@ describe('POST /api/items', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('URL');
+      expect(data.error.code).toBe('VALIDATION_FAILED');
+      expect(data.error.message).toContain('URL');
     });
   });
 
@@ -210,7 +217,8 @@ describe('POST /api/items', () => {
       const data = await res.json();
 
       expect(res.status).toBe(404);
-      expect(data.error).toBe('Shelf not found');
+      expect(data.error.code).toBe('NOT_FOUND');
+      expect(data.error.message).toContain('Shelf');
     });
 
     it('returns 403 when user does not own the shelf', async () => {
@@ -227,7 +235,8 @@ describe('POST /api/items', () => {
       const data = await res.json();
 
       expect(res.status).toBe(403);
-      expect(data.error).toContain('Unauthorized');
+      expect(data.error.code).toBe('FORBIDDEN');
+      expect(data.error.message).toContain('Unauthorized');
     });
   });
 

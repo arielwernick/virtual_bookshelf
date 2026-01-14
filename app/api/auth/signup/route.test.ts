@@ -83,7 +83,8 @@ describe('POST /api/auth/signup', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('email');
+      expect(data.error.code).toBe('VALIDATION_FAILED');
+      expect(data.error.message).toContain('email');
     });
 
     it('returns 400 for empty email', async () => {
@@ -149,7 +150,8 @@ describe('POST /api/auth/signup', () => {
       const data = await res.json();
 
       expect(res.status).toBe(409);
-      expect(data.error).toBe('Username already taken');
+      expect(data.error.code).toBe('DUPLICATE_ENTRY');
+      expect(data.error.message).toBe('Username already taken');
     });
 
     it('returns 409 when email already exists', async () => {
@@ -177,7 +179,8 @@ describe('POST /api/auth/signup', () => {
       const data = await res.json();
 
       expect(res.status).toBe(409);
-      expect(data.error).toBe('Email already registered');
+      expect(data.error.code).toBe('DUPLICATE_ENTRY');
+      expect(data.error.message).toBe('Email already registered');
     });
   });
 

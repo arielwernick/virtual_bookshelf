@@ -38,7 +38,8 @@ describe('POST /api/auth/login', () => {
 
       expect(res.status).toBe(400);
       expect(data.success).toBe(false);
-      expect(data.error).toContain('Invalid username');
+      expect(data.error.code).toBe('VALIDATION_FAILED');
+      expect(data.error.message).toContain('Invalid username');
     });
 
     it('returns 400 for short username', async () => {
@@ -57,7 +58,8 @@ describe('POST /api/auth/login', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('Invalid password');
+      expect(data.error.code).toBe('VALIDATION_FAILED');
+      expect(data.error.message).toContain('Invalid password');
     });
 
     it('returns 400 for short password', async () => {
@@ -79,7 +81,8 @@ describe('POST /api/auth/login', () => {
       const data = await res.json();
 
       expect(res.status).toBe(401);
-      expect(data.error).toBe('Invalid username or password');
+      expect(data.error.code).toBe('INVALID_CREDENTIALS');
+      expect(data.error.message).toBe('Invalid username or password');
     });
 
     it('returns 401 for Google-only account', async () => {
@@ -97,7 +100,8 @@ describe('POST /api/auth/login', () => {
       const data = await res.json();
 
       expect(res.status).toBe(401);
-      expect(data.error).toContain('Google authentication');
+      expect(data.error.code).toBe('INVALID_CREDENTIALS');
+      expect(data.error.message).toContain('Google authentication');
     });
 
     it('returns 401 for incorrect password', async () => {
@@ -115,7 +119,8 @@ describe('POST /api/auth/login', () => {
       const data = await res.json();
 
       expect(res.status).toBe(401);
-      expect(data.error).toBe('Invalid username or password');
+      expect(data.error.code).toBe('INVALID_CREDENTIALS');
+      expect(data.error.message).toBe('Invalid username or password');
     });
   });
 
