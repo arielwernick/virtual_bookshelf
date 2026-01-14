@@ -4,6 +4,13 @@ import { getItemById, updateItem, deleteItem, getShelfById } from '@/lib/db/quer
 import { validateText, validateUrl, validateNotes, validateRating } from '@/lib/utils/validation';
 import { UpdateItemData } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
+import {
+  authRequiredError,
+  notFoundError,
+  forbiddenError,
+  validationError,
+  internalError,
+} from '@/lib/utils/errors';
 
 const logger = createLogger('ItemById');
 
@@ -52,10 +59,7 @@ export async function PATCH(
     if (body.title !== undefined) {
       const titleValidation = validateText(body.title, 'Title');
       if (!titleValidation.valid) {
-        return NextResponse.json(
-          { success: false, error: titleValidation.error },
-          { status: 400 }
-        );
+        return validationError(titleValidation.error || 'Invalid title');
       }
       updateData.title = body.title;
     }
@@ -63,10 +67,7 @@ export async function PATCH(
     if (body.creator !== undefined) {
       const creatorValidation = validateText(body.creator, 'Creator');
       if (!creatorValidation.valid) {
-        return NextResponse.json(
-          { success: false, error: creatorValidation.error },
-          { status: 400 }
-        );
+        return validationError(creatorValidation.error || 'Invalid creator');
       }
       updateData.creator = body.creator;
     }
@@ -75,10 +76,7 @@ export async function PATCH(
       if (body.image_url) {
         const imageValidation = validateUrl(body.image_url, 'Image URL');
         if (!imageValidation.valid) {
-          return NextResponse.json(
-            { success: false, error: imageValidation.error },
-            { status: 400 }
-          );
+          return validationError(imageValidation.error || 'Invalid image URL');
         }
       }
       updateData.image_url = body.image_url;
@@ -88,10 +86,7 @@ export async function PATCH(
       if (body.external_url) {
         const urlValidation = validateUrl(body.external_url, 'External URL');
         if (!urlValidation.valid) {
-          return NextResponse.json(
-            { success: false, error: urlValidation.error },
-            { status: 400 }
-          );
+          return validationError(urlValidation.error || 'Invalid external URL');
         }
       }
       updateData.external_url = body.external_url;
@@ -101,10 +96,7 @@ export async function PATCH(
       if (body.notes) {
         const notesValidation = validateNotes(body.notes);
         if (!notesValidation.valid) {
-          return NextResponse.json(
-            { success: false, error: notesValidation.error },
-            { status: 400 }
-          );
+          return validationError(notesValidation.error || 'Invalid notes');
         }
       }
       updateData.notes = body.notes;
@@ -114,10 +106,7 @@ export async function PATCH(
       if (body.rating !== null) {
         const ratingValidation = validateRating(body.rating);
         if (!ratingValidation.valid) {
-          return NextResponse.json(
-            { success: false, error: ratingValidation.error },
-            { status: 400 }
-          );
+          return validationError(ratingValidation.error || 'Invalid rating');
         }
       }
       updateData.rating = body.rating;
@@ -136,10 +125,7 @@ export async function PATCH(
     });
   } catch (error) {
     logger.errorWithException('Failed to update item', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to update item' },
-      { status: 500 }
-    );
+    return internalError('Failed to update item');
   }
 }
 
@@ -155,10 +141,7 @@ export async function DELETE(
     // Check authentication
     const session = await getSession();
     if (!session || !session.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
+      return authRequiredError();
     }
 
     const { id } = await params;
@@ -166,19 +149,13 @@ export async function DELETE(
     // Get existing item
     const existingItem = await getItemById(id);
     if (!existingItem) {
-      return NextResponse.json(
-        { success: false, error: 'Item not found' },
-        { status: 404 }
-      );
+      return notFoundError('Item');
     }
 
     // Check ownership via shelf
     const shelf = await getShelfById(existingItem.shelf_id);
     if (!shelf || shelf.user_id !== session.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 403 }
-      );
+      return forbiddenError();
     }
 
     // Delete item
@@ -190,9 +167,6 @@ export async function DELETE(
     });
   } catch (error) {
     logger.errorWithException('Failed to delete item', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to delete item' },
-      { status: 500 }
-    );
+    return internalError('Failed to delete item');
   }
 }
