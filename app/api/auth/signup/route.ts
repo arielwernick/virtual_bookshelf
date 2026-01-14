@@ -10,6 +10,11 @@ import {
   isRateLimitingEnabled 
 } from '@/lib/utils/rateLimit';
 import { createLogger } from '@/lib/utils/logger';
+import {
+  validationError,
+  alreadyExistsError,
+  internalError,
+} from '@/lib/utils/errors';
 
 const logger = createLogger('AuthSignup');
 
@@ -30,26 +35,17 @@ export async function POST(request: Request) {
     // Validate inputs
     const usernameValidation = validateUsername(username);
     if (!usernameValidation.valid) {
-      return NextResponse.json(
-        { success: false, error: usernameValidation.error || 'Invalid username' },
-        { status: 400 }
-      );
+      return validationError(usernameValidation.error || 'Invalid username');
     }
 
     const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid email address' },
-        { status: 400 }
-      );
+      return validationError('Invalid email address');
     }
 
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.valid) {
-      return NextResponse.json(
-        { success: false, error: passwordValidation.error || 'Invalid password' },
-        { status: 400 }
-      );
+      return validationError(passwordValidation.error || 'Invalid password');
     }
 
     const normalizedUsername = usernameValidation.normalized!;
@@ -58,19 +54,13 @@ export async function POST(request: Request) {
     // Check if username already exists
     const existingUsername = await getUserByUsername(normalizedUsername);
     if (existingUsername) {
-      return NextResponse.json(
-        { success: false, error: 'Username already taken' },
-        { status: 409 }
-      );
+      return alreadyExistsError('Username already taken');
     }
 
     // Check if email already exists
     const existingEmail = await getUserByEmail(normalizedEmail);
     if (existingEmail) {
-      return NextResponse.json(
-        { success: false, error: 'Email already registered' },
-        { status: 409 }
-      );
+      return alreadyExistsError('Email already registered');
     }
 
     // Hash password
@@ -102,9 +92,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     logger.errorWithException('Signup failed', error);
-    return NextResponse.json(
-      { success: false, error: 'Signup failed' },
-      { status: 500 }
-    );
+    return internalError('Signup failed');
   }
 }

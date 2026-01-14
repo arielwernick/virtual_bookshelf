@@ -5,6 +5,14 @@ import { validateItemType, validateText, validateUrl, validateNotes, validateRat
 import { isTop5Shelf, validateTop5Capacity, validateNoDuplicateItems, TOP5_MAX_ITEMS } from '@/lib/utils/top5';
 import { CreateItemData } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
+import {
+  authRequiredError,
+  notFoundError,
+  forbiddenError,
+  validationError,
+  missingFieldError,
+  internalError,
+} from '@/lib/utils/errors';
 
 const logger = createLogger('ItemsCreate');
 
@@ -18,10 +26,7 @@ export async function POST(request: Request) {
     // Check authentication
     const session = await getSession();
     if (!session || !session.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
+      return authRequiredError();
     }
 
     const body = await request.json();
@@ -29,63 +34,42 @@ export async function POST(request: Request) {
 
     // Validate shelf_id
     if (!shelf_id || typeof shelf_id !== 'string') {
-      return NextResponse.json(
-        { success: false, error: 'Shelf ID is required' },
-        { status: 400 }
-      );
+      return missingFieldError('shelf_id');
     }
 
     // Verify shelf exists and user owns it
     const shelf = await getShelfById(shelf_id);
     if (!shelf) {
-      return NextResponse.json(
-        { success: false, error: 'Shelf not found' },
-        { status: 404 }
-      );
+      return notFoundError('Shelf');
     }
 
     if (shelf.user_id !== session.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized - shelf does not belong to you' },
-        { status: 403 }
-      );
+      return forbiddenError('Unauthorized - shelf does not belong to you');
     }
 
     // Validate type
     const typeValidation = validateItemType(type);
     if (!typeValidation.valid) {
-      return NextResponse.json(
-        { success: false, error: typeValidation.error },
-        { status: 400 }
-      );
+      return validationError(typeValidation.error || 'Invalid item type');
     }
 
     // Validate title
     const titleValidation = validateText(title, 'Title');
     if (!titleValidation.valid) {
-      return NextResponse.json(
-        { success: false, error: titleValidation.error },
-        { status: 400 }
-      );
+      return validationError(titleValidation.error || 'Invalid title');
     }
 
     // Validate creator
     const creatorValidation = validateText(creator, 'Creator');
     if (!creatorValidation.valid) {
-      return NextResponse.json(
-        { success: false, error: creatorValidation.error },
-        { status: 400 }
-      );
+      return validationError(creatorValidation.error || 'Invalid creator');
     }
 
     // Validate image_url if provided
     if (image_url) {
       const imageValidation = validateUrl(image_url, 'Image URL');
       if (!imageValidation.valid) {
-        return NextResponse.json(
-          { success: false, error: imageValidation.error },
-          { status: 400 }
-        );
+        return validationError(imageValidation.error || 'Invalid image URL');
       }
     }
 
@@ -93,10 +77,7 @@ export async function POST(request: Request) {
     if (external_url) {
       const urlValidation = validateUrl(external_url, 'External URL');
       if (!urlValidation.valid) {
-        return NextResponse.json(
-          { success: false, error: urlValidation.error },
-          { status: 400 }
-        );
+        return validationError(urlValidation.error || 'Invalid external URL');
       }
     }
 
@@ -104,10 +85,7 @@ export async function POST(request: Request) {
     if (notes) {
       const notesValidation = validateNotes(notes);
       if (!notesValidation.valid) {
-        return NextResponse.json(
-          { success: false, error: notesValidation.error },
-          { status: 400 }
-        );
+        return validationError(notesValidation.error || 'Invalid notes');
       }
     }
 
@@ -115,10 +93,7 @@ export async function POST(request: Request) {
     if (rating !== undefined && rating !== null) {
       const ratingValidation = validateRating(rating);
       if (!ratingValidation.valid) {
-        return NextResponse.json(
-          { success: false, error: ratingValidation.error },
-          { status: 400 }
-        );
+        return validationError(ratingValidation.error || 'Invalid rating');
       }
     }
 
@@ -130,20 +105,14 @@ export async function POST(request: Request) {
       // Check capacity
       const capacityValidation = validateTop5Capacity(existingItems.length + 1);
       if (!capacityValidation.valid) {
-        return NextResponse.json(
-          { success: false, error: `Top 5 shelf is full. Maximum ${TOP5_MAX_ITEMS} items allowed.` },
-          { status: 400 }
-        );
+        return validationError(`Top 5 shelf is full. Maximum ${TOP5_MAX_ITEMS} items allowed.`);
       }
 
       // Check for duplicates
       const newItemData: CreateItemData = { type, title, creator };
       const duplicateValidation = validateNoDuplicateItems(existingItems, newItemData);
       if (!duplicateValidation.valid) {
-        return NextResponse.json(
-          { success: false, error: duplicateValidation.error },
-          { status: 400 }
-        );
+        return validationError(duplicateValidation.error || 'Duplicate item');
       }
     }
 
@@ -170,9 +139,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     logger.errorWithException('Failed to create item', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to create item' },
-      { status: 500 }
-    );
+    return internalError('Failed to create item');
   }
 }

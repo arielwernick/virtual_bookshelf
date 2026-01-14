@@ -95,10 +95,51 @@ export interface EpisodeSearchResult {
   showName: string;
 }
 
+// Error codes enum for standardized API errors
+export enum ErrorCode {
+  // Authentication errors (401)
+  AUTH_REQUIRED = 'AUTH_REQUIRED',
+  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
+  INVALID_TOKEN = 'INVALID_TOKEN',
+  
+  // Authorization errors (403)
+  FORBIDDEN = 'FORBIDDEN',
+  INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
+  
+  // Validation errors (400)
+  VALIDATION_FAILED = 'VALIDATION_FAILED',
+  INVALID_INPUT = 'INVALID_INPUT',
+  MISSING_FIELD = 'MISSING_FIELD',
+  
+  // Resource errors (404)
+  NOT_FOUND = 'NOT_FOUND',
+  RESOURCE_NOT_FOUND = 'RESOURCE_NOT_FOUND',
+  
+  // Conflict errors (409)
+  ALREADY_EXISTS = 'ALREADY_EXISTS',
+  DUPLICATE_ENTRY = 'DUPLICATE_ENTRY',
+  
+  // Rate limiting (429)
+  RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
+  
+  // Server errors (500)
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  DATABASE_ERROR = 'DATABASE_ERROR',
+  EXTERNAL_SERVICE_ERROR = 'EXTERNAL_SERVICE_ERROR',
+}
+
+// Standardized error object
+export interface ApiError {
+  code: ErrorCode;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
 // API response types
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
-  error?: string;
+  error?: ApiError;
+  // Deprecated: keeping for backward compatibility during migration
   message?: string;
 }
