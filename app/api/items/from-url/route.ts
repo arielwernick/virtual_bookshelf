@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { extractVideoId, getVideoDetails } from '@/lib/api/youtube';
+import { fetchLinkMetadata, isYouTubeUrl, MicrolinkQuotaExceededError } from '@/lib/api/microlink';
 import { sql } from '@/lib/db/client';
 import { createLogger } from '@/lib/utils/logger';
 
@@ -10,7 +11,7 @@ export const runtime = 'edge';
 
 /**
  * POST /api/items/from-url
- * Create an item from a URL (currently supports YouTube videos)
+ * Create an item from a URL (supports YouTube videos and generic links via Microlink)
  */
 export async function POST(request: Request) {
   try {
@@ -56,31 +57,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Try to extract YouTube video ID
-    const videoId = extractVideoId(url);
-    
-    if (!videoId) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid YouTube URL. Please provide a valid YouTube video URL.' },
-        { status: 400 }
-      );
-    }
-
-    // Fetch video details from YouTube API
-    let videoDetails;
-    try {
-      videoDetails = await getVideoDetails(videoId);
-    } catch (error) {
-      logger.errorWithException('YouTube API error', error);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Failed to fetch video details from YouTube' 
-        },
-        { status: 500 }
-      );
-    }
-
     // Get the next order_index for this shelf
     const orderResult = await sql`
       SELECT COALESCE(MAX(order_index), -1) + 1 as next_order
@@ -89,7 +65,92 @@ export async function POST(request: Request) {
     `;
     const nextOrder = orderResult[0]?.next_order || 0;
 
-    // Create the item
+    // Check if it's a YouTube URL - use existing YouTube handler
+    if (isYouTubeUrl(url)) {
+      const videoId = extractVideoId(url);
+      
+      if (!videoId) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid YouTube URL. Please provide a valid YouTube video URL.' },
+          { status: 400 }
+        );
+      }
+
+      // Fetch video details from YouTube API
+      let videoDetails;
+      try {
+        videoDetails = await getVideoDetails(videoId);
+      } catch (error) {
+        logger.errorWithException('YouTube API error', error);
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Failed to fetch video details from YouTube' 
+          },
+          { status: 500 }
+        );
+      }
+
+      // Create the video item
+      const result = await sql`
+        INSERT INTO items (
+          shelf_id,
+          user_id,
+          type,
+          title,
+          creator,
+          image_url,
+          external_url,
+          order_index
+        )
+        VALUES (
+          ${shelf_id},
+          ${session.userId},
+          'video',
+          ${videoDetails.title},
+          ${videoDetails.channelName},
+          ${videoDetails.thumbnailUrl},
+          ${videoDetails.videoUrl},
+          ${nextOrder}
+        )
+        RETURNING *
+      `;
+
+      return NextResponse.json({
+        success: true,
+        data: result[0],
+      });
+    }
+
+    // For all other URLs, use Microlink to extract metadata
+    let linkMetadata;
+    try {
+      linkMetadata = await fetchLinkMetadata(url);
+    } catch (error) {
+      logger.errorWithException('Microlink API error', error);
+      
+      // Return 503 for quota exceeded to signal UI to disable feature
+      if (error instanceof MicrolinkQuotaExceededError) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'quota_exceeded',
+            message: 'Link preview service temporarily unavailable'
+          },
+          { status: 503 }
+        );
+      }
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Failed to fetch link metadata' 
+        },
+        { status: 500 }
+      );
+    }
+
+    // Create the link item
     const result = await sql`
       INSERT INTO items (
         shelf_id,
@@ -104,11 +165,11 @@ export async function POST(request: Request) {
       VALUES (
         ${shelf_id},
         ${session.userId},
-        'video',
-        ${videoDetails.title},
-        ${videoDetails.channelName},
-        ${videoDetails.thumbnailUrl},
-        ${videoDetails.videoUrl},
+        'link',
+        ${linkMetadata.title},
+        ${linkMetadata.publisher},
+        ${linkMetadata.image},
+        ${linkMetadata.url},
         ${nextOrder}
       )
       RETURNING *

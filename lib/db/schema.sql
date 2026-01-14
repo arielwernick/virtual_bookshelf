@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shelf_id UUID NOT NULL REFERENCES shelves(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  type VARCHAR(20) NOT NULL CHECK (type IN ('book', 'podcast', 'music', 'podcast_episode', 'video')),
+  type VARCHAR(20) NOT NULL CHECK (type IN ('book', 'podcast', 'music', 'podcast_episode', 'video', 'link')),
   title VARCHAR(255) NOT NULL,
   creator VARCHAR(255) NOT NULL,
   image_url TEXT,

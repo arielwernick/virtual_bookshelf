@@ -27,7 +27,7 @@ export interface Shelf {
   updated_at: Date;
 }
 
-export type ItemType = 'book' | 'podcast' | 'music' | 'podcast_episode' | 'video';
+export type ItemType = 'book' | 'podcast' | 'music' | 'podcast_episode' | 'video' | 'link';
 
 export interface Item {
   id: string;

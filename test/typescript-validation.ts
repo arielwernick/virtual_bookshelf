@@ -52,6 +52,8 @@ function testTypeDiscrimination() {
         return 'Music';
       case 'video':
         return 'Video';
+      case 'link':
+        return 'Link';
       default:
         // TypeScript should ensure this is never reached
         const exhaustiveCheck: never = type;
@@ -64,6 +66,7 @@ function testTypeDiscrimination() {
   console.log('podcast_episode ->', getItemTypeLabel('podcast_episode'));
   console.log('music ->', getItemTypeLabel('music'));
   console.log('video ->', getItemTypeLabel('video'));
+  console.log('link ->', getItemTypeLabel('link'));
 }
 
 // Run all tests
