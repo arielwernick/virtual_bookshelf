@@ -33,7 +33,6 @@ export async function GET(
         id: shelf.id,
         name: shelf.name,
         description: shelf.description,
-        shelf_type: shelf.shelf_type,
         items,
         created_at: shelf.created_at,
       },

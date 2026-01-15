@@ -81,8 +81,6 @@ dark:bg-gradient-to-br dark:from-gray-950 dark:to-gray-900
 - [ ] `components/shelf/ShareModal.tsx` - Share settings modal
 - [ ] `components/shelf/ShelfTitleEditor.tsx` - Title editing
 - [ ] `components/shelf/NoteEditorModal.tsx` - Note editing modal
-- [ ] `components/shelf/Top5ShelfGrid.tsx` - Top 5 layout
-- [ ] `components/shelf/Top5ItemCard.tsx` - Ranked item cards
 
 ### UI Components
 - [ ] `components/ui/Modal.tsx` - Base modal styling
