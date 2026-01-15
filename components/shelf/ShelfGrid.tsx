@@ -2,7 +2,7 @@
 
 import { Item, ItemType } from '@/lib/types/shelf';
 import { ItemCard } from './ItemCard';
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   DndContext,
   closestCenter,
