@@ -2,48 +2,22 @@ name: Refine Quick Ideas with AI
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened]
 
 jobs:
   ai-refinement:
-    # Run on opened issues with "idea" label, OR when "idea" label is specifically added
-    # This prevents duplicate runs when issue is created with multiple labels
-    if: |
-      (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'idea')) ||
-      (github.event.action == 'labeled' && github.event.label.name == 'idea')
+    # Only run on issues with the "idea" label
+    if: contains(github.event.issue.labels.*.name, 'idea')
     runs-on: ubuntu-latest
     permissions:
       issues: write
       models: read
     
     steps:
-      - name: Check for existing AI comment
-        id: check-comment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const hasAIComment = comments.data.some(c => 
-              c.body.includes('🤖 AI Analysis: Let\'s refine this idea!')
-            );
-            core.setOutput('exists', hasAIComment ? 'true' : 'false');
-
-      - name: Skip if already commented
-        if: steps.check-comment.outputs.exists == 'true'
-        run: |
-          echo "AI comment already exists, skipping..."
-          exit 0
-
       - name: Checkout repository
-        if: steps.check-comment.outputs.exists != 'true'
         uses: actions/checkout@v4
 
       - name: Gather codebase context
-        if: steps.check-comment.outputs.exists != 'true'
         id: context
         run: |
           # Read project instructions if they exist
@@ -77,9 +51,8 @@ jobs:
           echo "$PRDS" > /tmp/prds.txt
           echo "$STRUCTURE" > /tmp/structure.txt
 
-      - name: Analyze idea with AI and generate questions
-        if: steps.check-comment.outputs.exists != 'true'
-        id: ai-analysis
+      - name: Generate feature request draft with AI
+        id: ai-draft
         uses: actions/github-script@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -99,30 +72,8 @@ jobs:
               ? fs.readFileSync('/tmp/prds.txt', 'utf8') : '';
             const structure = fs.existsSync('/tmp/structure.txt')
               ? fs.readFileSync('/tmp/structure.txt', 'utf8') : '';
-            
-            const featureRequestTemplate = `
-            ## Problem Statement
-            <!-- What problem does this feature solve? Who experiences this problem? -->
-
-            ## Proposed Solution
-            <!-- Describe the feature you'd like to see -->
-
-            ## User Story
-            As a [type of user], I want [goal] so that [benefit].
-
-            ## Mockup / Examples
-            <!-- Screenshots, wireframes, or links to similar features in other products -->
-
-            ## Alternatives Considered
-            <!-- What other solutions have you thought about? -->
-
-            ## Additional Context
-            <!-- Any other context, links, or references -->
-            `;
 
             const codebaseContext = `
-            ## Project Context (from codebase)
-            
             ### Project Overview
             ${readme || 'No README found'}
             
@@ -136,35 +87,53 @@ jobs:
             ${structure || 'No structure available'}
             `;
 
-            const prompt = `You are a helpful product manager assistant for this specific project. A user has submitted a quick idea for a software feature. Your job is to:
+            const prompt = `You are a product manager assistant. Transform this quick idea into a complete feature request.
 
-            1. Analyze the idea IN THE CONTEXT of this specific codebase
-            2. Identify what information is missing or unclear
-            3. Generate 3-5 specific, contextual follow-up questions that would help transform this into a complete feature request
-            4. Consider how this idea fits with the existing tech stack and project patterns
-            5. If possible, suggest a draft user story based on what you can infer
-
+            PROJECT CONTEXT:
             ${codebaseContext}
 
-            The idea should eventually be refined to match this feature request template:
-            ${featureRequestTemplate}
-
-            Here is the quick idea:
+            QUICK IDEA:
             Title: ${issueTitle}
             Description: ${issueBody}
 
-            Respond in markdown format with:
-            - A brief summary of what you understand the idea to be (1-2 sentences)
-            - How this might fit into the existing project structure
-            - A numbered list of specific follow-up questions (tailored to THIS idea AND this codebase)
-            - A suggested draft user story if you can infer one
-            - Note which sections of the feature request template still need information
-            - If relevant, mention which existing files/components might be affected
+            Generate a complete feature request using EXACTLY this format (fill in each section based on the idea and project context):
 
-            Keep your response concise and actionable.`;
+            ## Problem Statement
+            [Infer the problem this solves. If unclear, make your best guess and mark with ⚠️]
+
+            ## Proposed Solution
+            [Describe the feature based on the idea. Be specific about implementation given the tech stack]
+
+            ## User Story
+            As a [user type], I want [goal] so that [benefit].
+
+            ## Mockup / Examples
+            [Suggest what this might look like or reference similar features. Mark with ⚠️ if needs input]
+
+            ## Alternatives Considered
+            [Suggest 1-2 alternatives if applicable, or mark with ⚠️ needs input]
+
+            ## Additional Context
+            [Note which files/components might be affected based on project structure]
+
+            ## ⚠️ Needs Clarification
+            [List 2-4 specific questions that need answers to complete this feature request]
+
+            ---
+            <details>
+            <summary>💡 Original Idea</summary>
+
+            ${issueBody || '_No description provided_'}
+
+            </details>
+
+            IMPORTANT: 
+            - Fill in as much as you can infer from the idea and codebase
+            - Use ⚠️ to mark sections that need human input
+            - Be specific about implementation details given the Next.js/TypeScript/Neon stack
+            - Keep it concise but actionable`;
 
             try {
-              // Using GitHub Models API
               const response = await fetch('https://models.github.ai/inference/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -174,7 +143,7 @@ jobs:
                 body: JSON.stringify({
                   model: 'openai/gpt-4o-mini',
                   messages: [
-                    { role: 'system', content: 'You are a helpful product manager assistant that helps refine feature ideas with deep knowledge of the codebase.' },
+                    { role: 'system', content: 'You are a product manager that transforms rough ideas into structured feature requests. Output ONLY the feature request markdown, no preamble.' },
                     { role: 'user', content: prompt }
                   ],
                   max_tokens: 1500,
@@ -188,83 +157,119 @@ jobs:
                 throw new Error(data.error.message);
               }
 
-              const aiResponse = data.choices[0].message.content;
-              core.setOutput('ai_response', aiResponse);
+              const draftBody = data.choices[0].message.content;
+              core.setOutput('draft_body', draftBody);
+              core.setOutput('success', 'true');
               
             } catch (error) {
               console.error('GitHub Models API error:', error);
-              core.setOutput('ai_response', null);
+              core.setOutput('success', 'false');
               core.setOutput('error', error.message);
             }
 
-      - name: Post AI-generated refinement questions
-        if: steps.check-comment.outputs.exists != 'true'
-        uses: peter-evans/create-or-update-comment@v4
+      - name: Update issue with feature request draft
+        if: steps.ai-draft.outputs.success == 'true'
+        uses: actions/github-script@v7
         with:
-          issue-number: ${{ github.event.issue.number }}
-          body: |
-            ## 🤖 AI Analysis: Let's refine this idea!
+          script: |
+            const draftBody = `${{ steps.ai-draft.outputs.draft_body }}`;
+            
+            // Update the issue body
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: draftBody
+            });
+            
+            // Update title to feature request format
+            const currentTitle = context.payload.issue.title;
+            const newTitle = currentTitle.replace('[IDEA]', '[FEATURE]');
+            if (newTitle !== currentTitle) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                title: newTitle
+              });
+            }
+            
+            // Swap labels: remove idea/needs-refinement, add enhancement
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              name: 'idea'
+            }).catch(() => {}); // Ignore if label doesn't exist
+            
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              name: 'needs-refinement'
+            }).catch(() => {});
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['enhancement', 'ai-drafted']
+            });
+            
+            // Add a small comment explaining what happened
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '🤖 I\'ve transformed your idea into a feature request draft above. Please review and edit the sections marked with ⚠️, then remove the `ai-drafted` label when it\'s ready.'
+            });
 
-            ${{ steps.ai-analysis.outputs.ai_response }}
-
-            ---
-
-            <details>
-            <summary>📝 Feature Request Template (copy when ready)</summary>
-
-            ```markdown
-            ## Problem Statement
-            <!-- What problem does this feature solve? Who experiences this problem? -->
+      - name: Post fallback if AI fails
+        if: steps.ai-draft.outputs.success != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const originalBody = context.payload.issue.body || '_No description provided_';
+            
+            const fallbackBody = `## Problem Statement
+            <!-- ⚠️ What problem does this feature solve? Who experiences this problem? -->
 
             ## Proposed Solution
-            <!-- Describe the feature you'd like to see -->
+            <!-- ⚠️ Describe the feature you'd like to see -->
 
             ## User Story
             As a __________, I want __________ so that __________.
 
             ## Mockup / Examples
-            <!-- Screenshots, wireframes, or links to similar features -->
+            <!-- ⚠️ Screenshots, wireframes, or links to similar features -->
 
             ## Alternatives Considered
-            <!-- What other solutions have you thought about? -->
+            <!-- ⚠️ What other solutions have you thought about? -->
 
             ## Additional Context
             <!-- Any other context, links, or references -->
-            ```
-            </details>
-
-            💡 **Next steps:** Reply with answers to the questions above, then remove the `needs-refinement` label when this idea is ready to become a feature request.
-
-      - name: Post fallback if AI fails
-        if: steps.check-comment.outputs.exists != 'true' && steps.ai-analysis.outputs.error
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          issue-number: ${{ github.event.issue.number }}
-          body: |
-            ## 🤖 Let's refine this idea!
-
-            *(AI analysis unavailable - using standard questions)*
-
-            To help turn this into an actionable feature request, please consider:
-
-            1. **What problem does this solve?** Who experiences this and how often?
-            2. **What would success look like?** Describe the ideal end state.
-            3. **Who is the target user?** Can you write a user story?
-            4. **Are there examples elsewhere?** Similar features in other products?
-            5. **What's the priority?** Must-have or nice-to-have?
 
             ---
-            
             <details>
-            <summary>📝 Feature Request Template</summary>
+            <summary>💡 Original Idea</summary>
 
-            ```markdown
-            ## Problem Statement
-            ## Proposed Solution  
-            ## User Story
-            As a __________, I want __________ so that __________.
-            ## Mockup / Examples
-            ## Alternatives Considered
-            ## Additional Context
-            ```
+            ${originalBody}
+
             </details>
+
+            ---
+            *⚠️ AI drafting was unavailable. Please fill in the sections above manually.*`;
+            
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: fallbackBody
+            });
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '🤖 AI drafting wasn\'t available, but I\'ve converted this to a feature request template. Please fill in the sections marked with ⚠️.'
+            });
