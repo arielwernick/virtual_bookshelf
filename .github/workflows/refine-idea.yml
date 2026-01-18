@@ -6,26 +6,99 @@ on:
 
 jobs:
   ai-refinement:
-    # Only run on issues with the "idea" label
-    if: contains(github.event.issue.labels.*.name, 'idea')
+    # Run on opened issues with "idea" label, OR when "idea" label is specifically added
+    # This prevents duplicate runs when issue is created with multiple labels
+    if: |
+      (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'idea')) ||
+      (github.event.action == 'labeled' && github.event.label.name == 'idea')
     runs-on: ubuntu-latest
     permissions:
       issues: write
       models: read
     
     steps:
+      - name: Check for existing AI comment
+        id: check-comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const hasAIComment = comments.data.some(c => 
+              c.body.includes('🤖 AI Analysis: Let\'s refine this idea!')
+            );
+            core.setOutput('exists', hasAIComment ? 'true' : 'false');
+
+      - name: Skip if already commented
+        if: steps.check-comment.outputs.exists == 'true'
+        run: |
+          echo "AI comment already exists, skipping..."
+          exit 0
+
       - name: Checkout repository
+        if: steps.check-comment.outputs.exists != 'true'
         uses: actions/checkout@v4
 
+      - name: Gather codebase context
+        if: steps.check-comment.outputs.exists != 'true'
+        id: context
+        run: |
+          # Read project instructions if they exist
+          if [ -f ".github/copilot-instructions.md" ]; then
+            echo "Found copilot-instructions.md"
+            INSTRUCTIONS=$(cat .github/copilot-instructions.md | head -c 4000)
+          else
+            INSTRUCTIONS=""
+          fi
+          
+          # Read README for project overview
+          if [ -f "README.md" ]; then
+            README=$(cat README.md | head -c 2000)
+          else
+            README=""
+          fi
+          
+          # List existing PRDs to show feature patterns
+          if [ -d "prds" ]; then
+            PRDS=$(ls -1 prds/ | head -20)
+          else
+            PRDS=""
+          fi
+          
+          # Get directory structure (top level)
+          STRUCTURE=$(find . -maxdepth 2 -type d | grep -v node_modules | grep -v .git | head -30)
+          
+          # Write to files to avoid escaping issues
+          echo "$INSTRUCTIONS" > /tmp/instructions.txt
+          echo "$README" > /tmp/readme.txt
+          echo "$PRDS" > /tmp/prds.txt
+          echo "$STRUCTURE" > /tmp/structure.txt
+
       - name: Analyze idea with AI and generate questions
+        if: steps.check-comment.outputs.exists != 'true'
         id: ai-analysis
         uses: actions/github-script@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
+            const fs = require('fs');
+            
             const issueTitle = context.payload.issue.title;
             const issueBody = context.payload.issue.body || '';
+            
+            // Read codebase context
+            const instructions = fs.existsSync('/tmp/instructions.txt') 
+              ? fs.readFileSync('/tmp/instructions.txt', 'utf8') : '';
+            const readme = fs.existsSync('/tmp/readme.txt')
+              ? fs.readFileSync('/tmp/readme.txt', 'utf8') : '';
+            const prds = fs.existsSync('/tmp/prds.txt')
+              ? fs.readFileSync('/tmp/prds.txt', 'utf8') : '';
+            const structure = fs.existsSync('/tmp/structure.txt')
+              ? fs.readFileSync('/tmp/structure.txt', 'utf8') : '';
             
             const featureRequestTemplate = `
             ## Problem Statement
@@ -47,11 +120,31 @@ jobs:
             <!-- Any other context, links, or references -->
             `;
 
-            const prompt = `You are a helpful product manager assistant. A user has submitted a quick idea for a software feature. Your job is to:
+            const codebaseContext = `
+            ## Project Context (from codebase)
+            
+            ### Project Overview
+            ${readme || 'No README found'}
+            
+            ### Tech Stack & Conventions
+            ${instructions || 'No copilot-instructions found'}
+            
+            ### Existing Feature PRDs
+            ${prds || 'No PRDs found'}
+            
+            ### Project Structure
+            ${structure || 'No structure available'}
+            `;
 
-            1. Analyze the idea and identify what information is missing or unclear
-            2. Generate 3-5 specific, contextual follow-up questions that would help transform this into a complete feature request
-            3. If possible, suggest a draft user story based on what you can infer
+            const prompt = `You are a helpful product manager assistant for this specific project. A user has submitted a quick idea for a software feature. Your job is to:
+
+            1. Analyze the idea IN THE CONTEXT of this specific codebase
+            2. Identify what information is missing or unclear
+            3. Generate 3-5 specific, contextual follow-up questions that would help transform this into a complete feature request
+            4. Consider how this idea fits with the existing tech stack and project patterns
+            5. If possible, suggest a draft user story based on what you can infer
+
+            ${codebaseContext}
 
             The idea should eventually be refined to match this feature request template:
             ${featureRequestTemplate}
@@ -62,9 +155,11 @@ jobs:
 
             Respond in markdown format with:
             - A brief summary of what you understand the idea to be (1-2 sentences)
-            - A numbered list of specific follow-up questions (not generic - tailored to THIS idea)
-            - A suggested draft user story if you can infer one (or ask clarifying questions if you can't)
+            - How this might fit into the existing project structure
+            - A numbered list of specific follow-up questions (tailored to THIS idea AND this codebase)
+            - A suggested draft user story if you can infer one
             - Note which sections of the feature request template still need information
+            - If relevant, mention which existing files/components might be affected
 
             Keep your response concise and actionable.`;
 
@@ -79,10 +174,10 @@ jobs:
                 body: JSON.stringify({
                   model: 'openai/gpt-4o-mini',
                   messages: [
-                    { role: 'system', content: 'You are a helpful product manager assistant that helps refine feature ideas.' },
+                    { role: 'system', content: 'You are a helpful product manager assistant that helps refine feature ideas with deep knowledge of the codebase.' },
                     { role: 'user', content: prompt }
                   ],
-                  max_tokens: 1000,
+                  max_tokens: 1500,
                   temperature: 0.7,
                 }),
               });
@@ -103,6 +198,7 @@ jobs:
             }
 
       - name: Post AI-generated refinement questions
+        if: steps.check-comment.outputs.exists != 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.issue.number }}
@@ -140,7 +236,7 @@ jobs:
             💡 **Next steps:** Reply with answers to the questions above, then remove the `needs-refinement` label when this idea is ready to become a feature request.
 
       - name: Post fallback if AI fails
-        if: ${{ steps.ai-analysis.outputs.error }}
+        if: steps.check-comment.outputs.exists != 'true' && steps.ai-analysis.outputs.error
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.issue.number }}
