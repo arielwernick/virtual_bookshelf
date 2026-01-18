@@ -1,0 +1,174 @@
+name: Refine Quick Ideas with AI
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  ai-refinement:
+    # Only run on issues with the "idea" label
+    if: contains(github.event.issue.labels.*.name, 'idea')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      models: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Analyze idea with AI and generate questions
+        id: ai-analysis
+        uses: actions/github-script@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const issueTitle = context.payload.issue.title;
+            const issueBody = context.payload.issue.body || '';
+            
+            const featureRequestTemplate = `
+            ## Problem Statement
+            <!-- What problem does this feature solve? Who experiences this problem? -->
+
+            ## Proposed Solution
+            <!-- Describe the feature you'd like to see -->
+
+            ## User Story
+            As a [type of user], I want [goal] so that [benefit].
+
+            ## Mockup / Examples
+            <!-- Screenshots, wireframes, or links to similar features in other products -->
+
+            ## Alternatives Considered
+            <!-- What other solutions have you thought about? -->
+
+            ## Additional Context
+            <!-- Any other context, links, or references -->
+            `;
+
+            const prompt = `You are a helpful product manager assistant. A user has submitted a quick idea for a software feature. Your job is to:
+
+            1. Analyze the idea and identify what information is missing or unclear
+            2. Generate 3-5 specific, contextual follow-up questions that would help transform this into a complete feature request
+            3. If possible, suggest a draft user story based on what you can infer
+
+            The idea should eventually be refined to match this feature request template:
+            ${featureRequestTemplate}
+
+            Here is the quick idea:
+            Title: ${issueTitle}
+            Description: ${issueBody}
+
+            Respond in markdown format with:
+            - A brief summary of what you understand the idea to be (1-2 sentences)
+            - A numbered list of specific follow-up questions (not generic - tailored to THIS idea)
+            - A suggested draft user story if you can infer one (or ask clarifying questions if you can't)
+            - Note which sections of the feature request template still need information
+
+            Keep your response concise and actionable.`;
+
+            try {
+              // Using GitHub Models API
+              const response = await fetch('https://models.github.ai/inference/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  model: 'openai/gpt-4o-mini',
+                  messages: [
+                    { role: 'system', content: 'You are a helpful product manager assistant that helps refine feature ideas.' },
+                    { role: 'user', content: prompt }
+                  ],
+                  max_tokens: 1000,
+                  temperature: 0.7,
+                }),
+              });
+
+              const data = await response.json();
+              
+              if (data.error) {
+                throw new Error(data.error.message);
+              }
+
+              const aiResponse = data.choices[0].message.content;
+              core.setOutput('ai_response', aiResponse);
+              
+            } catch (error) {
+              console.error('GitHub Models API error:', error);
+              core.setOutput('ai_response', null);
+              core.setOutput('error', error.message);
+            }
+
+      - name: Post AI-generated refinement questions
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ## 🤖 AI Analysis: Let's refine this idea!
+
+            ${{ steps.ai-analysis.outputs.ai_response }}
+
+            ---
+
+            <details>
+            <summary>📝 Feature Request Template (copy when ready)</summary>
+
+            ```markdown
+            ## Problem Statement
+            <!-- What problem does this feature solve? Who experiences this problem? -->
+
+            ## Proposed Solution
+            <!-- Describe the feature you'd like to see -->
+
+            ## User Story
+            As a __________, I want __________ so that __________.
+
+            ## Mockup / Examples
+            <!-- Screenshots, wireframes, or links to similar features -->
+
+            ## Alternatives Considered
+            <!-- What other solutions have you thought about? -->
+
+            ## Additional Context
+            <!-- Any other context, links, or references -->
+            ```
+            </details>
+
+            💡 **Next steps:** Reply with answers to the questions above, then remove the `needs-refinement` label when this idea is ready to become a feature request.
+
+      - name: Post fallback if AI fails
+        if: ${{ steps.ai-analysis.outputs.error }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ## 🤖 Let's refine this idea!
+
+            *(AI analysis unavailable - using standard questions)*
+
+            To help turn this into an actionable feature request, please consider:
+
+            1. **What problem does this solve?** Who experiences this and how often?
+            2. **What would success look like?** Describe the ideal end state.
+            3. **Who is the target user?** Can you write a user story?
+            4. **Are there examples elsewhere?** Similar features in other products?
+            5. **What's the priority?** Must-have or nice-to-have?
+
+            ---
+            
+            <details>
+            <summary>📝 Feature Request Template</summary>
+
+            ```markdown
+            ## Problem Statement
+            ## Proposed Solution  
+            ## User Story
+            As a __________, I want __________ so that __________.
+            ## Mockup / Examples
+            ## Alternatives Considered
+            ## Additional Context
+            ```
+            </details>
