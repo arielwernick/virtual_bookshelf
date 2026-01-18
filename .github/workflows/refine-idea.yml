@@ -2,48 +2,22 @@ name: Refine Quick Ideas with AI
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened]
 
 jobs:
   ai-refinement:
-    # Run on opened issues with "idea" label, OR when "idea" label is specifically added
-    # This prevents duplicate runs when issue is created with multiple labels
-    if: |
-      (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'idea')) ||
-      (github.event.action == 'labeled' && github.event.label.name == 'idea')
+    # Only run on issues with the "idea" label
+    if: contains(github.event.issue.labels.*.name, 'idea')
     runs-on: ubuntu-latest
     permissions:
       issues: write
       models: read
     
     steps:
-      - name: Check for existing AI comment
-        id: check-comment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const hasAIComment = comments.data.some(c => 
-              c.body.includes('🤖 AI Analysis: Let\'s refine this idea!')
-            );
-            core.setOutput('exists', hasAIComment ? 'true' : 'false');
-
-      - name: Skip if already commented
-        if: steps.check-comment.outputs.exists == 'true'
-        run: |
-          echo "AI comment already exists, skipping..."
-          exit 0
-
       - name: Checkout repository
-        if: steps.check-comment.outputs.exists != 'true'
         uses: actions/checkout@v4
 
       - name: Gather codebase context
-        if: steps.check-comment.outputs.exists != 'true'
         id: context
         run: |
           # Read project instructions if they exist
@@ -78,7 +52,6 @@ jobs:
           echo "$STRUCTURE" > /tmp/structure.txt
 
       - name: Analyze idea with AI and generate questions
-        if: steps.check-comment.outputs.exists != 'true'
         id: ai-analysis
         uses: actions/github-script@v7
         env:
@@ -198,7 +171,6 @@ jobs:
             }
 
       - name: Post AI-generated refinement questions
-        if: steps.check-comment.outputs.exists != 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.issue.number }}
@@ -236,7 +208,7 @@ jobs:
             💡 **Next steps:** Reply with answers to the questions above, then remove the `needs-refinement` label when this idea is ready to become a feature request.
 
       - name: Post fallback if AI fails
-        if: steps.check-comment.outputs.exists != 'true' && steps.ai-analysis.outputs.error
+        if: steps.ai-analysis.outputs.error
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.issue.number }}
