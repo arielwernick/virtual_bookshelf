@@ -313,4 +313,80 @@ describe('ItemCard', () => {
       expect(onClick).not.toHaveBeenCalled();
     });
   });
+
+  describe('Keyboard Accessibility', () => {
+    it('is keyboard focusable when clickable', () => {
+      const onClick = vi.fn();
+      render(<ItemCard item={createMockItem()} onClick={onClick} />);
+
+      const card = screen.getByRole('button');
+      expect(card).toHaveAttribute('tabIndex', '0');
+    });
+
+    it('is not focusable when not clickable', () => {
+      render(<ItemCard item={createMockItem()} />);
+
+      const card = screen.getByText('The Great Gatsby').closest('div');
+      expect(card).not.toHaveAttribute('tabIndex');
+      expect(card).not.toHaveAttribute('role', 'button');
+    });
+
+    it('calls onClick when Enter key is pressed', () => {
+      const onClick = vi.fn();
+      render(<ItemCard item={createMockItem()} onClick={onClick} />);
+
+      const card = screen.getByRole('button');
+      fireEvent.keyDown(card, { key: 'Enter' });
+
+      expect(onClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls onClick when Space key is pressed', () => {
+      const onClick = vi.fn();
+      render(<ItemCard item={createMockItem()} onClick={onClick} />);
+
+      const card = screen.getByRole('button');
+      fireEvent.keyDown(card, { key: ' ' });
+
+      expect(onClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not call onClick for other keys', () => {
+      const onClick = vi.fn();
+      render(<ItemCard item={createMockItem()} onClick={onClick} />);
+
+      const card = screen.getByRole('button');
+      fireEvent.keyDown(card, { key: 'a' });
+      fireEvent.keyDown(card, { key: 'Escape' });
+
+      expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it('does not call onClick on keyboard press in edit mode', () => {
+      const onClick = vi.fn();
+      render(<ItemCard item={createMockItem()} onClick={onClick} editMode={true} />);
+
+      const card = screen.getByText('The Great Gatsby').closest('div');
+      fireEvent.keyDown(card!, { key: 'Enter' });
+
+      expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it('has accessible label', () => {
+      const onClick = vi.fn();
+      render(<ItemCard item={createMockItem({ title: 'Test Title' })} onClick={onClick} />);
+
+      const card = screen.getByRole('button');
+      expect(card).toHaveAttribute('aria-label', 'View details for Test Title');
+    });
+
+    it('shows focus ring when focused', () => {
+      const onClick = vi.fn();
+      render(<ItemCard item={createMockItem()} onClick={onClick} />);
+
+      const card = screen.getByRole('button');
+      expect(card.className).toContain('focus-within:ring-2');
+      expect(card.className).toContain('focus-within:ring-gray-500');
+    });
+  });
 });

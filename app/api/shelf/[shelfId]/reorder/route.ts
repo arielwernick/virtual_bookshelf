@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { getShelfById, getItemsByShelfId, updateItemOrder } from '@/lib/db/queries';
-import { isTop5Shelf } from '@/lib/utils/top5';
 import { createLogger } from '@/lib/utils/logger';
 
 const logger = createLogger('ShelfReorder');
@@ -89,16 +88,6 @@ export async function POST(request: Request, { params }: RouteParams) {
         { success: false, error: 'Duplicate item IDs not allowed' },
         { status: 400 }
       );
-    }
-
-    // For Top 5 shelves, ensure all items are included
-    if (isTop5Shelf(shelf)) {
-      if (item_ids.length !== existingItems.length) {
-        return NextResponse.json(
-          { success: false, error: 'All items must be included when reordering a Top 5 shelf' },
-          { status: 400 }
-        );
-      }
     }
 
     // Update item order

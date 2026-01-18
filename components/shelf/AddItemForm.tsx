@@ -9,6 +9,7 @@ import { SearchForm } from './forms/SearchForm';
 import { EpisodeBrowser } from './forms/EpisodeBrowser';
 import { ManualEntryForm } from './forms/ManualEntryForm';
 import { VideoUrlForm } from './forms/VideoUrlForm';
+import { LinkUrlForm } from './forms/LinkUrlForm';
 
 interface AddItemFormProps {
   shelfId: string;
@@ -21,6 +22,9 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
   const [adding, setAdding] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
   const [fetchingVideo, setFetchingVideo] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [fetchingLink, setFetchingLink] = useState(false);
+  const [linkQuotaExceeded, setLinkQuotaExceeded] = useState(false);
 
   const search = useSearch();
   const episodes = useEpisodes();
@@ -120,6 +124,48 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
     }
   };
 
+  const handleFetchLink = async () => {
+    if (!linkUrl.trim()) {
+      alert('Please enter a URL');
+      return;
+    }
+
+    setFetchingLink(true);
+
+    try {
+      const res = await fetch('/api/items/from-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: linkUrl,
+          shelf_id: shelfId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        onItemAdded();
+        setLinkUrl('');
+        // Reset quota state on successful request
+        setLinkQuotaExceeded(false);
+      } else {
+        // Check if quota is exceeded (503 status)
+        if (res.status === 503 && data.error === 'quota_exceeded') {
+          setLinkQuotaExceeded(true);
+          // Don't show alert, just disable the feature
+        } else {
+          alert(data.error || 'Failed to fetch link metadata');
+        }
+      }
+    } catch (error) {
+      console.error('Fetch link error:', error);
+      alert('Failed to fetch link metadata');
+    } finally {
+      setFetchingLink(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Add Item</h2>
@@ -168,6 +214,21 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
         >
           Video
         </button>
+
+        <button
+          onClick={() => setItemType('link')}
+          disabled={linkQuotaExceeded}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            linkQuotaExceeded
+              ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
+              : itemType === 'link'
+              ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+          }`}
+          title={linkQuotaExceeded ? 'Link preview service temporarily unavailable' : ''}
+        >
+          Link
+        </button>
       </div>
 
       {/* Mode Toggle */}
@@ -199,6 +260,14 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
                   setVideoUrl={setVideoUrl}
                   onSubmit={handleFetchVideo}
                   fetching={fetchingVideo}
+                />
+              ) : itemType === 'link' ? (
+                <LinkUrlForm
+                  linkUrl={linkUrl}
+                  setLinkUrl={setLinkUrl}
+                  onSubmit={handleFetchLink}
+                  fetching={fetchingLink}
+                  quotaExceeded={linkQuotaExceeded}
                 />
               ) : (
                 <SearchForm

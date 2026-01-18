@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS shelves (
   description TEXT,
   share_token VARCHAR(128) UNIQUE NOT NULL DEFAULT encode(gen_random_uuid()::text::bytea, 'hex'),
   is_public BOOLEAN DEFAULT FALSE,
-  shelf_type VARCHAR(20) NOT NULL DEFAULT 'standard' CHECK (shelf_type IN ('standard', 'top5')),
+  shelf_type VARCHAR(20) NOT NULL DEFAULT 'standard' CHECK (shelf_type = 'standard'),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shelf_id UUID NOT NULL REFERENCES shelves(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  type VARCHAR(20) NOT NULL CHECK (type IN ('book', 'podcast', 'music', 'podcast_episode', 'video')),
+  type VARCHAR(20) NOT NULL CHECK (type IN ('book', 'podcast', 'music', 'podcast_episode', 'video', 'link')),
   title VARCHAR(255) NOT NULL,
   creator VARCHAR(255) NOT NULL,
   image_url TEXT,

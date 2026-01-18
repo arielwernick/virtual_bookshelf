@@ -130,17 +130,6 @@
 - **Dependencies:** Task 4.3
 - **Estimated Time:** 2 hours
 
-#### 5.2 Update Top5ItemCard for Episodes
-- **Task:** Apply episode support to Top5 shelf item cards
-- **Description:** Ensure episode display works correctly in Top5 shelf format
-- **Files:** `components/shelf/Top5ItemCard.tsx`
-- **Acceptance Criteria:**
-  - Duration badge displays properly in compact format
-  - Styling consistent with Top5 design patterns
-  - Episode metadata fits within space constraints
-- **Dependencies:** Task 5.1
-- **Estimated Time:** 1 hour
-
 ### 6. Integration & State Management
 
 #### 6.1 Update AddItemForm State Management

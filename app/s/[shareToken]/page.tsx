@@ -109,7 +109,6 @@ async function getShelfData(shareToken: string) {
       description: shelf.description,
       items,
       created_at: shelf.created_at.toISOString(),
-      shelf_type: shelf.shelf_type,
     };
   } catch (error) {
     console.error('Error loading shared shelf:', error);

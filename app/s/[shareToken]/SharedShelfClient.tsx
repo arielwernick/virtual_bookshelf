@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { ShelfGrid } from '@/components/shelf/ShelfGrid';
-import { Top5ShelfGrid } from '@/components/shelf/Top5ShelfGrid';
 import { ItemModal } from '@/components/shelf/ItemModal';
-import { Item, ShelfType } from '@/lib/types/shelf';
+import { Item } from '@/lib/types/shelf';
 import Link from 'next/link';
 
 interface SharedShelfData {
@@ -13,7 +12,6 @@ interface SharedShelfData {
   description: string | null;
   items: Item[];
   created_at: string;
-  shelf_type: ShelfType;
 }
 
 interface SharedShelfClientProps {
@@ -51,11 +49,7 @@ export function SharedShelfClient({ shelfData }: SharedShelfClientProps) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {shelfData.shelf_type === 'top5' ? (
-          <Top5ShelfGrid items={shelfData.items} onItemClick={setSelectedItem} />
-        ) : (
-          <ShelfGrid items={shelfData.items} onItemClick={setSelectedItem} />
-        )}
+        <ShelfGrid items={shelfData.items} onItemClick={setSelectedItem} />
       </main>
 
       {/* Item Modal */}
