@@ -59,7 +59,6 @@ export async function GET(
     // Get shelf items
     const items = await getItemsByShelfId(shelf.id);
     const displayItems = items.slice(0, 5); // Show up to 5 items
-    const isTop5 = shelf.shelf_type === 'top5';
 
     return new ImageResponse(
       (
@@ -82,12 +81,6 @@ export async function GET(
                 Virtual Bookshelf
               </span>
             </div>
-            {isTop5 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fef3c7', padding: '8px 16px', borderRadius: '20px' }}>
-                <TrophyIcon />
-                <span style={{ fontSize: '18px', fontWeight: '600', color: '#92400e' }}>Top 5</span>
-              </div>
-            )}
           </div>
 
           {/* Shelf Title */}
@@ -128,7 +121,7 @@ export async function GET(
               paddingBottom: '0',
             }}>
               {displayItems.length > 0 ? (
-                displayItems.map((item, index) => (
+                displayItems.map((item) => (
                   <div 
                     key={item.id} 
                     style={{ 
@@ -137,25 +130,6 @@ export async function GET(
                       alignItems: 'center',
                     }}
                   >
-                    {/* Rank badge for Top 5 */}
-                    {isTop5 && (
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '36px',
-                        height: '36px',
-                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                        borderRadius: '50%',
-                        marginBottom: '-18px',
-                        zIndex: 10,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                      }}>
-                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'white' }}>
-                          {index + 1}
-                        </span>
-                      </div>
-                    )}
                     {/* Book cover */}
                     <div style={{
                       display: 'flex',
@@ -320,14 +294,6 @@ function BookshelfIcon() {
       <rect x="17" y="8" width="2" height="10" />
       <rect x="19.5" y="7" width="2" height="11" />
       <line x1="1" y1="19" x2="23" y2="19" stroke="#1f2937" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-function TrophyIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="#d97706">
-      <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z" />
     </svg>
   );
 }

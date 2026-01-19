@@ -20,6 +20,13 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (onClick && !editMode && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   const aspectRatio = getAspectRatio(item.type);
   const isClickable = onClick && !editMode;
   const hasNotes = Boolean(item.notes);
@@ -30,14 +37,19 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
     music: 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200',
     podcast_episode: 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200',
     video: 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200',
+    link: 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200',
   };
 
   return (
     <div
-      className={`group relative bg-white dark:bg-gray-900 rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 ${
+      className={`group relative bg-white dark:bg-gray-900 rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 focus-within:ring-2 focus-within:ring-gray-500 focus-within:ring-offset-2 ${
         isClickable ? 'cursor-pointer' : ''
       }`}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={isClickable ? 0 : undefined}
+      role={isClickable ? 'button' : undefined}
+      aria-label={isClickable ? `View details for ${item.title}` : undefined}
     >
       {/* Image Container */}
       <div

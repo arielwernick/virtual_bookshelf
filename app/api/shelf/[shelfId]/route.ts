@@ -48,7 +48,6 @@ export async function GET(
                 name: shelf.name,
                 description: shelf.description,
                 is_public: shelf.is_public,
-                shelf_type: shelf.shelf_type,
                 share_token: shelf.share_token,
                 items,
                 created_at: shelf.created_at,

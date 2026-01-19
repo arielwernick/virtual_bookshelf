@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
-import { createItem, getNextOrderIndex, getShelfById, getItemsByShelfId } from '@/lib/db/queries';
+import { createItem, getNextOrderIndex, getShelfById } from '@/lib/db/queries';
 import { validateItemType, validateText, validateUrl, validateNotes, validateRating } from '@/lib/utils/validation';
-import { isTop5Shelf, validateTop5Capacity, validateNoDuplicateItems, TOP5_MAX_ITEMS } from '@/lib/utils/top5';
 import { CreateItemData } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
 import {
@@ -94,25 +93,6 @@ export async function POST(request: Request) {
       const ratingValidation = validateRating(rating);
       if (!ratingValidation.valid) {
         return validationError(ratingValidation.error || 'Invalid rating');
-      }
-    }
-
-    // Top 5 shelf specific validations
-    if (isTop5Shelf(shelf)) {
-      // Get existing items (also gives us the count)
-      const existingItems = await getItemsByShelfId(shelf_id);
-      
-      // Check capacity
-      const capacityValidation = validateTop5Capacity(existingItems.length + 1);
-      if (!capacityValidation.valid) {
-        return validationError(`Top 5 shelf is full. Maximum ${TOP5_MAX_ITEMS} items allowed.`);
-      }
-
-      // Check for duplicates
-      const newItemData: CreateItemData = { type, title, creator };
-      const duplicateValidation = validateNoDuplicateItems(existingItems, newItemData);
-      if (!duplicateValidation.valid) {
-        return validationError(duplicateValidation.error || 'Duplicate item');
       }
     }
 
