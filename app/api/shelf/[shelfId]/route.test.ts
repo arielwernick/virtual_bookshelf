@@ -42,7 +42,8 @@ describe('PATCH /api/shelf/[shelfId]', () => {
 
       expect(res.status).toBe(401);
       expect(data.success).toBe(false);
-      expect(data.error).toBe('Not authenticated');
+      expect(data.error.code).toBe('AUTH_REQUIRED');
+      expect(data.error.message).toContain('Authentication required');
     });
 
     it('returns 401 when session has no userId', async () => {
@@ -68,7 +69,8 @@ describe('PATCH /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(404);
-      expect(data.error).toBe('Shelf not found');
+      expect(data.error.code).toBe('NOT_FOUND');
+      expect(data.error.message).toContain('Shelf not found');
     });
 
     it('returns 403 when user does not own the shelf', async () => {
@@ -79,7 +81,8 @@ describe('PATCH /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(403);
-      expect(data.error).toBe('Unauthorized');
+      expect(data.error.code).toBe('FORBIDDEN');
+      expect(data.error.message).toContain('Access forbidden');
     });
 
     it('prevents non-owner from changing is_public to false (unpublishing)', async () => {
@@ -94,7 +97,8 @@ describe('PATCH /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(403);
-      expect(data.error).toBe('Unauthorized');
+      expect(data.error.code).toBe('FORBIDDEN');
+      expect(data.error.message).toContain('Access forbidden');
       expect(updateShelf).not.toHaveBeenCalled();
     });
 
@@ -110,7 +114,8 @@ describe('PATCH /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(403);
-      expect(data.error).toBe('Unauthorized');
+      expect(data.error.code).toBe('FORBIDDEN');
+      expect(data.error.message).toContain('Access forbidden');
       expect(updateShelf).not.toHaveBeenCalled();
     });
 
@@ -123,7 +128,8 @@ describe('PATCH /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(403);
-      expect(data.error).toBe('Unauthorized');
+      expect(data.error.code).toBe('FORBIDDEN');
+      expect(data.error.message).toContain('Access forbidden');
       expect(updateShelf).not.toHaveBeenCalled();
     });
 
@@ -136,7 +142,8 @@ describe('PATCH /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(403);
-      expect(data.error).toBe('Unauthorized');
+      expect(data.error.code).toBe('FORBIDDEN');
+      expect(data.error.message).toContain('Access forbidden');
       expect(updateShelf).not.toHaveBeenCalled();
     });
   });
@@ -153,7 +160,8 @@ describe('PATCH /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('name');
+      expect(data.error.code).toBe('VALIDATION_FAILED');
+      expect(data.error.message).toContain('name');
     });
 
     it('returns 400 for name too long', async () => {
@@ -162,7 +170,8 @@ describe('PATCH /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('100 characters');
+      expect(data.error.code).toBe('VALIDATION_FAILED');
+      expect(data.error.message).toContain('100 characters');
     });
 
     it('returns 400 for invalid is_public type', async () => {
@@ -171,7 +180,8 @@ describe('PATCH /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('boolean');
+      expect(data.error.code).toBe('VALIDATION_FAILED');
+      expect(data.error.message).toContain('boolean');
     });
 
     it('returns 400 when no fields provided', async () => {
@@ -180,7 +190,8 @@ describe('PATCH /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('No fields to update');
+      expect(data.error.code).toBe('VALIDATION_FAILED');
+      expect(data.error.message).toContain('No fields to update');
     });
   });
 
@@ -250,7 +261,8 @@ describe('DELETE /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(401);
-      expect(data.error).toBe('Not authenticated');
+      expect(data.error.code).toBe('AUTH_REQUIRED');
+      expect(data.error.message).toContain('Authentication required');
     });
 
     it('returns 403 when user does not own the shelf', async () => {
@@ -262,7 +274,8 @@ describe('DELETE /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(403);
-      expect(data.error).toBe('Unauthorized');
+      expect(data.error.code).toBe('FORBIDDEN');
+      expect(data.error.message).toContain('Access forbidden');
       expect(deleteShelf).not.toHaveBeenCalled();
     });
 
@@ -331,7 +344,8 @@ describe('GET /api/shelf/[shelfId]', () => {
       const data = await res.json();
 
       expect(res.status).toBe(403);
-      expect(data.error).toBe('Unauthorized');
+      expect(data.error.code).toBe('FORBIDDEN');
+      expect(data.error.message).toContain('Access forbidden');
     });
   });
 });

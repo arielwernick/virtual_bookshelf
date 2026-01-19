@@ -1,6 +1,7 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { NextResponse } from 'next/server';
+import { rateLimitError } from '@/lib/utils/errors';
 
 /**
  * Rate limiting utility for authentication endpoints.
@@ -119,24 +120,25 @@ export async function checkRateLimit(
   if (!success) {
     const retryAfter = Math.ceil((reset - Date.now()) / 1000);
     
+    const errorResponse = rateLimitError(
+      'Too many requests. Please try again later.',
+      {
+        retryAfter,
+        limit,
+        remaining,
+        reset,
+      }
+    );
+    
+    // Add rate limit headers
+    errorResponse.headers.set('Retry-After', retryAfter.toString());
+    errorResponse.headers.set('X-RateLimit-Limit', limit.toString());
+    errorResponse.headers.set('X-RateLimit-Remaining', remaining.toString());
+    errorResponse.headers.set('X-RateLimit-Reset', reset.toString());
+    
     return {
       success: false,
-      response: NextResponse.json(
-        { 
-          success: false, 
-          error: 'Too many requests. Please try again later.',
-          retryAfter 
-        },
-        { 
-          status: 429,
-          headers: {
-            'Retry-After': retryAfter.toString(),
-            'X-RateLimit-Limit': limit.toString(),
-            'X-RateLimit-Remaining': remaining.toString(),
-            'X-RateLimit-Reset': reset.toString(),
-          }
-        }
-      ),
+      response: errorResponse,
     };
   }
   
