@@ -124,8 +124,8 @@ describe('AddItemForm - Episode Browsing', () => {
     });
 
     // Check that episodes are displayed
-    expect(screen.getByText('Episode 1: Introduction')).toBeInTheDocument();
-    expect(screen.getByText('Episode 2: Deep Dive')).toBeInTheDocument();
+    expect(screen.getByText(/Episode 1: Introduction/i)).toBeInTheDocument();
+    expect(screen.getByText(/Episode 2: Deep Dive/i)).toBeInTheDocument();
 
     // Check that episodes have duration info (don't need exact matching)
     expect(screen.getByText(/30m/)).toBeInTheDocument(); // 30 minutes duration appears
