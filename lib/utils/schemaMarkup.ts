@@ -7,125 +7,117 @@
 
 import { Item, ItemType, Shelf } from '@/lib/types/shelf';
 
-/**
- * Schema.org types for different item types in Virtual Bookshelf
- */
 type SchemaItemType = 'Book' | 'PodcastSeries' | 'MusicRecording' | 'VideoObject' | 'Linkage';
+type SchemaObject = Record<string, unknown>;
 
-/**
- * Maps Virtual Bookshelf ItemType to schema.org type
- */
+const SCHEMA_TYPE_MAP: Record<ItemType, SchemaItemType> = {
+  book: 'Book',
+  podcast: 'PodcastSeries',
+  podcast_episode: 'PodcastSeries',
+  music: 'MusicRecording',
+  video: 'VideoObject',
+  link: 'Linkage',
+};
+
+const CREATOR_PROPERTY_MAP: Record<SchemaItemType, string> = {
+  Book: 'author',
+  MusicRecording: 'byArtist',
+  PodcastSeries: 'creator',
+  VideoObject: 'creator',
+  Linkage: 'creator',
+};
+
 function getSchemaType(itemType: ItemType): SchemaItemType {
-  const typeMap: Record<ItemType, SchemaItemType> = {
-    book: 'Book',
-    podcast: 'PodcastSeries',
-    podcast_episode: 'PodcastSeries',
-    music: 'MusicRecording',
-    video: 'VideoObject',
-    link: 'Linkage',
-  };
-  return typeMap[itemType] || 'Linkage';
+  return SCHEMA_TYPE_MAP[itemType] || 'Linkage';
 }
 
-/**
- * Generates schema.org JSON-LD markup for an individual item
- */
-function generateItemSchema(item: Item) {
-  const schemaType = getSchemaType(item.type);
+function createPersonObject(name: string): SchemaObject {
+  return {
+    '@type': 'Person',
+    name,
+  };
+}
 
-  const baseSchema = {
+function createBaseSchema(item: Item, schemaType: SchemaItemType): SchemaObject {
+  const schema: SchemaObject = {
     '@type': schemaType,
     name: item.title,
-    ...(item.notes && { description: item.notes }),
-    ...(item.external_url && { url: item.external_url }),
-    ...(item.image_url && { image: item.image_url }),
   };
 
-  // Add creator/author based on type
-  if (item.creator) {
-    if (schemaType === 'Book') {
-      return {
-        ...baseSchema,
-        author: {
-          '@type': 'Person',
-          name: item.creator,
-        },
-      };
-    } else if (schemaType === 'MusicRecording') {
-      return {
-        ...baseSchema,
-        byArtist: {
-          '@type': 'Person',
-          name: item.creator,
-        },
-      };
-    } else if (schemaType === 'PodcastSeries') {
-      return {
-        ...baseSchema,
-        creator: {
-          '@type': 'Person',
-          name: item.creator,
-        },
-      };
-    } else if (schemaType === 'VideoObject') {
-      return {
-        ...baseSchema,
-        uploadDate: item.created_at?.toISOString(),
-        creator: {
-          '@type': 'Person',
-          name: item.creator,
-        },
-      };
-    }
-  }
+  if (item.notes) schema.description = item.notes;
+  if (item.external_url) schema.url = item.external_url;
+  if (item.image_url) schema.image = item.image_url;
 
-  return baseSchema;
+  return schema;
 }
 
-/**
- * Generates complete JSON-LD markup for a shelf
- * 
- * @param shelf - The shelf object containing name, description, etc.
- * @param items - Array of items in the shelf
- * @param username - Username of the shelf owner
- * @returns JSON-LD object ready for serialization
- */
+function addCreatorToSchema(schema: SchemaObject, item: Item, schemaType: SchemaItemType): SchemaObject {
+  if (!item.creator) return schema;
+
+  const creatorProperty = CREATOR_PROPERTY_MAP[schemaType];
+  if (!creatorProperty) return schema;
+
+  const creatorObject = createPersonObject(item.creator);
+
+  return {
+    ...schema,
+    [creatorProperty]: creatorObject,
+  };
+}
+
+function addVideoMetadata(schema: SchemaObject, item: Item): SchemaObject {
+  if (!item.created_at) return schema;
+
+  return {
+    ...schema,
+    uploadDate: item.created_at.toISOString(),
+  };
+}
+
+function generateItemSchema(item: Item): SchemaObject {
+  const schemaType = getSchemaType(item.type);
+  let schema = createBaseSchema(item, schemaType);
+  
+  schema = addCreatorToSchema(schema, item, schemaType);
+  
+  if (schemaType === 'VideoObject') {
+    schema = addVideoMetadata(schema, item);
+  }
+
+  return schema;
+}
+
+function sortItemsByOrder(items: Item[]): Item[] {
+  return [...items].sort((a, b) => a.order_index - b.order_index);
+}
+
+function createCollectionSchema(shelf: Shelf, itemSchemas: SchemaObject[], username?: string | null): SchemaObject {
+  const schema: SchemaObject = {
+    '@context': 'https://schema.org',
+    '@type': 'Collection',
+    name: shelf.name,
+    itemListElement: itemSchemas,
+    numberOfItems: itemSchemas.length,
+  };
+
+  if (shelf.description) schema.description = shelf.description;
+  if (shelf.created_at) schema.datePublished = shelf.created_at.toISOString();
+  if (shelf.updated_at) schema.dateModified = shelf.updated_at.toISOString();
+  if (username) schema.creator = createPersonObject(username);
+
+  return schema;
+}
+
 export function generateShelfSchema(
   shelf: Shelf,
   items: Item[],
   username?: string | null
-): Record<string, unknown> {
-  const itemListElement = items
-    .sort((a, b) => a.order_index - b.order_index)
-    .map((item) => generateItemSchema(item));
-
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Collection',
-    name: shelf.name,
-    ...(shelf.description && { description: shelf.description }),
-    ...(username && {
-      creator: {
-        '@type': 'Person',
-        name: username,
-      },
-    }),
-    datePublished: shelf.created_at?.toISOString(),
-    dateModified: shelf.updated_at?.toISOString(),
-    itemListElement,
-    numberOfItems: items.length,
-  };
+): SchemaObject {
+  const sortedItems = sortItemsByOrder(items);
+  const itemSchemas = sortedItems.map(generateItemSchema);
+  return createCollectionSchema(shelf, itemSchemas, username);
 }
 
-/**
- * Generates JSON-LD script tag markup as a string
- * Ready to be embedded in page head
- * 
- * @param shelf - The shelf object
- * @param items - Array of items in the shelf
- * @param username - Username of the shelf owner
- * @returns JSON string of schema markup
- */
 export function generateShelfSchemaJson(
   shelf: Shelf,
   items: Item[],
