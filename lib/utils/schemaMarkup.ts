@@ -55,6 +55,8 @@ function addCreatorToSchema(schema: SchemaObject, item: Item, schemaType: Schema
   if (!item.creator) return schema;
 
   const creatorProperty = CREATOR_PROPERTY_MAP[schemaType];
+  if (!creatorProperty) return schema;
+
   const creatorObject = createPersonObject(item.creator);
 
   return {
@@ -65,7 +67,7 @@ function addCreatorToSchema(schema: SchemaObject, item: Item, schemaType: Schema
 
 function addVideoMetadata(schema: SchemaObject, item: Item): SchemaObject {
   if (!item.created_at) return schema;
-  
+
   return {
     ...schema,
     uploadDate: item.created_at.toISOString(),
