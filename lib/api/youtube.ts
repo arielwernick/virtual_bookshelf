@@ -187,13 +187,13 @@ export async function getChannelDetails(identifier: { type: 'handle' | 'username
   let apiUrl: string;
   
   if (identifier.type === 'id') {
-    // Query by channel ID
+    // Query by channel ID directly
     apiUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${encodeURIComponent(identifier.value)}&key=${apiKey}`;
   } else if (identifier.type === 'handle') {
-    // Query by handle (@username) - requires forUsername parameter
-    apiUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${encodeURIComponent(identifier.value)}&key=${apiKey}`;
+    // Query by handle - YouTube API supports handles with the id parameter using @ prefix
+    apiUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${encodeURIComponent('@' + identifier.value)}&key=${apiKey}`;
   } else {
-    // Query by custom username (/c/ChannelName) - requires forUsername parameter
+    // Query by custom username (/c/ChannelName) - use forUsername parameter
     apiUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&forUsername=${encodeURIComponent(identifier.value)}&key=${apiKey}`;
   }
   
@@ -228,8 +228,15 @@ export async function getChannelDetails(identifier: { type: 'handle' | 'username
     snippet.thumbnails.default?.url ||
     '';
   
-  // Extract handle from customUrl if available, otherwise use @title
-  const handle = snippet.customUrl || null;
+  // Extract handle - YouTube API returns customUrl which may contain the handle or custom URL
+  // If customUrl is not available, fall back to channel title
+  let handle: string;
+  if (snippet.customUrl) {
+    // customUrl might be @handle or /c/name - extract the relevant part
+    handle = snippet.customUrl.startsWith('@') ? snippet.customUrl : snippet.customUrl;
+  } else {
+    handle = snippet.title;
+  }
   
   return {
     id: channel.id,
