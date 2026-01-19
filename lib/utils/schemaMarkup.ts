@@ -64,10 +64,12 @@ function addCreatorToSchema(schema: SchemaObject, item: Item, schemaType: Schema
 }
 
 function addVideoMetadata(schema: SchemaObject, item: Item): SchemaObject {
-  if (item.created_at) {
-    schema.uploadDate = item.created_at.toISOString();
-  }
-  return schema;
+  if (!item.created_at) return schema;
+  
+  return {
+    ...schema,
+    uploadDate: item.created_at.toISOString(),
+  };
 }
 
 function generateItemSchema(item: Item): SchemaObject {
