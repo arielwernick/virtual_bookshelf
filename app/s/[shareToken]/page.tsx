@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
 import { SharedShelfClient } from './SharedShelfClient';
+import { generateShelfSchemaJson } from '@/lib/utils/schemaMarkup';
 
 interface PageProps {
   params: Promise<{ shareToken: string }>;
@@ -104,6 +105,7 @@ async function getShelfData(shareToken: string) {
     const items = await getItemsByShelfId(shelf.id);
 
     return {
+      shelf,
       id: shelf.id,
       name: shelf.name,
       description: shelf.description,
@@ -128,5 +130,17 @@ export default async function SharedShelfPage({ params }: PageProps) {
     return <ShelfNotFound />;
   }
 
-  return <SharedShelfClient shelfData={shelfData} />;
+  // Generate JSON-LD schema markup for AI readability
+  const schemaJson = generateShelfSchemaJson(shelfData.shelf, shelfData.items);
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: schemaJson }}
+        suppressHydrationWarning
+      />
+      <SharedShelfClient shelfData={shelfData} />
+    </>
+  );
 }

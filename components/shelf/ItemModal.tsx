@@ -2,9 +2,11 @@
 import Image from 'next/image';
 
 import { Item } from '@/lib/types/shelf';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { extractVideoId } from '@/lib/api/youtube';
 import { StarDisplay } from '@/components/ui/StarDisplay';
+import { getAspectRatio, getAspectRatioNumeric } from '@/lib/constants/aspectRatios';
+import { getImageFitMode, isAmazonHostedImage } from '@/lib/utils/imageUtils';
 
 interface ItemModalProps {
   item: Item | null;
@@ -40,6 +42,10 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
       document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen, onClose]);
+
+  // Image fit handling state
+  const [imageError, setImageError] = useState(false);
+  const [fitMode, setFitMode] = useState<'cover' | 'contain'>('cover');
 
   if (!isOpen || !item) return null;
 
@@ -156,24 +162,45 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
             <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
               {/* Cover Image */}
               <div className="w-32 sm:w-48 md:w-64 flex-shrink-0 mx-auto md:mx-0">
-                <div className="aspect-[2/3] relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-lg overflow-hidden shadow-lg">
-                  {item.image_url ? (
-                    <Image
-                      src={item.image_url}
-                      alt={item.title}
-                      fill
-                      className="w-full h-full object-cover"
-                      style={{ objectFit: 'cover' }}
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500">
-                      <svg className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
+                {(() => {
+                  const baseRatioStr = getAspectRatio(item.type);
+                  const baseRatioNum = getAspectRatioNumeric(item.type);
+                  const containerStyle = { aspectRatio: baseRatioNum || baseRatioStr } as React.CSSProperties;
+                  return (
+                    <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-lg overflow-hidden shadow-lg" style={containerStyle}>
+                      {item.image_url && !imageError ? (
+                        <Image
+                          src={item.image_url}
+                          alt={item.title}
+                          fill
+                          className={`w-full h-full ${fitMode === 'cover' ? 'object-cover' : 'object-contain'} object-center`}
+                          sizes="(max-width: 640px) 128px, (max-width: 768px) 192px, 256px"
+                          onLoad={(e) => {
+                            try {
+                              const containerRatio = baseRatioNum;
+                              const isAmazon = isAmazonHostedImage(item.image_url || '');
+                              if (isAmazon) {
+                                setFitMode('contain');
+                                return;
+                              }
+                              setFitMode(getImageFitMode(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight, containerRatio));
+                            } catch {
+                              setFitMode('cover');
+                            }
+                          }}
+                          onError={() => setImageError(true)}
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500">
+                          <svg className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                          </svg>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  );
+                })()}
               </div>
 
               {/* Item Details */}
