@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
+import { getShelfByShareToken, getItemsByShelfId, getUserById } from '@/lib/db/queries';
 import { SharedShelfClient } from './SharedShelfClient';
 import { generateShelfSchemaJson } from '@/lib/utils/schemaMarkup';
 
@@ -103,6 +103,10 @@ async function getShelfData(shareToken: string) {
     }
 
     const items = await getItemsByShelfId(shelf.id);
+    
+    // Fetch user data to get the creator's username for schema markup
+    const user = await getUserById(shelf.user_id);
+    const username = user?.username || null;
 
     return {
       shelf,
@@ -110,6 +114,7 @@ async function getShelfData(shareToken: string) {
       name: shelf.name,
       description: shelf.description,
       items,
+      username,
       created_at: shelf.created_at.toISOString(),
     };
   } catch (error) {
@@ -131,7 +136,7 @@ export default async function SharedShelfPage({ params }: PageProps) {
   }
 
   // Generate JSON-LD schema markup for AI readability
-  const schemaJson = generateShelfSchemaJson(shelfData.shelf, shelfData.items);
+  const schemaJson = generateShelfSchemaJson(shelfData.shelf, shelfData.items, shelfData.username);
 
   return (
     <>

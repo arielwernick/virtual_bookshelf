@@ -30,7 +30,7 @@ function getSchemaType(itemType: ItemType): SchemaItemType {
 /**
  * Generates schema.org JSON-LD markup for an individual item
  */
-function generateItemSchema(item: Item) {
+function generateItemSchema(item: Item, index: number) {
   const schemaType = getSchemaType(item.type);
 
   const baseSchema = {
@@ -42,9 +42,11 @@ function generateItemSchema(item: Item) {
   };
 
   // Add creator/author based on type
+  let itemSchema: Record<string, unknown> = baseSchema;
+  
   if (item.creator) {
     if (schemaType === 'Book') {
-      return {
+      itemSchema = {
         ...baseSchema,
         author: {
           '@type': 'Person',
@@ -52,7 +54,7 @@ function generateItemSchema(item: Item) {
         },
       };
     } else if (schemaType === 'MusicRecording') {
-      return {
+      itemSchema = {
         ...baseSchema,
         byArtist: {
           '@type': 'Person',
@@ -60,7 +62,7 @@ function generateItemSchema(item: Item) {
         },
       };
     } else if (schemaType === 'PodcastSeries') {
-      return {
+      itemSchema = {
         ...baseSchema,
         creator: {
           '@type': 'Person',
@@ -68,9 +70,17 @@ function generateItemSchema(item: Item) {
         },
       };
     } else if (schemaType === 'VideoObject') {
-      return {
+      itemSchema = {
         ...baseSchema,
         uploadDate: item.created_at?.toISOString(),
+        creator: {
+          '@type': 'Person',
+          name: item.creator,
+        },
+      };
+    } else {
+      itemSchema = {
+        ...baseSchema,
         creator: {
           '@type': 'Person',
           name: item.creator,
@@ -79,7 +89,11 @@ function generateItemSchema(item: Item) {
     }
   }
 
-  return baseSchema;
+  return {
+    '@type': 'ListItem',
+    position: index + 1,
+    item: itemSchema,
+  };
 }
 
 /**
@@ -97,7 +111,7 @@ export function generateShelfSchema(
 ): Record<string, unknown> {
   const itemListElement = items
     .sort((a, b) => a.order_index - b.order_index)
-    .map((item) => generateItemSchema(item));
+    .map((item, index) => generateItemSchema(item, index));
 
   return {
     '@context': 'https://schema.org',
