@@ -74,7 +74,7 @@ function addVideoMetadata(schema: SchemaObject, item: Item): SchemaObject {
   };
 }
 
-function generateItemSchema(item: Item): SchemaObject {
+function generateItemSchema(item: Item, index: number): SchemaObject {
   const schemaType = getSchemaType(item.type);
   let schema = createBaseSchema(item, schemaType);
   
@@ -84,7 +84,12 @@ function generateItemSchema(item: Item): SchemaObject {
     schema = addVideoMetadata(schema, item);
   }
 
-  return schema;
+  // Wrap in ListItem for proper schema.org Collection structure
+  return {
+    '@type': 'ListItem',
+    position: index + 1,
+    item: schema,
+  };
 }
 
 function sortItemsByOrder(items: Item[]): Item[] {
@@ -114,7 +119,7 @@ export function generateShelfSchema(
   username?: string | null
 ): SchemaObject {
   const sortedItems = sortItemsByOrder(items);
-  const itemSchemas = sortedItems.map(generateItemSchema);
+  const itemSchemas = sortedItems.map((item, index) => generateItemSchema(item, index));
   return createCollectionSchema(shelf, itemSchemas, username);
 }
 
