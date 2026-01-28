@@ -69,7 +69,9 @@ export async function POST(request: Request) {
             quotaExceeded = true;
             return { url, error: 'Quota exceeded' };
           }
-          logger.warn(`Failed to fetch metadata for ${url}:`, error instanceof Error ? error.message : error);
+          logger.warn(`Failed to fetch metadata for ${url}:`, { 
+            error: error instanceof Error ? error.message : String(error) 
+          });
           return { url, error: error instanceof Error ? error.message : 'Failed to fetch metadata' };
         }
       });

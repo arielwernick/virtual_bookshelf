@@ -140,35 +140,35 @@
 
 ---
 
-## Phase 4: Anonymous Rate Limiting (Deferred)
+## Phase 4: Anonymous Rate Limiting (Removed for now)
 
-### Task 4.1: Create rate limit utility
-**File**: `lib/utils/rateLimit.ts`  
+### Task 4.1: Create rate limit utility ✅
+**File**: `lib/utils/importRateLimit.ts`  
 **Description**: IP-based rate limiting for anonymous users  
 **Acceptance Criteria**:
-- [ ] Hash IP address for privacy
-- [ ] Check limit before processing
-- [ ] Store in database (simple table)
-- [ ] 1 preview/IP/24 hours for anonymous
-- [ ] Bypass for authenticated users
+- [x] Hash IP address for privacy
+- [x] Check limit before processing
+- [x] Store in database (simple table)
+- [x] 1 resolve/IP/24 hours for anonymous
+- [x] Bypass for authenticated users
 
-### Task 4.2: Create rate limit database table
+### Task 4.2: Create rate limit database table ✅
 **File**: `lib/db/schema.sql` (add migration)  
 **Description**: Table to track anonymous import attempts  
 **Acceptance Criteria**:
-- [ ] Table: `import_rate_limits`
-- [ ] Columns: id, ip_hash, created_at
-- [ ] Index on ip_hash + created_at
-- [ ] Cleanup job for old entries (optional)
+- [x] Table: `import_rate_limits`
+- [x] Columns: id, ip_hash, limit_type, created_at
+- [x] Index on ip_hash + limit_type + created_at
+- [x] Index for cleanup operations
 
-### Task 4.3: Apply rate limiting to resolve endpoint
+### Task 4.3: Apply rate limiting to resolve endpoint ✅
 **File**: `app/api/import/resolve/route.ts`  
 **Description**: Check rate limit before processing  
 **Acceptance Criteria**:
-- [ ] Returns 429 if limit exceeded
-- [ ] Clear error message: "Sign up to continue"
-- [ ] Includes retry-after header
-- [ ] Logs rate limit hits for monitoring
+- [x] Returns 429 if limit exceeded
+- [x] Clear error message: "Sign up to continue"
+- [x] Includes retry-after header
+- [x] Records attempts for anonymous users only
 
 ---
 
@@ -193,13 +193,14 @@
 - [ ] Auto-focus "Create Shelf" button
 - [x] Clear localStorage after successful creation
 
-### Task 5.3: Add return URL to signup/login flow
+### Task 5.3: Add return URL to signup/login flow ✅
 **File**: `app/login/page.tsx`, `app/signup/page.tsx`  
 **Description**: Redirect back to /import after auth  
 **Acceptance Criteria**:
-- [ ] Accept `?returnTo=/import` query param
-- [ ] Redirect to returnTo after successful auth
-- [ ] Validate returnTo is internal URL (security)
+- [x] Accept `?returnTo=/import` query param
+- [x] Redirect to returnTo after successful auth
+- [x] Validate returnTo is internal URL (security)
+- [x] Preserve returnTo in signup/login cross-links
 
 ---
 
@@ -254,14 +255,16 @@
 - [ ] Consider adding to homepage CTA
 - [x] Mobile-friendly placement
 
-### Task 7.4: Write integration tests
+### Task 7.4: Write integration tests ✅
 **File**: `app/import/page.test.tsx`  
 **Description**: Test full import flow  
 **Acceptance Criteria**:
-- [ ] Test paste → extract → preview flow
-- [ ] Test authenticated save flow
-- [ ] Test anonymous rate limit
-- [ ] Test post-signup restoration
+- [x] Test paste → extract → preview flow
+- [x] Test authenticated save flow
+- [x] Test anonymous rate limit
+- [x] Test localStorage restoration
+- [x] Test item selection controls
+- [x] Test error handling
 
 ---
 

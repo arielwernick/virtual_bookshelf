@@ -117,7 +117,7 @@ export async function POST(request: Request) {
         const createdItem = await createItem(shelf.id, itemData, session.userId);
         createdItems.push(createdItem);
       } catch (error) {
-        logger.warn(`Failed to create item ${i} (${item.url}):`, error);
+        logger.warn(`Failed to create item ${i} (${item.url}):`, { error });
         failedItems.push({ index: i, url: item.url, error: 'Failed to create item' });
       }
     }
