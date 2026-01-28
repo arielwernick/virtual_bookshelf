@@ -54,13 +54,14 @@ Refactor `/s/[shareToken]` to server-render item content for AI/crawler readabil
   - Progressive enhancement: works without JS via URL params or just shows all
 
 ### 5. Testing & Verification
-- [ ] **5.1** Manual verification: View page source shows item content
-- [ ] **5.2** Test with JavaScript disabled - items should be visible
-- [ ] **5.3** Verify interactive features still work with JS enabled
-- [ ] **5.4** Test with curl/fetch to confirm crawlers see content
+- [x] **5.1** Manual verification: View page source shows item content
+- [x] **5.2** Test with JavaScript disabled - items should be visible
+- [x] **5.3** Verify interactive features still work with JS enabled
+- [x] **5.4** Test with curl/fetch to confirm crawlers see content
+- [x] **5.5** Add unit tests for static components
 
 ### 6. Documentation & Cleanup
-- [ ] **6.1** Update any relevant documentation
+- [x] **6.1** Update any relevant documentation
 - [ ] **6.2** Close issue #126 with summary
 
 ---
