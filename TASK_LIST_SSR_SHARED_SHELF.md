@@ -22,7 +22,7 @@ Refactor `/s/[shareToken]` to server-render item content for AI/crawler readabil
 ## Tasks
 
 ### 1. Create Static Item Card Component
-- [ ] **1.1** Create `components/shelf/ItemCardStatic.tsx` - Server-renderable item card
+- [x] **1.1** Create `components/shelf/ItemCardStatic.tsx` - Server-renderable item card
   - No `'use client'` directive
   - No onClick handlers, no useState
   - Renders all visible content: image, title, creator, type badge, notes, rating
@@ -30,19 +30,19 @@ Refactor `/s/[shareToken]` to server-render item content for AI/crawler readabil
   - Add data attributes for item type (for CSS filtering)
 
 ### 2. Create Static Shelf Grid Component  
-- [ ] **2.1** Create `components/shelf/ShelfGridStatic.tsx` - Server-renderable shelf grid
+- [x] **2.1** Create `components/shelf/ShelfGridStatic.tsx` - Server-renderable shelf grid
   - No `'use client'` directive
   - No drag-and-drop (view-only)
   - Renders items in shelf rows visually
   - Simpler layout without dynamic resize calculations
 
 ### 3. Refactor Shared Shelf Page
-- [ ] **3.1** Update `app/s/[shareToken]/page.tsx` to render static content
+- [x] **3.1** Update `app/s/[shareToken]/page.tsx` to render static content
   - Render header (shelf name, description, item count) directly in server component
   - Render `ShelfGridStatic` with items
   - Wrap interactive elements with client component
 
-- [ ] **3.2** Create `app/s/[shareToken]/SharedShelfInteractive.tsx` - Client wrapper
+- [x] **3.2** Create `app/s/[shareToken]/SharedShelfInteractive.tsx` - Client wrapper
   - Handles ItemModal state
   - Provides click handlers to static grid via children pattern
   - Manages filter tab state (if implementing filters)
