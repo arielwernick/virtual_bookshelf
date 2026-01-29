@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { fetchLinkMetadata, MicrolinkQuotaExceededError, MicrolinkData } from '@/lib/api/microlink';
+import { fetchLinkMetadata, MicrolinkQuotaExceededError, MicrolinkData, isYouTubeUrl } from '@/lib/api/microlink';
+import { extractVideoId, getVideoDetails } from '@/lib/api/youtube';
 import { createLogger } from '@/lib/utils/logger';
 
 const logger = createLogger('ImportMetadata');
@@ -11,6 +12,36 @@ interface MetadataResult {
   url: string;
   metadata?: MicrolinkData;
   error?: string;
+  source?: 'youtube' | 'microlink';
+}
+
+/**
+ * Fetch metadata for a YouTube URL using the YouTube Data API
+ */
+async function fetchYouTubeMetadata(url: string): Promise<MicrolinkData | null> {
+  const videoId = extractVideoId(url);
+  if (!videoId) {
+    logger.warn('Could not extract YouTube video ID', { url });
+    return null;
+  }
+
+  try {
+    const video = await getVideoDetails(videoId);
+    return {
+      title: video.title,
+      description: `Video by ${video.channelName}`,
+      image: video.thumbnailUrl,
+      url: video.videoUrl,
+      logo: 'https://www.youtube.com/favicon.ico',
+      publisher: video.channelName,
+    };
+  } catch (error) {
+    logger.warn('YouTube API failed, will fall back to Microlink', { 
+      url, 
+      error: error instanceof Error ? error.message : String(error) 
+    });
+    return null;
+  }
 }
 
 export async function POST(request: Request) {
@@ -62,8 +93,17 @@ export async function POST(request: Request) {
       
       const batchPromises = batch.map(async (url): Promise<MetadataResult> => {
         try {
+          // Use YouTube API for YouTube URLs (better data, saves Microlink quota)
+          if (isYouTubeUrl(url)) {
+            const ytMetadata = await fetchYouTubeMetadata(url);
+            if (ytMetadata) {
+              return { url, metadata: ytMetadata, source: 'youtube' };
+            }
+            // Fall through to Microlink if YouTube API fails
+          }
+
           const metadata = await fetchLinkMetadata(url);
-          return { url, metadata };
+          return { url, metadata, source: 'microlink' };
         } catch (error) {
           if (error instanceof MicrolinkQuotaExceededError) {
             quotaExceeded = true;
