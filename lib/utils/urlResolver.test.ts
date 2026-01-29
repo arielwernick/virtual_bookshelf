@@ -1,5 +1,77 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isShortUrl, resolveUrl, resolveUrls, getDomain } from './urlResolver';
+import { isShortUrl, resolveUrl, resolveUrls, getDomain, extractLinkedInRedirectUrl, needsResolution } from './urlResolver';
+
+// ============================================================================
+// extractLinkedInRedirectUrl Tests
+// ============================================================================
+
+describe('extractLinkedInRedirectUrl', () => {
+  it('extracts URL from linkedin.com/redir/redirect', () => {
+    const linkedInUrl = 'https://www.linkedin.com/redir/redirect?url=https%3A%2F%2Fexample.com%2Fpage&trk=something';
+    expect(extractLinkedInRedirectUrl(linkedInUrl)).toBe('https://example.com/page');
+  });
+
+  it('extracts URL from linkedin.com/safety/go', () => {
+    const linkedInUrl = 'https://www.linkedin.com/safety/go?url=https%3A%2F%2Fgithub.com%2Fuser%2Frepo';
+    expect(extractLinkedInRedirectUrl(linkedInUrl)).toBe('https://github.com/user/repo');
+  });
+
+  it('extracts URL from linkedin.com/csp/redirect', () => {
+    const linkedInUrl = 'https://linkedin.com/csp/redirect?url=https%3A%2F%2Fmedium.com%2F%40user%2Farticle';
+    expect(extractLinkedInRedirectUrl(linkedInUrl)).toBe('https://medium.com/@user/article');
+  });
+
+  it('handles complex encoded URLs', () => {
+    const target = 'https://example.com/page?foo=bar&baz=qux';
+    const linkedInUrl = `https://www.linkedin.com/redir/redirect?url=${encodeURIComponent(target)}`;
+    expect(extractLinkedInRedirectUrl(linkedInUrl)).toBe(target);
+  });
+
+  it('returns null for regular LinkedIn URLs', () => {
+    expect(extractLinkedInRedirectUrl('https://www.linkedin.com/in/johndoe')).toBeNull();
+    expect(extractLinkedInRedirectUrl('https://www.linkedin.com/posts/johndoe-123')).toBeNull();
+    expect(extractLinkedInRedirectUrl('https://www.linkedin.com/company/acme')).toBeNull();
+  });
+
+  it('returns null for non-LinkedIn URLs', () => {
+    expect(extractLinkedInRedirectUrl('https://example.com/redir/redirect?url=foo')).toBeNull();
+    expect(extractLinkedInRedirectUrl('https://google.com')).toBeNull();
+  });
+
+  it('returns null for redirect URLs without url parameter', () => {
+    expect(extractLinkedInRedirectUrl('https://www.linkedin.com/redir/redirect?trk=something')).toBeNull();
+  });
+
+  it('returns null for invalid URLs', () => {
+    expect(extractLinkedInRedirectUrl('not-a-url')).toBeNull();
+    expect(extractLinkedInRedirectUrl('')).toBeNull();
+  });
+
+  it('returns null if extracted URL is invalid', () => {
+    const linkedInUrl = 'https://www.linkedin.com/redir/redirect?url=not-a-valid-url';
+    expect(extractLinkedInRedirectUrl(linkedInUrl)).toBeNull();
+  });
+});
+
+// ============================================================================
+// needsResolution Tests
+// ============================================================================
+
+describe('needsResolution', () => {
+  it('returns true for short URLs', () => {
+    expect(needsResolution('https://lnkd.in/abc123')).toBe(true);
+    expect(needsResolution('https://bit.ly/xyz')).toBe(true);
+  });
+
+  it('returns true for LinkedIn redirect URLs', () => {
+    expect(needsResolution('https://www.linkedin.com/redir/redirect?url=https%3A%2F%2Fexample.com')).toBe(true);
+  });
+
+  it('returns false for regular URLs', () => {
+    expect(needsResolution('https://example.com/page')).toBe(false);
+    expect(needsResolution('https://github.com/user/repo')).toBe(false);
+  });
+});
 
 // ============================================================================
 // isShortUrl Tests
@@ -86,6 +158,19 @@ describe('resolveUrl', () => {
     expect(result).toBe(url);
   });
 
+  it('extracts URL from LinkedIn redirect without fetch', async () => {
+    const linkedInUrl = 'https://www.linkedin.com/redir/redirect?url=https%3A%2F%2Fexample.com%2Fpage';
+    const result = await resolveUrl(linkedInUrl);
+    expect(result).toBe('https://example.com/page');
+    // Should not make any fetch calls
+  });
+
+  it('extracts URL from LinkedIn safety redirect', async () => {
+    const linkedInUrl = 'https://www.linkedin.com/safety/go?url=https%3A%2F%2Fgithub.com%2Frepo';
+    const result = await resolveUrl(linkedInUrl);
+    expect(result).toBe('https://github.com/repo');
+  });
+
   it('resolves shortened URL via fetch', async () => {
     const shortUrl = 'https://bit.ly/abc123';
     const resolvedUrl = 'https://example.com/final-destination';
@@ -100,6 +185,19 @@ describe('resolveUrl', () => {
       shortUrl,
       expect.objectContaining({ method: 'HEAD' })
     );
+  });
+
+  it('extracts real URL when fetch resolves to LinkedIn redirect', async () => {
+    const shortUrl = 'https://lnkd.in/abc123';
+    // Sometimes lnkd.in resolves to a LinkedIn redirect page
+    const linkedInRedirect = 'https://www.linkedin.com/redir/redirect?url=https%3A%2F%2Fexample.com%2Ftarget';
+
+    global.fetch = vi.fn().mockResolvedValue({
+      url: linkedInRedirect,
+    });
+
+    const result = await resolveUrl(shortUrl);
+    expect(result).toBe('https://example.com/target');
   });
 
   it('falls back to GET if HEAD fails', async () => {
@@ -166,7 +264,15 @@ describe('resolveUrls', () => {
 
     let callIndex = 0;
     global.fetch = vi.fn().mockImplementation(() => {
-      return Promise.resolve({ url: resolved[callIndex++] });
+      // Each URL makes one call with manual redirect
+      const resolvedUrl = resolved[callIndex++];
+      const headers = new Headers();
+      headers.set('location', resolvedUrl);
+      return Promise.resolve({ 
+        status: 302,
+        url: resolvedUrl,
+        headers,
+      });
     });
 
     const result = await resolveUrls(urls);

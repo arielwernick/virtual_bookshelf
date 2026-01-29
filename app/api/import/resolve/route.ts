@@ -6,8 +6,8 @@ import { createLogger } from '@/lib/utils/logger';
 const logger = createLogger('ImportResolve');
 
 const MAX_URLS = 50;
-const CONCURRENCY_LIMIT = 5;
-const TIMEOUT_MS = 5000;
+const CONCURRENCY_LIMIT = 3; // Reduced to avoid rate limiting
+const TIMEOUT_MS = 8000; // Increased timeout for slow redirects
 
 export async function POST(request: Request) {
   try {

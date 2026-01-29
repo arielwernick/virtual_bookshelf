@@ -3,6 +3,7 @@
  * 
  * Resolves shortened URLs (lnkd.in, bit.ly, t.co, etc.) to their
  * final destination URLs by following redirects.
+ * Also extracts real URLs from tracking/redirect wrappers.
  */
 
 /**
@@ -28,6 +29,50 @@ const SHORTENER_DOMAINS = [
 const DEFAULT_TIMEOUT_MS = 5000;
 
 /**
+ * User agent that looks like a browser to avoid bot detection
+ */
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+/**
+ * Extract the real URL from a LinkedIn redirect wrapper
+ * LinkedIn wraps external links like: linkedin.com/redir/redirect?url=<encoded_url>
+ * or linkedin.com/safety/go?url=<encoded_url>
+ */
+export function extractLinkedInRedirectUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    
+    // Check if it's a LinkedIn redirect URL
+    if (!hostname.includes('linkedin.com')) {
+      return null;
+    }
+    
+    // Common LinkedIn redirect paths
+    const redirectPaths = ['/redir/redirect', '/safety/go', '/csp/redirect'];
+    const isRedirectPath = redirectPaths.some(path => 
+      parsed.pathname.toLowerCase().startsWith(path)
+    );
+    
+    if (!isRedirectPath) {
+      return null;
+    }
+    
+    // Extract the 'url' parameter
+    const targetUrl = parsed.searchParams.get('url');
+    if (targetUrl) {
+      // Validate it's a proper URL
+      new URL(targetUrl);
+      return targetUrl;
+    }
+    
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Check if a URL is from a known shortener service
  */
 export function isShortUrl(url: string): boolean {
@@ -41,10 +86,18 @@ export function isShortUrl(url: string): boolean {
 }
 
 /**
+ * Check if a URL needs resolution (shortened or redirect wrapper)
+ */
+export function needsResolution(url: string): boolean {
+  return isShortUrl(url) || extractLinkedInRedirectUrl(url) !== null;
+}
+
+/**
  * Resolve a single shortened URL to its final destination
  * 
  * Uses HEAD requests to minimize data transfer and follows redirects
  * until reaching the final URL or hitting the redirect limit.
+ * Also extracts URLs from tracking wrappers (e.g., LinkedIn redirect URLs).
  * 
  * @param url - The URL to resolve
  * @param timeoutMs - Timeout in milliseconds (default: 5000)
@@ -54,6 +107,13 @@ export async function resolveUrl(
   url: string,
   timeoutMs: number = DEFAULT_TIMEOUT_MS
 ): Promise<string> {
+  // First, check if it's a LinkedIn redirect wrapper - extract directly without fetch
+  const linkedInTarget = extractLinkedInRedirectUrl(url);
+  if (linkedInTarget) {
+    // The extracted URL might itself be shortened, so resolve it recursively
+    return resolveUrl(linkedInTarget, timeoutMs);
+  }
+
   // If not a shortened URL, return as-is
   if (!isShortUrl(url)) {
     return url;
@@ -64,21 +124,54 @@ export async function resolveUrl(
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      // Use HEAD request to minimize data transfer
-      // redirect: 'follow' will automatically follow redirects
-      const response = await fetch(url, {
+      // First try: manual redirect to get Location header (faster, works for most shorteners)
+      const manualResponse = await fetch(url, {
+        method: 'HEAD',
+        redirect: 'manual', // Don't auto-follow, check Location header
+        signal: controller.signal,
+        headers: {
+          'User-Agent': USER_AGENT,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+      });
+
+      // Check for redirect
+      if (manualResponse.status >= 300 && manualResponse.status < 400) {
+        const location = manualResponse.headers.get('location');
+        if (location) {
+          clearTimeout(timeoutId);
+          // Location might be relative or another shortened URL
+          const absoluteUrl = new URL(location, url).href;
+          // Check if the redirect target is a LinkedIn redirect wrapper
+          const extracted = extractLinkedInRedirectUrl(absoluteUrl);
+          if (extracted) {
+            return resolveUrl(extracted, timeoutMs);
+          }
+          // If it's another shortener, resolve recursively
+          if (isShortUrl(absoluteUrl)) {
+            return resolveUrl(absoluteUrl, timeoutMs);
+          }
+          return absoluteUrl;
+        }
+      }
+
+      // If no redirect found with manual mode, try follow mode
+      const followResponse = await fetch(url, {
         method: 'HEAD',
         redirect: 'follow',
         signal: controller.signal,
         headers: {
-          'User-Agent': 'Virtual-Bookshelf-Bot/1.0',
+          'User-Agent': USER_AGENT,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         },
       });
 
       clearTimeout(timeoutId);
 
-      // Return the final URL after following redirects
-      return response.url;
+      // The final URL might be a LinkedIn redirect - extract if so
+      const finalUrl = followResponse.url;
+      const extractedFromFinal = extractLinkedInRedirectUrl(finalUrl);
+      return extractedFromFinal || finalUrl;
     } catch (fetchError) {
       clearTimeout(timeoutId);
       
@@ -93,12 +186,17 @@ export async function resolveUrl(
             redirect: 'follow',
             signal: controller2.signal,
             headers: {
-              'User-Agent': 'Virtual-Bookshelf-Bot/1.0',
+              'User-Agent': USER_AGENT,
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             },
           });
           
           clearTimeout(timeoutId2);
-          return getResponse.url;
+          
+          // Check for LinkedIn redirect in final URL
+          const finalUrl = getResponse.url;
+          const extractedFromFinal = extractLinkedInRedirectUrl(finalUrl);
+          return extractedFromFinal || finalUrl;
         } catch {
           clearTimeout(timeoutId2);
         }
