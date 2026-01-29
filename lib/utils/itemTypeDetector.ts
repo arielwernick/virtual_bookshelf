@@ -86,10 +86,10 @@ const TYPE_PATTERNS: DomainPattern[] = [
     type: 'book',
   },
   
-  // Video platforms default to link type
+  // Video platforms
   {
     domains: ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be', 'vimeo.com'],
-    type: 'link',
+    type: 'video',
   },
 ];
 

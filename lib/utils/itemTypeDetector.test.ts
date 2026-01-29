@@ -76,15 +76,21 @@ describe('detectItemType', () => {
     });
   });
 
+  describe('video detection', () => {
+    it('detects YouTube as video', () => {
+      expect(detectItemType('https://www.youtube.com/watch?v=abc123')).toBe('video');
+    });
+
+    it('detects youtu.be as video', () => {
+      expect(detectItemType('https://youtu.be/abc123')).toBe('video');
+    });
+
+    it('detects Vimeo as video', () => {
+      expect(detectItemType('https://vimeo.com/123456')).toBe('video');
+    });
+  });
+
   describe('link detection (default)', () => {
-    it('detects YouTube as link', () => {
-      expect(detectItemType('https://www.youtube.com/watch?v=abc123')).toBe('link');
-    });
-
-    it('detects youtu.be as link', () => {
-      expect(detectItemType('https://youtu.be/abc123')).toBe('link');
-    });
-
     it('detects generic URLs as link', () => {
       expect(detectItemType('https://example.com/some-article')).toBe('link');
     });
