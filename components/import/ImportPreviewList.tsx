@@ -11,7 +11,6 @@ interface ImportPreviewListProps {
   onDeselectAll: () => void;
   onCreateShelf: () => void;
   creating: boolean;
-  isAuthenticated: boolean;
 }
 
 export function ImportPreviewList({
@@ -23,7 +22,6 @@ export function ImportPreviewList({
   onDeselectAll,
   onCreateShelf,
   creating,
-  isAuthenticated,
 }: ImportPreviewListProps) {
   const selectedCount = items.filter((item) => item.selected).length;
   const totalCount = items.length;
@@ -100,47 +98,24 @@ export function ImportPreviewList({
 
       {/* Create button */}
       <div className="flex flex-col items-center gap-2 pt-2">
-        {isAuthenticated ? (
-          <button
-            type="button"
-            onClick={onCreateShelf}
-            disabled={!canCreate || creating}
-            className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium
-                       bg-amber-500 hover:bg-amber-600 text-white
-                       disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed
-                       transition-colors flex items-center justify-center gap-2"
-          >
-            {creating ? (
-              <>
-                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                Creating...
-              </>
-            ) : (
-              <>Create Shelf with {selectedCount} Items</>
-            )}
-          </button>
-        ) : (
-          <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              Sign up or log in to save your shelf
-            </p>
-            <div className="flex gap-3 justify-center">
-              <a
-                href="/signup?returnTo=/import"
-                className="px-4 py-2 rounded-lg font-medium bg-amber-500 hover:bg-amber-600 text-white transition-colors"
-              >
-                Sign Up
-              </a>
-              <a
-                href="/login?returnTo=/import"
-                className="px-4 py-2 rounded-lg font-medium border border-gray-300 dark:border-gray-600 
-                         hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Log In
-              </a>
-            </div>
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={onCreateShelf}
+          disabled={!canCreate || creating}
+          className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium
+                     bg-amber-500 hover:bg-amber-600 text-white
+                     disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed
+                     transition-colors flex items-center justify-center gap-2"
+        >
+          {creating ? (
+            <>
+              <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+              Creating...
+            </>
+          ) : (
+            <>Create Shelf with {selectedCount} Items</>
+          )}
+        </button>
       </div>
     </div>
   );

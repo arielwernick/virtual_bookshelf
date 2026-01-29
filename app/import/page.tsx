@@ -1,115 +1,24 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { ImportPreviewList } from '@/components/import/ImportPreviewList';
 import { PreviewItem } from '@/components/import/ParsedItemPreview';
 import { ParsedItem } from '@/lib/utils/textParser';
 import { Confetti } from '@/components/Confetti';
 
-type ImportState = 'input' | 'parsing' | 'resolving' | 'metadata' | 'preview' | 'creating' | 'success';
-
-// Key for localStorage
-const PENDING_IMPORT_KEY = 'pending_import';
-
-interface PendingImport {
-  items: PreviewItem[];
-  shelfTitle: string;
-  timestamp: number;
-}
-
-// Check for pending import from localStorage (lazy initializer)
-function getInitialItems(): PreviewItem[] {
-  if (typeof window === 'undefined') return [];
-  
-  const stored = localStorage.getItem(PENDING_IMPORT_KEY);
-  if (stored) {
-    try {
-      const pending: PendingImport = JSON.parse(stored);
-      if (Date.now() - pending.timestamp < 24 * 60 * 60 * 1000) {
-        return pending.items;
-      }
-    } catch {
-      // ignore
-    }
-  }
-  return [];
-}
-
-function getInitialShelfTitle(): string {
-  if (typeof window === 'undefined') return '';
-  
-  const stored = localStorage.getItem(PENDING_IMPORT_KEY);
-  if (stored) {
-    try {
-      const pending: PendingImport = JSON.parse(stored);
-      if (Date.now() - pending.timestamp < 24 * 60 * 60 * 1000) {
-        return pending.shelfTitle;
-      }
-    } catch {
-      // ignore
-    }
-  }
-  return '';
-}
-
-function getInitialState(): ImportState {
-  if (typeof window === 'undefined') return 'input';
-  
-  const stored = localStorage.getItem(PENDING_IMPORT_KEY);
-  if (stored) {
-    try {
-      const pending: PendingImport = JSON.parse(stored);
-      if (Date.now() - pending.timestamp < 24 * 60 * 60 * 1000) {
-        // Clear on read
-        localStorage.removeItem(PENDING_IMPORT_KEY);
-        return 'preview';
-      }
-      localStorage.removeItem(PENDING_IMPORT_KEY);
-    } catch {
-      localStorage.removeItem(PENDING_IMPORT_KEY);
-    }
-  }
-  return 'input';
-}
+type ImportState = 'input' | 'processing' | 'preview' | 'creating';
 
 export default function ImportPage() {
   const router = useRouter();
   const [text, setText] = useState('');
-  const [state, setState] = useState<ImportState>(getInitialState);
-  const [items, setItems] = useState<PreviewItem[]>(getInitialItems);
-  const [shelfTitle, setShelfTitle] = useState(getInitialShelfTitle);
+  const [state, setState] = useState<ImportState>('input');
+  const [items, setItems] = useState<PreviewItem[]>([]);
+  const [shelfTitle, setShelfTitle] = useState('');
   const [error, setError] = useState('');
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0, step: '' });
   const [showConfetti, setShowConfetti] = useState(false);
   const [createdShelfId, setCreatedShelfId] = useState<string | null>(null);
-
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/shelf/dashboard');
-        setIsAuthenticated(res.ok);
-      } catch {
-        setIsAuthenticated(false);
-      }
-    };
-    checkAuth();
-  }, []);
-
-  // Save pending import before auth redirect
-  const savePendingImport = useCallback(() => {
-    if (items.length > 0) {
-      const pending: PendingImport = {
-        items,
-        shelfTitle,
-        timestamp: Date.now(),
-      };
-      localStorage.setItem(PENDING_IMPORT_KEY, JSON.stringify(pending));
-    }
-  }, [items, shelfTitle]);
 
   const handleExtract = async () => {
     if (!text.trim()) {
@@ -118,7 +27,8 @@ export default function ImportPage() {
     }
 
     setError('');
-    setState('parsing');
+    setState('processing');
+    setProgress({ current: 0, total: 0, step: 'Parsing text...' });
 
     try {
       // Step 1: Parse text to extract URLs and context
@@ -152,7 +62,7 @@ export default function ImportPage() {
       }));
 
       setItems(previewItems);
-      setState('resolving');
+      setProgress({ current: 0, total: previewItems.length, step: 'Resolving URLs...' });
 
       // Step 2: Resolve shortened URLs
       const urls = parsedItems.map((item) => item.url);
@@ -171,12 +81,11 @@ export default function ImportPage() {
         setItems([...previewItems]);
       }
 
-      setState('metadata');
+      setProgress({ current: 0, total: previewItems.length, step: 'Fetching metadata...' });
 
       // Step 3: Fetch metadata in batches
       const resolvedUrls = previewItems.map((item) => item.resolvedUrl || item.url);
       const batchSize = 10;
-      setProgress({ current: 0, total: resolvedUrls.length });
 
       for (let i = 0; i < resolvedUrls.length; i += batchSize) {
         const batch = resolvedUrls.slice(i, i + batchSize);
@@ -227,7 +136,11 @@ export default function ImportPage() {
           setItems([...previewItems]);
         }
 
-        setProgress({ current: Math.min(i + batchSize, resolvedUrls.length), total: resolvedUrls.length });
+        setProgress({ 
+          current: Math.min(i + batchSize, resolvedUrls.length), 
+          total: resolvedUrls.length,
+          step: 'Fetching metadata...'
+        });
       }
 
       setState('preview');
@@ -255,13 +168,6 @@ export default function ImportPage() {
   };
 
   const handleCreateShelf = async () => {
-    if (!isAuthenticated) {
-      // Save state and redirect to signup
-      savePendingImport();
-      router.push('/signup?returnTo=/import');
-      return;
-    }
-
     setState('creating');
     setError('');
 
@@ -290,9 +196,8 @@ export default function ImportPage() {
         return;
       }
 
-      // Success!
+      // Success - show confetti and redirect
       setCreatedShelfId(json.data.shelf.id);
-      setState('success');
       setShowConfetti(true);
 
       // Redirect after a moment
@@ -312,28 +217,33 @@ export default function ImportPage() {
     setShelfTitle('');
     setError('');
     setState('input');
-    setProgress({ current: 0, total: 0 });
+    setProgress({ current: 0, total: 0, step: '' });
   };
+
+  // If just created a shelf, show success state
+  if (createdShelfId && showConfetti) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 dark:from-gray-900 dark:to-gray-800">
+        <Confetti />
+        <main className="max-w-4xl mx-auto px-4 py-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🎉</div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                Shelf Created!
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Redirecting you to your new shelf...
+              </p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 dark:from-gray-900 dark:to-gray-800">
-      {showConfetti && <Confetti />}
-      
-      {/* Navigation */}
-      <nav className="border-b border-amber-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-amber-600 dark:text-amber-500">
-            📚 Virtual Bookshelf
-          </Link>
-          <Link
-            href="/dashboard"
-            className="text-sm text-gray-600 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-500"
-          >
-            Dashboard
-          </Link>
-        </div>
-      </nav>
-
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
           {/* Header */}
@@ -353,29 +263,8 @@ export default function ImportPage() {
             </div>
           )}
 
-          {/* Success state */}
-          {state === 'success' && (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Shelf Created!
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Redirecting you to your new shelf...
-              </p>
-              {createdShelfId && (
-                <Link
-                  href={`/shelf/${createdShelfId}/edit`}
-                  className="text-amber-600 hover:text-amber-700 underline"
-                >
-                  Go to shelf now
-                </Link>
-              )}
-            </div>
-          )}
-
           {/* Input state */}
-          {(state === 'input' || state === 'parsing') && (
+          {state === 'input' && (
             <div className="space-y-4">
               <div>
                 <label htmlFor="import-text" className="sr-only">
@@ -386,7 +275,6 @@ export default function ImportPage() {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   rows={12}
-                  disabled={state === 'parsing'}
                   placeholder={`Paste any text with links, for example:
 
 1 → THE CODE
@@ -410,36 +298,29 @@ https://airbnb.tech/blog/`}
               <button
                 type="button"
                 onClick={handleExtract}
-                disabled={state === 'parsing' || !text.trim()}
+                disabled={!text.trim()}
                 className="w-full py-3 rounded-lg font-medium
                            bg-amber-500 hover:bg-amber-600 text-white
                            disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed
                            transition-colors flex items-center justify-center gap-2"
               >
-                {state === 'parsing' ? (
-                  <>
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                    Extracting links...
-                  </>
-                ) : (
-                  'Extract Links'
-                )}
+                Extract Links
               </button>
             </div>
           )}
 
-          {/* Loading states */}
-          {(state === 'resolving' || state === 'metadata') && (
+          {/* Processing state */}
+          {state === 'processing' && (
             <div className="text-center py-8">
               <div className="animate-spin h-8 w-8 border-3 border-amber-500 border-t-transparent rounded-full mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">
-                {state === 'resolving' && 'Resolving shortened URLs...'}
-                {state === 'metadata' && (
-                  <>
-                    Fetching metadata... ({progress.current}/{progress.total})
-                  </>
-                )}
+              <p className="text-gray-600 dark:text-gray-400 mb-1">
+                {progress.step}
               </p>
+              {progress.total > 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-500">
+                  {progress.current} of {progress.total} items
+                </p>
+              )}
 
               {/* Show items while loading */}
               {items.length > 0 && (
@@ -477,7 +358,6 @@ https://airbnb.tech/blog/`}
                 onDeselectAll={handleDeselectAll}
                 onCreateShelf={handleCreateShelf}
                 creating={false}
-                isAuthenticated={isAuthenticated}
               />
 
               <button
