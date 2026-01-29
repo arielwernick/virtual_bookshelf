@@ -34,6 +34,52 @@ const DEFAULT_TIMEOUT_MS = 5000;
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 /**
+ * Extract the destination URL from HTML content
+ * LinkedIn's lnkd.in uses different methods:
+ * 1. Direct page embedding with canonical tag pointing to external site
+ * 2. Interstitial page with external link in data-tracking anchor
+ */
+export function extractCanonicalUrl(html: string, sourceUrl: string): string | null {
+  try {
+    // Method 1: Look for <link rel="canonical" href="..."> pointing to external site
+    const canonicalMatch = html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
+                           html.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i);
+    
+    if (canonicalMatch) {
+      const canonical = canonicalMatch[1];
+      // Validate it's a proper URL and different from source
+      const canonicalUrl = new URL(canonical);
+      const sourceUrlObj = new URL(sourceUrl);
+      
+      // Only return if it's a different domain (not just linkedin.com variations)
+      if (canonicalUrl.hostname !== sourceUrlObj.hostname && 
+          !canonicalUrl.hostname.includes('linkedin.com')) {
+        return canonical;
+      }
+    }
+    
+    // Method 2: Look for LinkedIn interstitial page with external link
+    // Pattern: <a ... data-tracking-control-name="external_url_click" ... href="https://...">
+    const interstitialMatch = html.match(/data-tracking-control-name=["']external_url_click["'][^>]*href=["'](https?:\/\/[^"']+)["']/i) ||
+                              html.match(/href=["'](https?:\/\/[^"']+)["'][^>]*data-tracking-control-name=["']external_url_click["']/i);
+    
+    if (interstitialMatch) {
+      const externalUrl = interstitialMatch[1];
+      // Validate it's a proper URL and not LinkedIn
+      const externalUrlObj = new URL(externalUrl);
+      if (!externalUrlObj.hostname.includes('linkedin.com') &&
+          !externalUrlObj.hostname.includes('lnkd.in')) {
+        return externalUrl;
+      }
+    }
+    
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Extract the real URL from a LinkedIn redirect wrapper
  * LinkedIn wraps external links like: linkedin.com/redir/redirect?url=<encoded_url>
  * or linkedin.com/safety/go?url=<encoded_url>
@@ -155,9 +201,10 @@ export async function resolveUrl(
         }
       }
 
-      // If no redirect found with manual mode, try follow mode
-      const followResponse = await fetch(url, {
-        method: 'HEAD',
+      // If no redirect found with manual mode, try follow mode with GET to get the HTML
+      // Some shorteners (like lnkd.in) serve the page directly with a canonical tag
+      const getResponse = await fetch(url, {
+        method: 'GET',
         redirect: 'follow',
         signal: controller.signal,
         headers: {
@@ -166,16 +213,32 @@ export async function resolveUrl(
         },
       });
 
-      clearTimeout(timeoutId);
-
-      // The final URL might be a LinkedIn redirect - extract if so
-      const finalUrl = followResponse.url;
+      const finalUrl = getResponse.url;
+      
+      // Check for LinkedIn redirect in final URL
       const extractedFromFinal = extractLinkedInRedirectUrl(finalUrl);
-      return extractedFromFinal || finalUrl;
+      if (extractedFromFinal) {
+        clearTimeout(timeoutId);
+        return extractedFromFinal;
+      }
+      
+      // If the final URL is still a shortener URL, try to extract canonical from HTML
+      if (isShortUrl(finalUrl) || finalUrl === url) {
+        // Read the HTML to find canonical URL (only read first 50KB for performance)
+        const html = await getResponse.text();
+        const canonical = extractCanonicalUrl(html.substring(0, 50000), url);
+        if (canonical) {
+          clearTimeout(timeoutId);
+          return canonical;
+        }
+      }
+
+      clearTimeout(timeoutId);
+      return finalUrl;
     } catch (fetchError) {
       clearTimeout(timeoutId);
       
-      // If HEAD fails (some servers don't support it), try GET
+      // If the first request fails, try again with fresh controller
       if (fetchError instanceof Error && fetchError.name !== 'AbortError') {
         const controller2 = new AbortController();
         const timeoutId2 = setTimeout(() => controller2.abort(), timeoutMs);
@@ -191,12 +254,27 @@ export async function resolveUrl(
             },
           });
           
-          clearTimeout(timeoutId2);
+          const finalUrl = getResponse.url;
           
           // Check for LinkedIn redirect in final URL
-          const finalUrl = getResponse.url;
           const extractedFromFinal = extractLinkedInRedirectUrl(finalUrl);
-          return extractedFromFinal || finalUrl;
+          if (extractedFromFinal) {
+            clearTimeout(timeoutId2);
+            return extractedFromFinal;
+          }
+          
+          // If still a shortener URL, try to extract canonical from HTML
+          if (isShortUrl(finalUrl) || finalUrl === url) {
+            const html = await getResponse.text();
+            const canonical = extractCanonicalUrl(html.substring(0, 50000), url);
+            if (canonical) {
+              clearTimeout(timeoutId2);
+              return canonical;
+            }
+          }
+          
+          clearTimeout(timeoutId2);
+          return finalUrl;
         } catch {
           clearTimeout(timeoutId2);
         }

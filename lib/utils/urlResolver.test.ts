@@ -1,5 +1,95 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isShortUrl, resolveUrl, resolveUrls, getDomain, extractLinkedInRedirectUrl, needsResolution } from './urlResolver';
+import { isShortUrl, resolveUrl, resolveUrls, getDomain, extractLinkedInRedirectUrl, needsResolution, extractCanonicalUrl } from './urlResolver';
+
+// ============================================================================
+// extractCanonicalUrl Tests
+// ============================================================================
+
+describe('extractCanonicalUrl', () => {
+  it('extracts canonical URL from HTML', () => {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <link rel="canonical" href="https://aws.amazon.com/blogs/architecture/">
+          <title>AWS Architecture</title>
+        </head>
+      </html>
+    `;
+    expect(extractCanonicalUrl(html, 'https://lnkd.in/abc123')).toBe('https://aws.amazon.com/blogs/architecture/');
+  });
+
+  it('extracts canonical with reversed attributes order', () => {
+    const html = `<link href="https://netflixtechblog.com/article" rel="canonical">`;
+    expect(extractCanonicalUrl(html, 'https://lnkd.in/xyz')).toBe('https://netflixtechblog.com/article');
+  });
+
+  it('returns null if canonical is same domain as source', () => {
+    const html = `<link rel="canonical" href="https://lnkd.in/abc123">`;
+    expect(extractCanonicalUrl(html, 'https://lnkd.in/abc123')).toBeNull();
+  });
+
+  it('returns null if canonical is LinkedIn', () => {
+    const html = `<link rel="canonical" href="https://www.linkedin.com/posts/abc">`;
+    expect(extractCanonicalUrl(html, 'https://lnkd.in/abc123')).toBeNull();
+  });
+
+  it('returns null if no canonical found', () => {
+    const html = `<html><head><title>Page</title></head></html>`;
+    expect(extractCanonicalUrl(html, 'https://lnkd.in/abc')).toBeNull();
+  });
+
+  it('returns null for invalid canonical URL', () => {
+    const html = `<link rel="canonical" href="not-a-valid-url">`;
+    expect(extractCanonicalUrl(html, 'https://lnkd.in/abc')).toBeNull();
+  });
+
+  it('handles real LinkedIn shortlink page structure', () => {
+    // Simulates what lnkd.in returns for AWS Architecture Blog
+    const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta name="pageKey" content="d_shortlink_frontend_external_link_redirect_interstitial">
+          <link rel="canonical" href="https://aws.amazon.com/blogs/architecture/">
+          <title>LinkedIn</title>
+        </head>
+        <body><!-- AWS content embedded --></body>
+      </html>
+    `;
+    expect(extractCanonicalUrl(html, 'https://lnkd.in/gqjh88PS')).toBe('https://aws.amazon.com/blogs/architecture/');
+  });
+
+  it('extracts URL from LinkedIn interstitial page', () => {
+    // Simulates what lnkd.in returns for Netflix Tech Blog (interstitial pattern)
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <link rel="canonical" href="https://www.linkedin.com">
+          <title>LinkedIn</title>
+        </head>
+        <body>
+          <main>
+            <h1>This link will take you to a page that's not on LinkedIn</h1>
+            <a class="artdeco-button" 
+               data-tracking-control-name="external_url_click" 
+               data-tracking-will-navigate
+               href="https://netflixtechblog.com">
+                https://netflixtechblog.com
+            </a>
+          </main>
+        </body>
+      </html>
+    `;
+    expect(extractCanonicalUrl(html, 'https://lnkd.in/gNE8Cs6Z')).toBe('https://netflixtechblog.com');
+  });
+
+  it('extracts URL from interstitial with reversed attribute order', () => {
+    const html = `<a href="https://discord.com/blog/engineering" data-tracking-control-name="external_url_click">Link</a>`;
+    expect(extractCanonicalUrl(html, 'https://lnkd.in/abc')).toBe('https://discord.com/blog/engineering');
+  });
+});
 
 // ============================================================================
 // extractLinkedInRedirectUrl Tests
