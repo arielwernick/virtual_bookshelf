@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { GoogleIcon } from '@/components/ui/GoogleIcon';
 
-export default function SignupPage() {
+function SignupPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
+  
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -17,11 +20,36 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  // Validate returnTo parameter for security
+  const getValidatedReturnUrl = (url: string | null): string => {
+    if (!url) return '/dashboard';
+    
+    // Only allow internal URLs (prevent open redirect)
+    try {
+      const parsed = new URL(url, window.location.origin);
+      if (parsed.origin === window.location.origin) {
+        return parsed.pathname + parsed.search;
+      }
+    } catch {
+      // Invalid URL, fall back to dashboard
+    }
+    
+    return '/dashboard';
+  };
+
   const handleGoogleSignUp = () => {
     setGoogleLoading(true);
     setError('');
+    
+    // Include returnTo in Google OAuth flow
+    let googleAuthUrl = '/api/auth/google';
+    if (returnTo) {
+      const encodedReturnTo = encodeURIComponent(returnTo);
+      googleAuthUrl += `?returnTo=${encodedReturnTo}`;
+    }
+    
     // Redirect to Google OAuth flow (same endpoint - it handles both login and signup)
-    window.location.href = '/api/auth/google';
+    window.location.href = googleAuthUrl;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,8 +121,9 @@ export default function SignupPage() {
         return;
       }
 
-      // Success - redirect to dashboard
-      router.push('/dashboard');
+      // Success - redirect to return URL or dashboard
+      const redirectUrl = getValidatedReturnUrl(returnTo);
+      router.push(redirectUrl);
     } catch (err) {
       console.error('Signup error:', err);
       setError('Something went wrong. Please try again.');
@@ -221,11 +250,22 @@ export default function SignupPage() {
 
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
           Already have an account?{' '}
-          <Link href="/login" className="text-gray-900 dark:text-gray-100 font-medium hover:underline">
+          <Link 
+            href={returnTo ? `/login?returnTo=${encodeURIComponent(returnTo)}` : '/login'} 
+            className="text-gray-900 dark:text-gray-100 font-medium hover:underline"
+          >
             Sign in
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignupPageContent />
+    </Suspense>
   );
 }

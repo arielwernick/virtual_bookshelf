@@ -74,6 +74,12 @@ export function Navigation() {
               // Logged in
               <>
                 <Link
+                  href="/import"
+                  className="text-sm text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                >
+                  Import
+                </Link>
+                <Link
                   href="/dashboard"
                   className="text-sm text-gray-700 hover:text-gray-900 font-medium transition-colors"
                 >
