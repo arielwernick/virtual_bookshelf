@@ -249,10 +249,10 @@ export default function ImportPage() {
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-              📋 Import from Text
+              📋 Create Shelf from Text
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Paste any text with links — social media posts, newsletters, notes — and we&apos;ll create a shelf for you.
+              Paste any text with links — reading lists, recommendations, articles to save — and we&apos;ll create a shelf for you.
             </p>
           </div>
 
@@ -277,15 +277,15 @@ export default function ImportPage() {
                   rows={12}
                   placeholder={`Paste any text with links, for example:
 
-1 → THE CODE
-Scale at global level.
-Teaches you how to code with AI and AI Agents
-https://lnkd.in/dcibJhzQ
+1 → Atomic Habits
+Great book on building better habits.
+Really changed how I think about daily routines.
+https://www.goodreads.com/book/show/40121378
 
-2 → Airbnb Tech Blog
-Product engineering done right.
-User focused systems.
-https://airbnb.tech/blog/`}
+2 → The Daily
+Interesting podcast about current events.
+Good for staying informed.
+https://open.spotify.com/show/1234`}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 
                              bg-white dark:bg-gray-900 text-gray-900 dark:text-white
                              focus:ring-2 focus:ring-amber-500 focus:border-transparent
@@ -304,7 +304,7 @@ https://airbnb.tech/blog/`}
                            disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed
                            transition-colors flex items-center justify-center gap-2"
               >
-                Extract Links
+                Create Shelf
               </button>
             </div>
           )}
