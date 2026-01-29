@@ -32,7 +32,6 @@ async function fetchYouTubeMetadata(url: string): Promise<MicrolinkData | null> 
       description: `Video by ${video.channelName}`,
       image: video.thumbnailUrl,
       url: video.videoUrl,
-      logo: 'https://www.youtube.com/favicon.ico',
       publisher: video.channelName,
     };
   } catch (error) {
