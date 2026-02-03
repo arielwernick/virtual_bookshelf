@@ -66,15 +66,16 @@ npm run lint         # Run ESLint
 │   ├── Navigation.tsx
 │   └── Confetti.tsx
 ├── docs/                  # Documentation
-│   ├── ADMIN_DEMO_SETUP.md
-│   ├── DEPLOYMENT_CHECKLIST.md
-│   ├── MIGRATION.md
-│   ├── MIGRATION_GOOGLE_AUTH.md
-│   ├── OAUTH_TROUBLESHOOTING.md
-│   └── QUICK_START.md
+│   ├── architecture/      # System design docs (PATTERNS.md, ANTI_PATTERNS.md)
+│   ├── guides/            # Operational docs (QUICK_START.md, DEPLOYMENT_CHECKLIST.md)
+│   ├── migrations/        # Database migration docs
+│   ├── prds/              # Product Requirement Documents
+│   ├── security-tasks/    # Security audit and tasks
+│   ├── task-lists/        # Feature task lists
+│   └── verification/      # Acceptance criteria verification
 ├── lib/
 │   ├── api/               # API client helpers
-│   ├── constants/         # Application constants
+│   ├── constants/         # Application constants (errors.ts, aspectRatios.ts)
 │   ├── db/
 │   │   ├── client.ts      # Neon database client
 │   │   ├── queries.ts     # Database query functions
@@ -87,15 +88,6 @@ npm run lint         # Run ESLint
 │       ├── password.ts    # Password hashing (bcrypt)
 │       ├── session.ts     # JWT session management
 │       └── validation.ts  # Input validation
-├── prds/                  # Product Requirement Documents
-│   ├── BUTTON_HOVER_ENHANCEMENT.md
-│   ├── GOOGLE_AUTH_PRD.md
-│   ├── LINKEDIN_REDESIGN_PRD.md
-│   ├── prd-responsive-card-layouts.md
-│   ├── prd-virtual-bookshelf.md
-│   ├── SHELF_DESCRIPTION.md
-│   ├── SHELF_RENAME_PRD.md
-│   └── UNIT_TESTING_PRD.md
 ├── test/
 │   └── setup.ts           # Vitest setup file
 ├── public/                # Static assets
@@ -380,9 +372,20 @@ if (!usernameValidation.valid) {
 
 ### Error Handling
 
+- Use error constants from `lib/constants/errors.ts` for consistent messages
 - Log errors with `console.error` for debugging
 - Return user-friendly error messages in API responses
 - Never expose internal error details to clients
+
+```typescript
+import { AUTH_ERRORS, VALIDATION_ERRORS, API_ERRORS } from '@/lib/constants/errors';
+
+// Use constants for consistent error messages
+return NextResponse.json(
+  { success: false, error: AUTH_ERRORS.NOT_AUTHENTICATED },
+  { status: 401 }
+);
+```
 
 ### Image Handling
 
