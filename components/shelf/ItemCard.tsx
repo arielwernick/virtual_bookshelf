@@ -10,48 +10,36 @@ import { useShelf } from '@/lib/contexts/ShelfContext';
 
 interface ItemCardProps {
   item: Item;
-  /** @deprecated Use ShelfContext instead - onClick prop is only for backwards compatibility */
-  onClick?: () => void;
-  /** @deprecated Use ShelfContext instead - editMode prop is only for backwards compatibility */
-  editMode?: boolean;
-  /** @deprecated Use ShelfContext instead - onDelete prop is only for backwards compatibility */
-  onDelete?: () => void;
-  /** @deprecated Use ShelfContext instead - onEditNote prop is only for backwards compatibility */
-  onEditNote?: () => void;
 }
 
 /**
  * ItemCard - Displays a single item (book, podcast, music) with image and metadata
  * 
- * Uses ShelfContext when available, falls back to props for backwards compatibility.
+ * Must be used within a ShelfProvider to access editMode and callbacks.
  * The context-based approach eliminates prop drilling in the shelf component hierarchy.
+ * 
+ * @see lib/contexts/ShelfContext.tsx for provider setup
  */
-export function ItemCard({ 
-  item, 
-  onClick: propOnClick, 
-  editMode: propEditMode, 
-  onDelete: propOnDelete, 
-  onEditNote: propOnEditNote 
-}: ItemCardProps) {
+export function ItemCard({ item }: ItemCardProps) {
   const [imageError, setImageError] = useState(false);
   const [fitMode, setFitMode] = useState<'cover' | 'contain'>('cover');
 
-  // Use context if available, fall back to props for backwards compatibility
+  // Get state from context
   const shelf = useShelf();
-  const editMode = shelf?.editMode ?? propEditMode ?? false;
+  const editMode = shelf?.editMode ?? false;
   
-  // Build callbacks: context takes precedence, then props
+  // Get callbacks from context
   const handleItemClick = shelf?.onItemClick 
     ? () => shelf.onItemClick!(item) 
-    : propOnClick;
+    : undefined;
   
   const handleDelete = shelf?.onDeleteItem 
     ? () => shelf.onDeleteItem!(item.id) 
-    : propOnDelete;
+    : undefined;
   
   const handleEditNote = shelf?.onEditNote 
     ? () => shelf.onEditNote!(item) 
-    : propOnEditNote;
+    : undefined;
 
   const handleClick = () => {
     if (handleItemClick && !editMode) {

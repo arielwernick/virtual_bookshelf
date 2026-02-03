@@ -1,41 +1,81 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ItemCard } from './ItemCard';
+import { ShelfProvider } from '@/lib/contexts/ShelfContext';
 import { createMockItem } from '@/test/utils/mocks';
+import { Item } from '@/lib/types/shelf';
+import { ReactNode } from 'react';
+
+// Helper to wrap ItemCard with ShelfProvider
+interface RenderOptions {
+  editMode?: boolean;
+  onItemClick?: (item: Item) => void;
+  onDeleteItem?: (itemId: string) => void;
+  onEditNote?: (item: Item) => void;
+}
+
+function renderWithProvider(
+  children: ReactNode,
+  options: RenderOptions = {}
+) {
+  const { editMode = false, onItemClick, onDeleteItem, onEditNote } = options;
+  return render(
+    <ShelfProvider
+      editMode={editMode}
+      onItemClick={onItemClick}
+      onDeleteItem={onDeleteItem}
+      onEditNote={onEditNote}
+    >
+      {children}
+    </ShelfProvider>
+  );
+}
 
 describe('ItemCard', () => {
   describe('Rendering', () => {
     it('renders item title', () => {
-      render(<ItemCard item={createMockItem({ title: 'Test Book Title' })} />);
+      renderWithProvider(<ItemCard item={createMockItem({ title: 'Test Book Title' })} />);
 
       expect(screen.getByText('Test Book Title')).toBeInTheDocument();
     });
 
     it('renders item creator', () => {
-      render(<ItemCard item={createMockItem({ creator: 'Test Author' })} />);
+      renderWithProvider(<ItemCard item={createMockItem({ creator: 'Test Author' })} />);
 
       expect(screen.getByText('Test Author')).toBeInTheDocument();
     });
 
     it('renders item type badge', () => {
-      render(<ItemCard item={createMockItem({ type: 'book' })} />);
+      renderWithProvider(<ItemCard item={createMockItem({ type: 'book' })} />);
 
       expect(screen.getByText('book')).toBeInTheDocument();
     });
 
     it('renders different type badges correctly', () => {
-      const { rerender } = render(<ItemCard item={createMockItem({ type: 'podcast' })} />);
+      const { rerender } = render(
+        <ShelfProvider>
+          <ItemCard item={createMockItem({ type: 'podcast' })} />
+        </ShelfProvider>
+      );
       expect(screen.getByText('podcast')).toBeInTheDocument();
 
-      rerender(<ItemCard item={createMockItem({ type: 'music' })} />);
+      rerender(
+        <ShelfProvider>
+          <ItemCard item={createMockItem({ type: 'music' })} />
+        </ShelfProvider>
+      );
       expect(screen.getByText('music')).toBeInTheDocument();
 
-      rerender(<ItemCard item={createMockItem({ type: 'video' })} />);
+      rerender(
+        <ShelfProvider>
+          <ItemCard item={createMockItem({ type: 'video' })} />
+        </ShelfProvider>
+      );
       expect(screen.getByText('video')).toBeInTheDocument();
     });
 
     it('renders image when provided', () => {
-      render(
+      renderWithProvider(
         <ItemCard
           item={createMockItem({
             image_url: 'https://example.com/image.jpg',
@@ -50,7 +90,7 @@ describe('ItemCard', () => {
     });
 
     it('renders fallback icon when no image', () => {
-      render(<ItemCard item={createMockItem({ image_url: null })} />);
+      renderWithProvider(<ItemCard item={createMockItem({ image_url: null })} />);
 
       // Check for SVG fallback icon
       const svg = document.querySelector('svg');
@@ -58,7 +98,7 @@ describe('ItemCard', () => {
     });
 
     it('has lazy loading on image', () => {
-      render(
+      renderWithProvider(
         <ItemCard
           item={createMockItem({ image_url: 'https://example.com/image.jpg' })}
         />
@@ -70,33 +110,42 @@ describe('ItemCard', () => {
   });
 
   describe('Click Behavior', () => {
-    it('calls onClick when clicked', () => {
-      const onClick = vi.fn();
-      render(<ItemCard item={createMockItem()} onClick={onClick} />);
+    it('calls onItemClick when clicked', () => {
+      const onItemClick = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { onItemClick }
+      );
 
       fireEvent.click(screen.getByText('The Great Gatsby'));
 
-      expect(onClick).toHaveBeenCalledTimes(1);
+      expect(onItemClick).toHaveBeenCalledTimes(1);
     });
 
     it('has cursor-pointer when clickable', () => {
-      render(<ItemCard item={createMockItem()} onClick={() => {}} />);
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { onItemClick: () => {} }
+      );
 
       const card = screen.getByText('The Great Gatsby').closest('div[class*="cursor-pointer"]');
       expect(card).toBeInTheDocument();
     });
 
-    it('does not call onClick in edit mode', () => {
-      const onClick = vi.fn();
-      render(<ItemCard item={createMockItem()} onClick={onClick} editMode={true} />);
+    it('does not call onItemClick in edit mode', () => {
+      const onItemClick = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { onItemClick, editMode: true }
+      );
 
       fireEvent.click(screen.getByText('The Great Gatsby'));
 
-      expect(onClick).not.toHaveBeenCalled();
+      expect(onItemClick).not.toHaveBeenCalled();
     });
 
     it('does not have cursor-pointer when not clickable', () => {
-      render(<ItemCard item={createMockItem()} />);
+      renderWithProvider(<ItemCard item={createMockItem()} />);
 
       const card = screen.getByText('The Great Gatsby').parentElement?.parentElement;
       expect(card?.className).not.toContain('cursor-pointer');
@@ -105,9 +154,10 @@ describe('ItemCard', () => {
 
   describe('Edit Mode', () => {
     it('shows delete button in edit mode', () => {
-      const onDelete = vi.fn();
-      render(
-        <ItemCard item={createMockItem()} editMode={true} onDelete={onDelete} />
+      const onDeleteItem = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { editMode: true, onDeleteItem }
       );
 
       const deleteButton = screen.getByTitle('Delete item');
@@ -115,45 +165,45 @@ describe('ItemCard', () => {
     });
 
     it('hides delete button when not in edit mode', () => {
-      const onDelete = vi.fn();
-      render(<ItemCard item={createMockItem()} onDelete={onDelete} />);
+      const onDeleteItem = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { onDeleteItem }
+      );
 
       expect(screen.queryByTitle('Delete item')).not.toBeInTheDocument();
     });
 
-    it('calls onDelete when delete button clicked', () => {
-      const onDelete = vi.fn();
-      render(
-        <ItemCard item={createMockItem()} editMode={true} onDelete={onDelete} />
+    it('calls onDeleteItem when delete button clicked', () => {
+      const onDeleteItem = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { editMode: true, onDeleteItem }
       );
 
       fireEvent.click(screen.getByTitle('Delete item'));
 
-      expect(onDelete).toHaveBeenCalledTimes(1);
+      expect(onDeleteItem).toHaveBeenCalledTimes(1);
     });
 
     it('stops propagation when delete button clicked', () => {
-      const onClick = vi.fn();
-      const onDelete = vi.fn();
-      render(
-        <ItemCard
-          item={createMockItem()}
-          onClick={onClick}
-          editMode={true}
-          onDelete={onDelete}
-        />
+      const onItemClick = vi.fn();
+      const onDeleteItem = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { onItemClick, editMode: true, onDeleteItem }
       );
 
       fireEvent.click(screen.getByTitle('Delete item'));
 
-      expect(onDelete).toHaveBeenCalled();
-      expect(onClick).not.toHaveBeenCalled();
+      expect(onDeleteItem).toHaveBeenCalled();
+      expect(onItemClick).not.toHaveBeenCalled();
     });
   });
 
   describe('Type Badge Colors', () => {
     it('applies blue color for book type', () => {
-      render(<ItemCard item={createMockItem({ type: 'book' })} />);
+      renderWithProvider(<ItemCard item={createMockItem({ type: 'book' })} />);
 
       const badge = screen.getByText('book');
       expect(badge.className).toContain('bg-blue-100');
@@ -161,7 +211,7 @@ describe('ItemCard', () => {
     });
 
     it('applies purple color for podcast type', () => {
-      render(<ItemCard item={createMockItem({ type: 'podcast' })} />);
+      renderWithProvider(<ItemCard item={createMockItem({ type: 'podcast' })} />);
 
       const badge = screen.getByText('podcast');
       expect(badge.className).toContain('bg-purple-100');
@@ -169,7 +219,7 @@ describe('ItemCard', () => {
     });
 
     it('applies green color for music type', () => {
-      render(<ItemCard item={createMockItem({ type: 'music' })} />);
+      renderWithProvider(<ItemCard item={createMockItem({ type: 'music' })} />);
 
       const badge = screen.getByText('music');
       expect(badge.className).toContain('bg-green-100');
@@ -179,7 +229,7 @@ describe('ItemCard', () => {
 
   describe('Note Preview', () => {
     it('renders note preview when item has notes in non-edit mode', () => {
-      render(<ItemCard item={createMockItem({ notes: 'Some notes here' })} />);
+      renderWithProvider(<ItemCard item={createMockItem({ notes: 'Some notes here' })} />);
 
       const notePreview = screen.getByTestId('note-preview');
       expect(notePreview).toBeInTheDocument();
@@ -187,24 +237,21 @@ describe('ItemCard', () => {
     });
 
     it('does not show note preview when item has no notes', () => {
-      render(<ItemCard item={createMockItem({ notes: null })} />);
+      renderWithProvider(<ItemCard item={createMockItem({ notes: null })} />);
 
       expect(screen.queryByTestId('note-preview')).not.toBeInTheDocument();
     });
 
     it('does not show note preview when notes is empty string', () => {
-      render(<ItemCard item={createMockItem({ notes: '' })} />);
+      renderWithProvider(<ItemCard item={createMockItem({ notes: '' })} />);
 
       expect(screen.queryByTestId('note-preview')).not.toBeInTheDocument();
     });
 
     it('does not show note preview in edit mode even when item has notes', () => {
-      render(
-        <ItemCard 
-          item={createMockItem({ notes: 'Some notes' })} 
-          editMode={true} 
-          onEditNote={() => {}} 
-        />
+      renderWithProvider(
+        <ItemCard item={createMockItem({ notes: 'Some notes' })} />,
+        { editMode: true, onEditNote: () => {} }
       );
 
       expect(screen.queryByTestId('note-preview')).not.toBeInTheDocument();
@@ -214,12 +261,9 @@ describe('ItemCard', () => {
   describe('Note Edit Button (Edit Mode)', () => {
     it('shows edit note button in edit mode when item has notes', () => {
       const onEditNote = vi.fn();
-      render(
-        <ItemCard 
-          item={createMockItem({ notes: 'Some notes' })} 
-          editMode={true} 
-          onEditNote={onEditNote} 
-        />
+      renderWithProvider(
+        <ItemCard item={createMockItem({ notes: 'Some notes' })} />,
+        { editMode: true, onEditNote }
       );
 
       const editNoteButton = screen.getByTestId('edit-note-button');
@@ -229,12 +273,9 @@ describe('ItemCard', () => {
 
     it('shows add note button in edit mode when item has no notes', () => {
       const onEditNote = vi.fn();
-      render(
-        <ItemCard 
-          item={createMockItem({ notes: null })} 
-          editMode={true} 
-          onEditNote={onEditNote} 
-        />
+      renderWithProvider(
+        <ItemCard item={createMockItem({ notes: null })} />,
+        { editMode: true, onEditNote }
       );
 
       const addNoteButton = screen.getByTestId('add-note-button');
@@ -244,12 +285,9 @@ describe('ItemCard', () => {
 
     it('calls onEditNote when edit note button is clicked', () => {
       const onEditNote = vi.fn();
-      render(
-        <ItemCard 
-          item={createMockItem({ notes: 'Some notes' })} 
-          editMode={true} 
-          onEditNote={onEditNote} 
-        />
+      renderWithProvider(
+        <ItemCard item={createMockItem({ notes: 'Some notes' })} />,
+        { editMode: true, onEditNote }
       );
 
       fireEvent.click(screen.getByTestId('edit-note-button'));
@@ -258,12 +296,9 @@ describe('ItemCard', () => {
 
     it('calls onEditNote when add note button is clicked', () => {
       const onEditNote = vi.fn();
-      render(
-        <ItemCard 
-          item={createMockItem({ notes: null })} 
-          editMode={true} 
-          onEditNote={onEditNote} 
-        />
+      renderWithProvider(
+        <ItemCard item={createMockItem({ notes: null })} />,
+        { editMode: true, onEditNote }
       );
 
       fireEvent.click(screen.getByTestId('add-note-button'));
@@ -272,11 +307,9 @@ describe('ItemCard', () => {
 
     it('does not show note edit button when not in edit mode', () => {
       const onEditNote = vi.fn();
-      render(
-        <ItemCard 
-          item={createMockItem({ notes: 'Some notes' })} 
-          onEditNote={onEditNote} 
-        />
+      renderWithProvider(
+        <ItemCard item={createMockItem({ notes: 'Some notes' })} />,
+        { onEditNote }
       );
 
       expect(screen.queryByTestId('edit-note-button')).not.toBeInTheDocument();
@@ -284,11 +317,9 @@ describe('ItemCard', () => {
     });
 
     it('does not show note edit button when onEditNote is not provided', () => {
-      render(
-        <ItemCard 
-          item={createMockItem({ notes: 'Some notes' })} 
-          editMode={true} 
-        />
+      renderWithProvider(
+        <ItemCard item={createMockItem({ notes: 'Some notes' })} />,
+        { editMode: true }
       );
 
       expect(screen.queryByTestId('edit-note-button')).not.toBeInTheDocument();
@@ -296,93 +327,110 @@ describe('ItemCard', () => {
     });
 
     it('stops propagation when note edit button is clicked', () => {
-      const onClick = vi.fn();
+      const onItemClick = vi.fn();
       const onEditNote = vi.fn();
-      render(
-        <ItemCard
-          item={createMockItem({ notes: 'Some notes' })}
-          onClick={onClick}
-          editMode={true}
-          onEditNote={onEditNote}
-        />
+      renderWithProvider(
+        <ItemCard item={createMockItem({ notes: 'Some notes' })} />,
+        { onItemClick, editMode: true, onEditNote }
       );
 
       fireEvent.click(screen.getByTestId('edit-note-button'));
 
       expect(onEditNote).toHaveBeenCalled();
-      expect(onClick).not.toHaveBeenCalled();
+      expect(onItemClick).not.toHaveBeenCalled();
     });
   });
 
   describe('Keyboard Accessibility', () => {
     it('is keyboard focusable when clickable', () => {
-      const onClick = vi.fn();
-      render(<ItemCard item={createMockItem()} onClick={onClick} />);
+      const onItemClick = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { onItemClick }
+      );
 
       const card = screen.getByRole('button');
       expect(card).toHaveAttribute('tabIndex', '0');
     });
 
     it('is not focusable when not clickable', () => {
-      render(<ItemCard item={createMockItem()} />);
+      renderWithProvider(<ItemCard item={createMockItem()} />);
 
       const card = screen.getByText('The Great Gatsby').closest('div');
       expect(card).not.toHaveAttribute('tabIndex');
       expect(card).not.toHaveAttribute('role', 'button');
     });
 
-    it('calls onClick when Enter key is pressed', () => {
-      const onClick = vi.fn();
-      render(<ItemCard item={createMockItem()} onClick={onClick} />);
+    it('calls onItemClick when Enter key is pressed', () => {
+      const onItemClick = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { onItemClick }
+      );
 
       const card = screen.getByRole('button');
       fireEvent.keyDown(card, { key: 'Enter' });
 
-      expect(onClick).toHaveBeenCalledTimes(1);
+      expect(onItemClick).toHaveBeenCalledTimes(1);
     });
 
-    it('calls onClick when Space key is pressed', () => {
-      const onClick = vi.fn();
-      render(<ItemCard item={createMockItem()} onClick={onClick} />);
+    it('calls onItemClick when Space key is pressed', () => {
+      const onItemClick = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { onItemClick }
+      );
 
       const card = screen.getByRole('button');
       fireEvent.keyDown(card, { key: ' ' });
 
-      expect(onClick).toHaveBeenCalledTimes(1);
+      expect(onItemClick).toHaveBeenCalledTimes(1);
     });
 
-    it('does not call onClick for other keys', () => {
-      const onClick = vi.fn();
-      render(<ItemCard item={createMockItem()} onClick={onClick} />);
+    it('does not call onItemClick for other keys', () => {
+      const onItemClick = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { onItemClick }
+      );
 
       const card = screen.getByRole('button');
       fireEvent.keyDown(card, { key: 'a' });
       fireEvent.keyDown(card, { key: 'Escape' });
 
-      expect(onClick).not.toHaveBeenCalled();
+      expect(onItemClick).not.toHaveBeenCalled();
     });
 
-    it('does not call onClick on keyboard press in edit mode', () => {
-      const onClick = vi.fn();
-      render(<ItemCard item={createMockItem()} onClick={onClick} editMode={true} />);
+    it('does not call onItemClick on keyboard press in edit mode', () => {
+      const onItemClick = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { onItemClick, editMode: true }
+      );
 
       const card = screen.getByText('The Great Gatsby').closest('div');
       fireEvent.keyDown(card!, { key: 'Enter' });
 
-      expect(onClick).not.toHaveBeenCalled();
+      expect(onItemClick).not.toHaveBeenCalled();
     });
 
     it('has accessible label', () => {
-      const onClick = vi.fn();
-      render(<ItemCard item={createMockItem({ title: 'Test Title' })} onClick={onClick} />);
+      const onItemClick = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem({ title: 'Test Title' })} />,
+        { onItemClick }
+      );
 
       const card = screen.getByRole('button');
       expect(card).toHaveAttribute('aria-label', 'View details for Test Title');
     });
 
     it('shows focus ring when focused', () => {
-      const onClick = vi.fn();
-      render(<ItemCard item={createMockItem()} onClick={onClick} />);
+      const onItemClick = vi.fn();
+      renderWithProvider(
+        <ItemCard item={createMockItem()} />,
+        { onItemClick }
+      );
 
       const card = screen.getByRole('button');
       expect(card.className).toContain('focus-within:ring-2');
