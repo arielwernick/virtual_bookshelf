@@ -15,27 +15,24 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { ShelfProvider, useShelf } from '@/lib/contexts/ShelfContext';
 
 interface ShelfRowProps {
   items: Item[];
-  onItemClick?: (item: Item) => void;
-  editMode?: boolean;
-  onDeleteItem?: (itemId: string) => void;
-  onEditNote?: (item: Item) => void;
 }
 
 /**
  * ShelfRow - A single shelf displaying items with a visual divider
+ * Uses ShelfContext for editMode, callbacks (no prop drilling)
  */
 interface SortableItemProps {
   item: Item;
-  onItemClick?: (item: Item) => void;
-  editMode?: boolean;
-  onDelete?: (itemId: string) => void;
-  onEditNote?: (item: Item) => void;
 }
 
-function SortableItem({ item, onItemClick, editMode, onDelete, onEditNote }: SortableItemProps) {
+function SortableItem({ item }: SortableItemProps) {
+  const shelf = useShelf();
+  const editMode = shelf?.editMode ?? false;
+
   const {
     attributes,
     listeners,
@@ -54,42 +51,26 @@ function SortableItem({ item, onItemClick, editMode, onDelete, onEditNote }: Sor
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...(editMode ? listeners : {})} className="w-[100px] sm:w-[140px] flex-shrink-0">
-      <ItemCard
-        item={item}
-        onClick={onItemClick ? () => onItemClick(item) : undefined}
-        editMode={editMode}
-        onDelete={onDelete ? () => onDelete(item.id) : undefined}
-        onEditNote={onEditNote ? () => onEditNote(item) : undefined}
-      />
+      <ItemCard item={item} />
     </div>
   );
 }
 
-function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfRowProps) {
+function ShelfRow({ items }: ShelfRowProps) {
+  const shelf = useShelf();
+  const editMode = shelf?.editMode ?? false;
+
   // Only enable SortableContext in edit mode
   const content = editMode ? (
     <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
       {items.map((item) => (
-        <SortableItem
-          key={item.id}
-          item={item}
-          onItemClick={onItemClick}
-          editMode={editMode}
-          onDelete={onDeleteItem}
-          onEditNote={onEditNote}
-        />
+        <SortableItem key={item.id} item={item} />
       ))}
     </SortableContext>
   ) : (
     items.map((item) => (
       <div key={item.id} className="w-[100px] sm:w-[140px] flex-shrink-0">
-        <ItemCard
-          item={item}
-          onClick={onItemClick ? () => onItemClick(item) : undefined}
-          editMode={editMode}
-          onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}
-          onEditNote={onEditNote ? () => onEditNote(item) : undefined}
-        />
+        <ItemCard item={item} />
       </div>
     ))
   );
@@ -117,17 +98,17 @@ function ShelfRow({ items, onItemClick, editMode, onDeleteItem, onEditNote }: Sh
 
 interface ShelfContainerProps {
   items: Item[];
-  onItemClick?: (item: Item) => void;
-  editMode?: boolean;
-  onDeleteItem?: (itemId: string) => void;
-  onEditNote?: (item: Item) => void;
 }
 
 /**
  * ShelfContainer - Splits items into shelf rows based on actual flex layout
  * Recalculates on window resize with debouncing
+ * Uses ShelfContext for editMode (no prop drilling)
  */
-function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfContainerProps) {
+function ShelfContainer({ items }: ShelfContainerProps) {
+  const shelf = useShelf();
+  const editMode = shelf?.editMode ?? false;
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [orderedItems, setOrderedItems] = useState(items);
   const [shelves, setShelves] = useState<Item[][]>([]);
@@ -256,14 +237,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={orderedItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
             {shelves.map((shelfItems, index) => (
-              <ShelfRow
-                key={`shelf-${index}`}
-                items={shelfItems}
-                onItemClick={onItemClick}
-                editMode={editMode}
-                onDeleteItem={onDeleteItem}
-                onEditNote={onEditNote}
-              />
+              <ShelfRow key={`shelf-${index}`} items={shelfItems} />
             ))}
           </SortableContext>
         </DndContext>
@@ -274,14 +248,7 @@ function ShelfContainer({ items, onItemClick, editMode, onDeleteItem, onEditNote
   return (
     <div ref={containerRef} className="space-y-4 sm:space-y-6">
       {shelves.map((shelfItems, index) => (
-        <ShelfRow
-          key={`shelf-${index}`}
-          items={shelfItems}
-          onItemClick={onItemClick}
-          editMode={editMode}
-          onDeleteItem={onDeleteItem}
-          onEditNote={onEditNote}
-        />
+        <ShelfRow key={`shelf-${index}`} items={shelfItems} />
       ))}
     </div>
   );
@@ -295,7 +262,7 @@ interface ShelfGridProps {
   onEditNote?: (item: Item) => void;
 }
 
-export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNote }: ShelfGridProps) {
+export function ShelfGrid({ items, onItemClick, editMode = false, onDeleteItem, onEditNote }: ShelfGridProps) {
   const [selectedType, setSelectedType] = useState<ItemType | 'all'>('all');
 
   const filteredItems = selectedType === 'all' 
@@ -325,42 +292,43 @@ export function ShelfGrid({ items, onItemClick, editMode, onDeleteItem, onEditNo
   );
 
   return (
-    <div>
-      {/* Filter tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200">
-        {filterButton('all', 'All', counts.all)}
-        {filterButton('book', 'Books', counts.book)}
-        {filterButton('podcast', 'Podcasts', counts.podcast)}
-        {filterButton('music', 'Music', counts.music)}
-      </div>
-
-      {/* Shelves or empty state */}
-      {filteredItems.length === 0 ? (
-        <div className="text-center py-16">
-          <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No items</h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {selectedType === 'all'
-              ? 'This shelf is empty.'
-              : `No ${selectedType}s in this shelf.`}
-          </p>
+    <ShelfProvider
+      editMode={editMode}
+      onDeleteItem={onDeleteItem}
+      onEditNote={onEditNote}
+      onItemClick={onItemClick}
+    >
+      <div>
+        {/* Filter tabs */}
+        <div className="flex gap-2 mb-6 border-b border-gray-200">
+          {filterButton('all', 'All', counts.all)}
+          {filterButton('book', 'Books', counts.book)}
+          {filterButton('podcast', 'Podcasts', counts.podcast)}
+          {filterButton('music', 'Music', counts.music)}
         </div>
-      ) : (
-        <ShelfContainer
-          items={filteredItems}
-          onItemClick={onItemClick}
-          editMode={editMode}
-          onDeleteItem={onDeleteItem}
-          onEditNote={onEditNote}
-        />
-      )}
-    </div>
+
+        {/* Shelves or empty state */}
+        {filteredItems.length === 0 ? (
+          <div className="text-center py-16">
+            <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+              />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No items</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {selectedType === 'all'
+                ? 'This shelf is empty.'
+                : `No ${selectedType}s in this shelf.`}
+            </p>
+          </div>
+        ) : (
+          <ShelfContainer items={filteredItems} />
+        )}
+      </div>
+    </ShelfProvider>
   );
 }

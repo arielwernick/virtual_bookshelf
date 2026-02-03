@@ -6,28 +6,51 @@ import { getAspectRatio, getAspectRatioNumeric } from '@/lib/constants/aspectRat
 import { StarDisplay } from '@/components/ui/StarDisplay';
 import { calculateJitter, getImageFitMode, isAmazonHostedImage } from '@/lib/utils/imageUtils';
 import { useState } from 'react';
+import { useShelf } from '@/lib/contexts/ShelfContext';
 
 interface ItemCardProps {
   item: Item;
-  onClick?: () => void;
-  editMode?: boolean;
-  onDelete?: () => void;
-  onEditNote?: () => void;
 }
 
-export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: ItemCardProps) {
+/**
+ * ItemCard - Displays a single item (book, podcast, music) with image and metadata
+ * 
+ * Must be used within a ShelfProvider to access editMode and callbacks.
+ * The context-based approach eliminates prop drilling in the shelf component hierarchy.
+ * 
+ * @see lib/contexts/ShelfContext.tsx for provider setup
+ */
+export function ItemCard({ item }: ItemCardProps) {
   const [imageError, setImageError] = useState(false);
   const [fitMode, setFitMode] = useState<'cover' | 'contain'>('cover');
+
+  // Get state from context
+  const shelf = useShelf();
+  const editMode = shelf?.editMode ?? false;
+  
+  // Get callbacks from context
+  const handleItemClick = shelf?.onItemClick 
+    ? () => shelf.onItemClick!(item) 
+    : undefined;
+  
+  const handleDelete = shelf?.onDeleteItem 
+    ? () => shelf.onDeleteItem!(item.id) 
+    : undefined;
+  
+  const handleEditNote = shelf?.onEditNote 
+    ? () => shelf.onEditNote!(item) 
+    : undefined;
+
   const handleClick = () => {
-    if (onClick && !editMode) {
-      onClick();
+    if (handleItemClick && !editMode) {
+      handleItemClick();
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (onClick && !editMode && (e.key === 'Enter' || e.key === ' ')) {
+    if (handleItemClick && !editMode && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
-      onClick();
+      handleItemClick();
     }
   };
 
@@ -35,7 +58,7 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
   const baseRatioNum = getAspectRatioNumeric(item.type);
   const jitter = item.type === 'book' ? calculateJitter(item.id, 0.07) : 0;
   const adjustedRatioNum = baseRatioNum * (1 + jitter);
-  const isClickable = onClick && !editMode;
+  const isClickable = handleItemClick && !editMode;
   const hasNotes = Boolean(item.notes);
 
   const badgeColor = {
@@ -111,11 +134,11 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
         </div>
 
         {/* Delete Button - Always visible in edit mode for better discoverability */}
-        {editMode && onDelete && (
+        {editMode && handleDelete && (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onDelete();
+              handleDelete();
             }}
             onPointerDown={e => e.stopPropagation()}
             className="absolute top-1 left-1 sm:top-2 sm:left-2 p-1.5 sm:p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
@@ -133,11 +156,11 @@ export function ItemCard({ item, onClick, editMode, onDelete, onEditNote }: Item
         )}
 
         {/* Edit Note Button (edit mode) - Always visible for better discoverability */}
-        {editMode && onEditNote && (
+        {editMode && handleEditNote && (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onEditNote();
+              handleEditNote();
             }}
             onPointerDown={e => e.stopPropagation()}
             className={`absolute bottom-1 left-1 sm:bottom-2 sm:left-2 flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium transition-colors ${
