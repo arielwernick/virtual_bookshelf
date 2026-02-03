@@ -114,7 +114,6 @@ describe('POST /api/items', () => {
         image_url: 'https://example.com/episode.jpg',
         external_url: 'https://open.spotify.com/episode/abc123',
         notes: null,
-        rating: null,
         order_index: 0,
         created_at: new Date(),
         updated_at: new Date(),
@@ -137,83 +136,6 @@ describe('POST /api/items', () => {
       expect(data.success).toBe(true);
       expect(data.data.type).toBe('podcast_episode');
       expect(data.data.title).toBe('Episode 42: The Answer');
-    });
-
-    it('accepts video as valid item type', async () => {
-      vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
-      vi.mocked(getNextOrderIndex).mockResolvedValue(0);
-      
-      const mockItem = {
-        id: 'video-1',
-        shelf_id: 'shelf-1',
-        user_id: 'user-1',
-        type: 'video' as const,
-        title: 'How to Code in TypeScript',
-        creator: 'Programming Channel',
-        image_url: 'https://example.com/video-thumb.jpg',
-        external_url: 'https://youtube.com/watch?v=abc123',
-        notes: null,
-        rating: null,
-        order_index: 0,
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
-      vi.mocked(createItem).mockResolvedValue(mockItem);
-
-      const req = createRequest({
-        shelf_id: 'shelf-1',
-        type: 'video',
-        title: 'How to Code in TypeScript',
-        creator: 'Programming Channel',
-        image_url: 'https://example.com/video-thumb.jpg',
-        external_url: 'https://youtube.com/watch?v=abc123',
-      });
-
-      const res = await POST(req);
-      const data = await res.json();
-
-      expect(res.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.data.type).toBe('video');
-      expect(data.data.title).toBe('How to Code in TypeScript');
-    });
-
-    it('accepts link as valid item type', async () => {
-      vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
-      vi.mocked(getNextOrderIndex).mockResolvedValue(0);
-      
-      const mockItem = {
-        id: 'link-1',
-        shelf_id: 'shelf-1',
-        user_id: 'user-1',
-        type: 'link' as const,
-        title: 'Great Article on Web Development',
-        creator: 'Tech Blog',
-        image_url: null,
-        external_url: 'https://example.com/article',
-        notes: null,
-        rating: null,
-        order_index: 0,
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
-      vi.mocked(createItem).mockResolvedValue(mockItem);
-
-      const req = createRequest({
-        shelf_id: 'shelf-1',
-        type: 'link',
-        title: 'Great Article on Web Development',
-        creator: 'Tech Blog',
-        external_url: 'https://example.com/article',
-      });
-
-      const res = await POST(req);
-      const data = await res.json();
-
-      expect(res.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.data.type).toBe('link');
-      expect(data.data.title).toBe('Great Article on Web Development');
     });
 
     it('returns 400 for empty title', async () => {

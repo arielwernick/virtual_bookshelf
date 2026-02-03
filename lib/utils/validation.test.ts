@@ -220,25 +220,10 @@ describe('validateItemType', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('accepts "podcast_episode" type', () => {
-    const result = validateItemType('podcast_episode');
-    expect(result.valid).toBe(true);
-  });
-
-  it('accepts "video" type', () => {
-    const result = validateItemType('video');
-    expect(result.valid).toBe(true);
-  });
-
-  it('accepts "link" type', () => {
-    const result = validateItemType('link');
-    expect(result.valid).toBe(true);
-  });
-
   it('rejects invalid type', () => {
     const result = validateItemType('movie');
     expect(result.valid).toBe(false);
-    expect(result.error).toBe('Type must be one of: book, podcast, music, podcast_episode, video, link');
+    expect(result.error).toBe('Type must be one of: book, podcast, music, podcast_episode');
   });
 
   it('rejects empty type', () => {

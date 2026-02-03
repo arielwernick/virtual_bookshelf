@@ -71,7 +71,7 @@ export function validatePassword(password: string): { valid: boolean; error?: st
  * Validate item type
  */
 export function validateItemType(type: string): { valid: boolean; error?: string } {
-  const validTypes: ItemType[] = ['book', 'podcast', 'music', 'podcast_episode', 'video', 'link'];
+  const validTypes: ItemType[] = ['book', 'podcast', 'music', 'podcast_episode'];
   
   if (!validTypes.includes(type as ItemType)) {
     return { valid: false, error: `Type must be one of: ${validTypes.join(', ')}` };
