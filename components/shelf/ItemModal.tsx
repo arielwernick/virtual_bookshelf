@@ -123,20 +123,20 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
                 {/* Notes Section */}
                 {item.notes && (
                   <div className="mb-4" data-testid="notes-section">
-                    <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          strokeWidth={1.5}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                         />
                       </svg>
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Notes</span>
+                      <span className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Note</span>
                     </div>
-                    <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-800 rounded-lg p-3 sm:p-4">
-                      <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 whitespace-pre-wrap italic" data-testid="notes-content">
-                        &ldquo;{item.notes}&rdquo;
+                    <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-lg p-3 sm:p-4">
+                      <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed" data-testid="notes-content">
+                        {item.notes}
                       </p>
                     </div>
                   </div>
@@ -232,23 +232,23 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
                   </div>
                 )}
 
-                {/* Notes Section - Display directly without collapse */}
+                {/* Notes Section - Clean Notion-style display */}
                 {item.notes && (
                   <div className="mb-4 sm:mb-6" data-testid="notes-section">
-                    <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          strokeWidth={1.5}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                         />
                       </svg>
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Notes</span>
+                      <span className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Note</span>
                     </div>
-                    <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-800 rounded-lg p-3 sm:p-4">
-                      <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 whitespace-pre-wrap italic" data-testid="notes-content">
-                        &ldquo;{item.notes}&rdquo;
+                    <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-lg p-3 sm:p-4">
+                      <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed" data-testid="notes-content">
+                        {item.notes}
                       </p>
                     </div>
                   </div>
