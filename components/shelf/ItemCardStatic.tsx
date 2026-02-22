@@ -98,11 +98,14 @@ export function ItemCardStatic({ item, ...props }: ItemCardStaticProps) {
           </div>
         )}
 
-        {/* Note preview */}
+        {/* Note preview - clean, minimal styling */}
         {hasNotes && (
-          <div className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-gray-100 dark:border-gray-800">
-            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 italic line-clamp-2">
-              &ldquo;{item.notes}&rdquo;
+          <div className="flex items-start gap-1.5 mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-gray-100 dark:border-gray-800">
+            <svg className="w-3 h-3 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+              {item.notes}
             </p>
           </div>
         )}
