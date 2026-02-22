@@ -5,7 +5,7 @@ import { Modal } from '@/components/ui/Modal';
 import { StarInput } from '@/components/ui/StarInput';
 
 const MAX_NOTES_LENGTH = 500;
-const CHAR_COUNT_THRESHOLD = 0.8;
+const CHAR_COUNT_DISPLAY_THRESHOLD = 0.8;
 
 interface NoteEditorModalProps {
   isOpen: boolean;
@@ -82,7 +82,7 @@ export function NoteEditorModal({
     }
   };
 
-  const showCharCount = notes.length >= MAX_NOTES_LENGTH * CHAR_COUNT_THRESHOLD;
+  const showCharCount = notes.length >= MAX_NOTES_LENGTH * CHAR_COUNT_DISPLAY_THRESHOLD;
   const isAtLimit = notes.length >= MAX_NOTES_LENGTH;
 
   return (
