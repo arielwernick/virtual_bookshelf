@@ -3,6 +3,58 @@ import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems } fro
 import { generateShortToken } from '../utils/token';
 
 // ============================================================================
+// DYNAMIC UPDATE HELPER
+// ============================================================================
+
+interface DynamicUpdateResult {
+  query: string;
+  values: unknown[];
+}
+
+/**
+ * Build a parameterized UPDATE query from a partial data object.
+ *
+ * Only fields present in `allowedFields` whose values are not `undefined`
+ * are included – every value gets its own positional placeholder ($1, $2, …)
+ * so the query stays safe from injection.
+ *
+ * Always appends `updated_at = NOW()` and puts the row id last.
+ */
+function buildDynamicUpdate<T extends object>(
+  table: string,
+  id: string,
+  data: T,
+  allowedFields: readonly string[],
+): DynamicUpdateResult {
+  const record = data as Record<string, unknown>;
+  const setClauses: string[] = [];
+  const values: unknown[] = [];
+  let paramIndex = 1;
+
+  for (const field of allowedFields) {
+    if (record[field] !== undefined) {
+      setClauses.push(`${field} = $${paramIndex++}`);
+      values.push(record[field]);
+    }
+  }
+
+  if (setClauses.length === 0) {
+    throw new Error('No fields to update');
+  }
+
+  setClauses.push('updated_at = NOW()');
+  values.push(id);
+
+  const query = `UPDATE ${table} SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+  return { query, values };
+}
+
+/** Execute a parameterized query string (as opposed to a tagged template). */
+function execParameterized(query: string, values: unknown[]): Promise<unknown[]> {
+  return (sql as unknown as (q: string, p: unknown[]) => Promise<unknown[]>)(query, values);
+}
+
+// ============================================================================
 // USER QUERIES
 // ============================================================================
 
@@ -304,46 +356,18 @@ export async function getShelvesWithItems(
   }));
 }
 
+const SHELF_UPDATABLE_FIELDS = ['name', 'description', 'is_public'] as const;
+
 /**
- * Update shelf
+ * Update shelf with a single atomic query.
+ * Only the supplied fields are written; all others are left untouched.
  */
 export async function updateShelf(
   shelfId: string,
-  data: Partial<Shelf>
+  data: Partial<Shelf>,
 ): Promise<Shelf> {
-  const setClauses: string[] = [];
-  const values: Record<string, string | boolean | null> = {};
-
-  if (data.name !== undefined) {
-    setClauses.push('name = $1');
-    values.name = data.name;
-  }
-  if (data.description !== undefined) {
-    setClauses.push('description = $2');
-    values.description = data.description;
-  }
-  if (data.is_public !== undefined) {
-    setClauses.push('is_public = $3');
-    values.is_public = data.is_public;
-  }
-
-  if (setClauses.length === 0) {
-    throw new Error('No fields to update');
-  }
-
-  // Simple approach: update one field at a time
-  let result: Shelf[] = [];
-
-  if (data.name !== undefined) {
-    result = await sql`UPDATE shelves SET name = ${data.name} WHERE id = ${shelfId} RETURNING *` as Shelf[];
-  }
-  if (data.description !== undefined) {
-    result = await sql`UPDATE shelves SET description = ${data.description} WHERE id = ${shelfId} RETURNING *` as Shelf[];
-  }
-  if (data.is_public !== undefined) {
-    result = await sql`UPDATE shelves SET is_public = ${data.is_public} WHERE id = ${shelfId} RETURNING *` as Shelf[];
-  }
-
+  const { query, values } = buildDynamicUpdate('shelves', shelfId, data, SHELF_UPDATABLE_FIELDS);
+  const result = await execParameterized(query, values);
   return result[0] as Shelf;
 }
 
@@ -427,34 +451,17 @@ export async function getItemById(itemId: string): Promise<Item | null> {
   return result.length > 0 ? (result[0] as Item) : null;
 }
 
+const ITEM_UPDATABLE_FIELDS = [
+  'title', 'creator', 'image_url', 'external_url', 'notes', 'rating', 'order_index',
+] as const;
+
 /**
- * Update an item
+ * Update an item with a single atomic query.
+ * Only the supplied fields are written; all others are left untouched.
  */
 export async function updateItem(itemId: string, itemData: UpdateItemData): Promise<Item> {
-  let result: Item[] = [];
-
-  if (itemData.title !== undefined) {
-    result = await sql`UPDATE items SET title = ${itemData.title} WHERE id = ${itemId} RETURNING *` as Item[];
-  }
-  if (itemData.creator !== undefined) {
-    result = await sql`UPDATE items SET creator = ${itemData.creator} WHERE id = ${itemId} RETURNING *` as Item[];
-  }
-  if (itemData.image_url !== undefined) {
-    result = await sql`UPDATE items SET image_url = ${itemData.image_url} WHERE id = ${itemId} RETURNING *` as Item[];
-  }
-  if (itemData.external_url !== undefined) {
-    result = await sql`UPDATE items SET external_url = ${itemData.external_url} WHERE id = ${itemId} RETURNING *` as Item[];
-  }
-  if (itemData.notes !== undefined) {
-    result = await sql`UPDATE items SET notes = ${itemData.notes} WHERE id = ${itemId} RETURNING *` as Item[];
-  }
-  if (itemData.rating !== undefined) {
-    result = await sql`UPDATE items SET rating = ${itemData.rating} WHERE id = ${itemId} RETURNING *` as Item[];
-  }
-  if (itemData.order_index !== undefined) {
-    result = await sql`UPDATE items SET order_index = ${itemData.order_index} WHERE id = ${itemId} RETURNING *` as Item[];
-  }
-
+  const { query, values } = buildDynamicUpdate('items', itemId, itemData, ITEM_UPDATABLE_FIELDS);
+  const result = await execParameterized(query, values);
   return result[0] as Item;
 }
 
