@@ -127,6 +127,13 @@ export async function PATCH(
       updateData.order_index = body.order_index;
     }
 
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No fields to update' },
+        { status: 400 }
+      );
+    }
+
     // Update item
     const updatedItem = await updateItem(id, updateData);
 
