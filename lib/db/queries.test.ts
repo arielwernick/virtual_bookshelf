@@ -7,9 +7,10 @@ import { Shelf } from '../types/shelf';
 // Mock the database client BEFORE importing queries
 vi.mock('./client', () => ({
   sql: vi.fn(),
+  sqlQuery: vi.fn(),
 }));
 
-import { sql } from './client';
+import { sql, sqlQuery } from './client';
 import {
   // User queries
   createUser,
@@ -234,6 +235,7 @@ describe('User Queries', () => {
 describe('Shelf Queries', () => {
   beforeEach(() => {
     vi.mocked(sql).mockReset();
+    vi.mocked(sqlQuery).mockReset();
   });
 
   describe('createShelf', () => {
@@ -440,13 +442,13 @@ describe('Shelf Queries', () => {
   describe('updateShelf', () => {
     it('updates shelf name with a single query', async () => {
       const mockShelf = { id: 'shelf-1', name: 'Updated Name' };
-      vi.mocked(sql).mockResolvedValueOnce([mockShelf]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockShelf]);
 
       const result = await updateShelf('shelf-1', { name: 'Updated Name' });
 
       expect(result.name).toBe('Updated Name');
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE shelves SET name = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
         ['Updated Name', 'shelf-1']
       );
@@ -454,13 +456,13 @@ describe('Shelf Queries', () => {
 
     it('updates shelf description with a single query', async () => {
       const mockShelf = { id: 'shelf-1', description: 'New description' };
-      vi.mocked(sql).mockResolvedValueOnce([mockShelf]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockShelf]);
 
       const result = await updateShelf('shelf-1', { description: 'New description' });
 
       expect(result.description).toBe('New description');
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE shelves SET description = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
         ['New description', 'shelf-1']
       );
@@ -468,13 +470,13 @@ describe('Shelf Queries', () => {
 
     it('updates shelf visibility with a single query', async () => {
       const mockShelf = { id: 'shelf-1', is_public: true };
-      vi.mocked(sql).mockResolvedValueOnce([mockShelf]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockShelf]);
 
       const result = await updateShelf('shelf-1', { is_public: true });
 
       expect(result.is_public).toBe(true);
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE shelves SET is_public = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
         [true, 'shelf-1']
       );
@@ -482,7 +484,7 @@ describe('Shelf Queries', () => {
 
     it('updates multiple shelf fields in a single query', async () => {
       const mockShelf = { id: 'shelf-1', name: 'New Name', description: 'New desc', is_public: true };
-      vi.mocked(sql).mockResolvedValueOnce([mockShelf]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockShelf]);
 
       const result = await updateShelf('shelf-1', {
         name: 'New Name',
@@ -491,8 +493,8 @@ describe('Shelf Queries', () => {
       });
 
       expect(result).toEqual(mockShelf);
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE shelves SET name = $1, description = $2, is_public = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
         ['New Name', 'New desc', true, 'shelf-1']
       );
@@ -500,12 +502,12 @@ describe('Shelf Queries', () => {
 
     it('updates name and description together', async () => {
       const mockShelf = { id: 'shelf-1', name: 'Name', description: 'Desc' };
-      vi.mocked(sql).mockResolvedValueOnce([mockShelf]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockShelf]);
 
       await updateShelf('shelf-1', { name: 'Name', description: 'Desc' });
 
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE shelves SET name = $1, description = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
         ['Name', 'Desc', 'shelf-1']
       );
@@ -513,12 +515,12 @@ describe('Shelf Queries', () => {
 
     it('allows setting description to null', async () => {
       const mockShelf = { id: 'shelf-1', description: null };
-      vi.mocked(sql).mockResolvedValueOnce([mockShelf]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockShelf]);
 
       await updateShelf('shelf-1', { description: null } as Partial<Shelf>);
 
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE shelves SET description = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
         [null, 'shelf-1']
       );
@@ -555,6 +557,7 @@ describe('Shelf Queries', () => {
 describe('Item Queries', () => {
   beforeEach(() => {
     vi.mocked(sql).mockReset();
+    vi.mocked(sqlQuery).mockReset();
   });
 
   describe('createItem', () => {
@@ -667,13 +670,13 @@ describe('Item Queries', () => {
   describe('updateItem', () => {
     it('updates item title with a single query', async () => {
       const mockItem = { id: 'item-1', title: 'New Title' };
-      vi.mocked(sql).mockResolvedValueOnce([mockItem]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockItem]);
 
       const result = await updateItem('item-1', { title: 'New Title' });
 
       expect(result.title).toBe('New Title');
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE items SET title = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
         ['New Title', 'item-1']
       );
@@ -681,13 +684,13 @@ describe('Item Queries', () => {
 
     it('updates item creator with a single query', async () => {
       const mockItem = { id: 'item-1', creator: 'New Author' };
-      vi.mocked(sql).mockResolvedValueOnce([mockItem]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockItem]);
 
       const result = await updateItem('item-1', { creator: 'New Author' });
 
       expect(result.creator).toBe('New Author');
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE items SET creator = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
         ['New Author', 'item-1']
       );
@@ -695,13 +698,13 @@ describe('Item Queries', () => {
 
     it('updates item notes with a single query', async () => {
       const mockItem = { id: 'item-1', notes: 'Updated notes' };
-      vi.mocked(sql).mockResolvedValueOnce([mockItem]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockItem]);
 
       const result = await updateItem('item-1', { notes: 'Updated notes' });
 
       expect(result.notes).toBe('Updated notes');
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE items SET notes = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
         ['Updated notes', 'item-1']
       );
@@ -709,13 +712,13 @@ describe('Item Queries', () => {
 
     it('updates item order_index with a single query', async () => {
       const mockItem = { id: 'item-1', order_index: 5 };
-      vi.mocked(sql).mockResolvedValueOnce([mockItem]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockItem]);
 
       const result = await updateItem('item-1', { order_index: 5 });
 
       expect(result.order_index).toBe(5);
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE items SET order_index = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
         [5, 'item-1']
       );
@@ -723,7 +726,7 @@ describe('Item Queries', () => {
 
     it('updates multiple item fields in a single query', async () => {
       const mockItem = { id: 'item-1', title: 'New Title', creator: 'New Author', notes: 'Some notes' };
-      vi.mocked(sql).mockResolvedValueOnce([mockItem]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockItem]);
 
       const result = await updateItem('item-1', {
         title: 'New Title',
@@ -732,8 +735,8 @@ describe('Item Queries', () => {
       });
 
       expect(result).toEqual(mockItem);
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE items SET title = $1, creator = $2, notes = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
         ['New Title', 'New Author', 'Some notes', 'item-1']
       );
@@ -741,7 +744,7 @@ describe('Item Queries', () => {
 
     it('updates all item fields in a single query', async () => {
       const mockItem = { id: 'item-1', title: 'T', creator: 'C', image_url: 'img', external_url: 'ext', notes: 'N', rating: 4, order_index: 2 };
-      vi.mocked(sql).mockResolvedValueOnce([mockItem]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockItem]);
 
       await updateItem('item-1', {
         title: 'T',
@@ -753,8 +756,8 @@ describe('Item Queries', () => {
         order_index: 2,
       });
 
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE items SET title = $1, creator = $2, image_url = $3, external_url = $4, notes = $5, rating = $6, order_index = $7, updated_at = NOW() WHERE id = $8 RETURNING *',
         ['T', 'C', 'img', 'ext', 'N', 4, 2, 'item-1']
       );
@@ -762,12 +765,12 @@ describe('Item Queries', () => {
 
     it('allows setting nullable fields to null', async () => {
       const mockItem = { id: 'item-1', notes: null, image_url: null };
-      vi.mocked(sql).mockResolvedValueOnce([mockItem]);
+      vi.mocked(sqlQuery).mockResolvedValueOnce([mockItem]);
 
       await updateItem('item-1', { notes: undefined, image_url: 'new-url' });
 
-      expect(sql).toHaveBeenCalledTimes(1);
-      expect(sql).toHaveBeenCalledWith(
+      expect(sqlQuery).toHaveBeenCalledTimes(1);
+      expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE items SET image_url = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
         ['new-url', 'item-1']
       );
