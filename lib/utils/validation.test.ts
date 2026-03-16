@@ -238,7 +238,7 @@ describe('validateItemType', () => {
   it('rejects invalid type', () => {
     const result = validateItemType('movie');
     expect(result.valid).toBe(false);
-    expect(result.error).toBe('Type must be one of: book, podcast, music, podcast_episode, video, link');
+    expect(result.error).toBe('Type must be one of: book, podcast, music, podcast_episode, video, link, stock');
   });
 
   it('rejects empty type', () => {
