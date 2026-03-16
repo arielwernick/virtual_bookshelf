@@ -1,4 +1,4 @@
-import { sql } from './client';
+import { sql, sqlQuery } from './client';
 import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
 
@@ -51,7 +51,7 @@ function buildDynamicUpdate<T extends object>(
 
 /** Execute a parameterized query string (as opposed to a tagged template). */
 function execParameterized(query: string, values: unknown[]): Promise<unknown[]> {
-  return (sql as unknown as (q: string, p: unknown[]) => Promise<unknown[]>)(query, values);
+  return sqlQuery(query, values);
 }
 
 // ============================================================================

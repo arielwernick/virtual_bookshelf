@@ -25,6 +25,13 @@ export const sql = ((strings: TemplateStringsArray, ...values: unknown[]) => {
   return getSql()(strings, ...values);
 }) as NeonQueryFunction<false, false>;
 
+// Parameterized query using sql.query() — required by newer Neon SDK versions
+// that no longer support calling the function as sql("SELECT $1", [value])
+export function sqlQuery(queryString: string, values?: unknown[]): Promise<unknown[]> {
+  const fn = getSql() as unknown as { query: (q: string, p?: unknown[]) => Promise<unknown[]> };
+  return fn.query(queryString, values);
+}
+
 // Helper function to test database connection
 export async function testConnection() {
   try {
