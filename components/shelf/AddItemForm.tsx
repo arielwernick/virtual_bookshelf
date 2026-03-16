@@ -10,6 +10,7 @@ import { EpisodeBrowser } from './forms/EpisodeBrowser';
 import { ManualEntryForm } from './forms/ManualEntryForm';
 import { VideoUrlForm } from './forms/VideoUrlForm';
 import { LinkUrlForm } from './forms/LinkUrlForm';
+import { StockTickerForm } from './forms/StockTickerForm';
 
 interface AddItemFormProps {
   shelfId: string;
@@ -166,6 +167,36 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
     }
   };
 
+  const handleAddStock = async (ticker: string, companyName: string, logoUrl: string | null) => {
+    setAdding(true);
+    try {
+      const res = await fetch('/api/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shelf_id: shelfId,
+          type: 'stock',
+          title: companyName,
+          creator: ticker,
+          external_url: `https://finance.yahoo.com/quote/${ticker}`,
+          ...(logoUrl ? { image_url: logoUrl } : {}),
+        }),
+      });
+
+      if (res.ok) {
+        onItemAdded();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to add stock');
+      }
+    } catch (error) {
+      console.error('Add stock error:', error);
+      alert('Failed to add stock');
+    } finally {
+      setAdding(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Add Item</h2>
@@ -229,9 +260,26 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
         >
           Link
         </button>
+
+        <button
+          onClick={() => setItemType('stock')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            itemType === 'stock'
+              ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+          }`}
+        >
+          Stock
+        </button>
       </div>
 
-      {/* Mode Toggle */}
+      {/* Stock flow is self-contained — no search/manual toggle needed */}
+      {itemType === 'stock' ? (
+        <StockTickerForm onAdd={(ticker, name, logoUrl) => handleAddStock(ticker, name, logoUrl)} adding={adding} />
+      ) : null}
+
+      {/* Mode Toggle + search/manual panel (hidden for stock) */}
+      {itemType !== 'stock' && (<>
       <div className="mb-6 flex justify-between items-center">
         <button
           onClick={() => manual.setManualMode(!manual.manualMode)}
@@ -314,6 +362,7 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
           adding={manual.adding}
         />
       )}
+      </>)}
     </div>
   );
 }

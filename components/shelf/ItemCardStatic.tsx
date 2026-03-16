@@ -23,6 +23,9 @@ export function ItemCardStatic({ item, ...props }: ItemCardStaticProps) {
   const baseRatioStr = getAspectRatio(item.type);
   const baseRatioNum = getAspectRatioNumeric(item.type);
   const jitter = item.type === 'book' ? calculateJitter(item.id, 0.07) : 0;
+  const effectiveImageUrl = item.type === 'stock'
+    ? `https://financialmodelingprep.com/image-stock/${encodeURIComponent(item.creator)}.png`
+    : item.image_url;
   const adjustedRatioNum = baseRatioNum * (1 + jitter);
   const hasNotes = Boolean(item.notes);
 
@@ -33,6 +36,7 @@ export function ItemCardStatic({ item, ...props }: ItemCardStaticProps) {
     podcast_episode: 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200',
     video: 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200',
     link: 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200',
+    stock: 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200',
   };
 
   return (
@@ -44,16 +48,17 @@ export function ItemCardStatic({ item, ...props }: ItemCardStaticProps) {
     >
       {/* Image Container */}
       <div
-        className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700"
+        className={`relative ${item.type === 'stock' ? 'bg-white dark:bg-gray-100' : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700'}`}
         style={{ aspectRatio: adjustedRatioNum || baseRatioStr }}
       >
         {/* Item Image - using standard img for SSR compatibility */}
-        {item.image_url && (
+        {effectiveImageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={item.image_url}
+            src={effectiveImageUrl}
             alt={item.title}
-            className="w-full h-full object-cover object-center"
+            className={`w-full h-full object-center ${item.type === 'stock' ? 'object-contain' : 'object-cover'}`}
+            style={item.type === 'stock' ? { padding: '8%' } : undefined}
             loading="lazy"
           />
         )}

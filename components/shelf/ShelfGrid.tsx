@@ -277,15 +277,28 @@ export function ShelfGrid({ items, onItemClick, editMode = false, onDeleteItem, 
     podcast: items.filter((i) => i.type === 'podcast' || i.type === 'podcast_episode').length,
     music: items.filter((i) => i.type === 'music').length,
     video: items.filter((i) => i.type === 'video').length,
+    link: items.filter((i) => i.type === 'link').length,
+    stock: items.filter((i) => i.type === 'stock').length,
+  };
+
+  const activeColor: Record<string, string> = {
+    all:     'border-gray-900 dark:border-gray-100 text-gray-900 dark:text-gray-100',
+    book:    'border-blue-600 text-blue-600',
+    podcast: 'border-purple-600 text-purple-600',
+    music:   'border-green-600 text-green-600',
+    video:   'border-red-600 text-red-600',
+    link:    'border-orange-500 text-orange-500',
+    stock:   'border-purple-600 text-purple-600',
   };
 
   const filterButton = (type: ItemType | 'all', label: string, count: number) => (
     <button
+      key={type}
       onClick={() => setSelectedType(type)}
       className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
         selectedType === type
-          ? `${type === 'all' ? 'border-gray-900 text-gray-900' : type === 'book' ? 'border-blue-600 text-blue-600' : type === 'podcast' ? 'border-purple-600 text-purple-600' : type === 'video' ? 'border-red-600 text-red-600' : 'border-green-600 text-green-600'}`
-          : 'border-transparent text-gray-500 hover:text-gray-700'
+          ? activeColor[type]
+          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
       }`}
     >
       {label} ({count})
@@ -301,12 +314,14 @@ export function ShelfGrid({ items, onItemClick, editMode = false, onDeleteItem, 
     >
       <div>
         {/* Filter tabs */}
-        <div className="flex gap-2 mb-6 border-b border-gray-200">
+        <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
           {filterButton('all', 'All', counts.all)}
           {filterButton('book', 'Books', counts.book)}
           {filterButton('podcast', 'Podcasts', counts.podcast)}
           {filterButton('music', 'Music', counts.music)}
           {filterButton('video', 'Videos', counts.video)}
+          {counts.link > 0 && filterButton('link', 'Links', counts.link)}
+          {counts.stock > 0 && filterButton('stock', 'Stocks', counts.stock)}
         </div>
 
         {/* Shelves or empty state */}

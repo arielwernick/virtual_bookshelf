@@ -17,6 +17,7 @@ const SCHEMA_TYPE_MAP: Record<ItemType, SchemaItemType> = {
   music: 'MusicRecording',
   video: 'VideoObject',
   link: 'Linkage',
+  stock: 'Linkage',
 };
 
 const CREATOR_PROPERTY_MAP: Record<SchemaItemType, string> = {

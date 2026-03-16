@@ -7,6 +7,7 @@ import { extractVideoId } from '@/lib/api/youtube';
 import { StarDisplay } from '@/components/ui/StarDisplay';
 import { getAspectRatio, getAspectRatioNumeric } from '@/lib/constants/aspectRatios';
 import { getImageFitMode, isAmazonHostedImage } from '@/lib/utils/imageUtils';
+import { StockDrawer } from '@/components/shelf/StockDrawer';
 
 interface ItemModalProps {
   item: Item | null;
@@ -80,6 +81,7 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
   // Check if this is a video item and extract video ID for embedding
   const isVideo = item.type === 'video';
   const videoId = isVideo && item.external_url ? extractVideoId(item.external_url) : null;
+  const isStock = item.type === 'stock';
 
   return (
     <div
@@ -111,7 +113,37 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
 
         {/* Content */}
         <div className="p-4 sm:p-6">
-          {isVideo && videoId ? (
+          {isStock ? (
+            /* Stock Layout - price strip, chart, news */
+            <div className="space-y-2">
+              {/* Header: logo + name + ticker */}
+              <div className="flex items-center gap-4 pb-2">
+                <div className="w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden bg-white border border-gray-100 dark:border-gray-700 flex items-center justify-center">
+                  <Image
+                    src={`https://financialmodelingprep.com/image-stock/${item.creator}.png`}
+                    alt={item.title}
+                    width={56}
+                    height={56}
+                    className="w-full h-full object-contain"
+                    style={{ padding: '8%' }}
+                    unoptimized
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
+                <div>
+                  <span className="inline-block px-2.5 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200 mb-1">
+                    stock
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                    {item.title}
+                  </h3>
+                  <p className="text-base text-gray-500 dark:text-gray-400">{item.creator}</p>
+                </div>
+              </div>
+              {item.notes && <NoteSection notes={item.notes} />}
+              <StockDrawer item={item} />
+            </div>
+          ) : isVideo && videoId ? (
             /* Video Layout - Full width with embedded player */
             <div className="space-y-4">
               {/* Embedded YouTube Player */}

@@ -54,6 +54,8 @@ function testTypeDiscrimination() {
         return 'Video';
       case 'link':
         return 'Link';
+      case 'stock':
+        return 'Stock';
       default:
         // TypeScript should ensure this is never reached
         const exhaustiveCheck: never = type;

@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS shelves (
 -- IMPORTANT: If you have an existing database, you MUST run the migrations:
 -- See: lib/db/MIGRATION_002_top5_shelf.sql
 -- See: lib/db/MIGRATION_003_podcast_episodes.sql
+-- See: lib/db/MIGRATION_006_stock_type.sql
 -- ============================================================================
 
 -- Create indexes for shelves
@@ -53,7 +54,7 @@ CREATE TABLE IF NOT EXISTS items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shelf_id UUID NOT NULL REFERENCES shelves(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  type VARCHAR(20) NOT NULL CHECK (type IN ('book', 'podcast', 'music', 'podcast_episode', 'video', 'link')),
+  type VARCHAR(20) NOT NULL CHECK (type IN ('book', 'podcast', 'music', 'podcast_episode', 'video', 'link', 'stock')),
   title VARCHAR(255) NOT NULL,
   creator VARCHAR(255) NOT NULL,
   image_url TEXT,
