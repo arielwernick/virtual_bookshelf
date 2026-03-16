@@ -167,7 +167,7 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
     }
   };
 
-  const handleAddStock = async (ticker: string, companyName: string) => {
+  const handleAddStock = async (ticker: string, companyName: string, logoUrl: string | null) => {
     setAdding(true);
     try {
       const res = await fetch('/api/items', {
@@ -179,6 +179,7 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
           title: companyName,
           creator: ticker,
           external_url: `https://finance.yahoo.com/quote/${ticker}`,
+          ...(logoUrl ? { image_url: logoUrl } : {}),
         }),
       });
 
@@ -274,7 +275,7 @@ export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'on
 
       {/* Stock flow is self-contained — no search/manual toggle needed */}
       {itemType === 'stock' ? (
-        <StockTickerForm onAdd={handleAddStock} adding={adding} />
+        <StockTickerForm onAdd={(ticker, name, logoUrl) => handleAddStock(ticker, name, logoUrl)} adding={adding} />
       ) : null}
 
       {/* Mode Toggle + search/manual panel (hidden for stock) */}

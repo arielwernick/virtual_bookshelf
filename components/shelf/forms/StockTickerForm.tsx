@@ -1,15 +1,39 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
+
+function LogoImage({ url, name }: { url: string; name: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <Image
+        src={url}
+        alt={name}
+        width={40}
+        height={40}
+        className="w-full h-full object-contain p-1"
+        unoptimized
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+}
 
 interface StockTickerFormProps {
-  onAdd: (ticker: string, companyName: string) => Promise<void>;
+  onAdd: (ticker: string, companyName: string, logoUrl: string | null) => Promise<void>;
   adding: boolean;
 }
 
 export function StockTickerForm({ onAdd, adding }: StockTickerFormProps) {
   const [ticker, setTicker] = useState('');
-  const [preview, setPreview] = useState<{ name: string; price: number; currency: string } | null>(null);
+  const [preview, setPreview] = useState<{
+    name: string;
+    price: number;
+    currency: string;
+    logoUrl: string | null;
+  } | null>(null);
   const [looking, setLooking] = useState(false);
   const [error, setError] = useState('');
 
@@ -23,7 +47,12 @@ export function StockTickerForm({ onAdd, adding }: StockTickerFormProps) {
       const res = await fetch(`/api/finance/quote?symbol=${encodeURIComponent(sym)}`);
       const data = await res.json();
       if (data.success) {
-        setPreview({ name: data.data.name, price: data.data.price, currency: data.data.currency });
+        setPreview({
+          name: data.data.name,
+          price: data.data.price,
+          currency: data.data.currency,
+          logoUrl: data.data.logoUrl ?? null,
+        });
       } else {
         setError(`Could not find ticker "${sym}"`);
       }
@@ -36,7 +65,7 @@ export function StockTickerForm({ onAdd, adding }: StockTickerFormProps) {
 
   const handleAdd = async () => {
     const sym = ticker.trim().toUpperCase();
-    await onAdd(sym, preview?.name ?? sym);
+    await onAdd(sym, preview?.name ?? sym, preview?.logoUrl ?? null);
     setTicker('');
     setPreview(null);
   };
@@ -68,16 +97,21 @@ export function StockTickerForm({ onAdd, adding }: StockTickerFormProps) {
 
       {preview && (
         <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
-          <div>
-            <p className="font-medium text-gray-900 dark:text-gray-100">{preview.name}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {ticker.trim().toUpperCase()} · {preview.price.toFixed(2)} {preview.currency}
-            </p>
+          <div className="flex items-center gap-3">
+            {preview.logoUrl && (
+              <LogoImage url={preview.logoUrl} name={preview.name} />
+            )}
+            <div>
+              <p className="font-medium text-gray-900 dark:text-gray-100">{preview.name}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {ticker.trim().toUpperCase()} · {preview.price.toFixed(2)} {preview.currency}
+              </p>
+            </div>
           </div>
           <button
             onClick={handleAdd}
             disabled={adding}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm disabled:opacity-50"
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm disabled:opacity-50 ml-3"
           >
             {adding ? 'Adding…' : 'Add Stock'}
           </button>

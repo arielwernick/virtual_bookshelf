@@ -16,6 +16,17 @@ function getRedis(): Redis | null {
   return _redis;
 }
 
+function logoUrlFromWebsite(website: string | undefined): string | null {
+  if (!website) return null;
+  try {
+    const domain = new URL(website).hostname.replace(/^www\./, '');
+    // Fallback: Google favicon at high quality — used only if ticker-based lookup fails
+    return `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=128`;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get('symbol')?.toUpperCase();
@@ -39,19 +50,38 @@ export async function GET(request: Request) {
   }
 
   try {
-    const quote = await yahooFinance.quote(symbol, {
-      fields: ['regularMarketPrice', 'regularMarketChange', 'regularMarketChangePercent',
-               'fiftyTwoWeekLow', 'fiftyTwoWeekHigh', 'shortName', 'longName', 'currency'],
-    }) as {
-      longName?: string;
-      shortName?: string;
-      regularMarketPrice?: number;
-      regularMarketChange?: number;
-      regularMarketChangePercent?: number;
-      fiftyTwoWeekLow?: number;
-      fiftyTwoWeekHigh?: number;
-      currency?: string;
-    };
+    // Fetch quote and company profile in parallel
+    const [quote, summary] = await Promise.all([
+      yahooFinance.quote(symbol, {
+        fields: ['regularMarketPrice', 'regularMarketChange', 'regularMarketChangePercent',
+                 'fiftyTwoWeekLow', 'fiftyTwoWeekHigh', 'shortName', 'longName', 'currency'],
+      }) as Promise<{
+        longName?: string;
+        shortName?: string;
+        regularMarketPrice?: number;
+        regularMarketChange?: number;
+        regularMarketChangePercent?: number;
+        fiftyTwoWeekLow?: number;
+        fiftyTwoWeekHigh?: number;
+        currency?: string;
+      }>,
+      yahooFinance.quoteSummary(
+        symbol,
+        { modules: ['assetProfile'] },
+        { validateResult: false }
+      ).catch((err) => {
+        logger.warn(`quoteSummary failed for ${symbol}`, { error: String(err) });
+        return null;
+      }),
+    ]);
+
+    // Primary: Financial Modeling Prep has high-quality ticker-based logos, no API key needed
+    const fmpLogoUrl = `https://financialmodelingprep.com/image-stock/${symbol}.png`;
+    // Fallback: derive from company website via Google favicon service
+    const website = (summary as { assetProfile?: { website?: string } } | null)?.assetProfile?.website;
+    const fallbackLogoUrl = logoUrlFromWebsite(website);
+    const logoUrl = fmpLogoUrl;
+    logger.debug(`Logo for ${symbol}`, { logoUrl, fallback: fallbackLogoUrl });
 
     const data = {
       symbol,
@@ -62,6 +92,7 @@ export async function GET(request: Request) {
       fiftyTwoWeekLow: quote.fiftyTwoWeekLow,
       fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh,
       currency: quote.currency ?? 'USD',
+      logoUrl,
     };
 
     if (redis) {

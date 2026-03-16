@@ -116,15 +116,30 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
           {isStock ? (
             /* Stock Layout - price strip, chart, news */
             <div className="space-y-2">
-              <div className="mb-1">
-                <span className="inline-block px-2.5 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200">
-                  stock
-                </span>
+              {/* Header: logo + name + ticker */}
+              <div className="flex items-center gap-4 pb-2">
+                <div className="w-14 h-14 flex-shrink-0 rounded-xl overflow-hidden bg-white border border-gray-100 dark:border-gray-700 flex items-center justify-center">
+                  <Image
+                    src={`https://financialmodelingprep.com/image-stock/${item.creator}.png`}
+                    alt={item.title}
+                    width={56}
+                    height={56}
+                    className="w-full h-full object-contain"
+                    style={{ padding: '8%' }}
+                    unoptimized
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
+                <div>
+                  <span className="inline-block px-2.5 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200 mb-1">
+                    stock
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                    {item.title}
+                  </h3>
+                  <p className="text-base text-gray-500 dark:text-gray-400">{item.creator}</p>
+                </div>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {item.title}
-              </h3>
-              <p className="text-base text-gray-500 dark:text-gray-400 pb-2">{item.creator}</p>
               {item.notes && <NoteSection notes={item.notes} />}
               <StockDrawer item={item} />
             </div>

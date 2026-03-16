@@ -24,6 +24,12 @@ export function ItemCard({ item }: ItemCardProps) {
   const [imageError, setImageError] = useState(false);
   const [fitMode, setFitMode] = useState<'cover' | 'contain'>('cover');
 
+  // For stock items, always try FMP ticker-based logo (high quality, derived from ticker at display time)
+  const stockLogoUrl = item.type === 'stock'
+    ? `https://financialmodelingprep.com/image-stock/${encodeURIComponent(item.creator)}.png`
+    : null;
+  const effectiveImageUrl = item.type === 'stock' ? (stockLogoUrl ?? item.image_url) : item.image_url;
+
   // Get state from context
   const shelf = useShelf();
   const editMode = shelf?.editMode ?? false;
@@ -84,18 +90,20 @@ export function ItemCard({ item }: ItemCardProps) {
     >
       {/* Image Container */}
       <div
-        className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700"
+        className={`relative ${item.type === 'stock' ? 'bg-white dark:bg-gray-100' : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700'}`}
         style={{ aspectRatio: adjustedRatioNum || baseRatioStr }}
       >
         {/* Item Image */}
-        {item.image_url && !imageError && (
+        {effectiveImageUrl && !imageError && (
           <Image
-            src={item.image_url}
+            src={effectiveImageUrl}
             alt={item.title}
             fill
-            className={`w-full h-full ${fitMode === 'cover' ? 'object-cover' : 'object-contain'} object-center`}
+            className={`w-full h-full object-center ${item.type === 'stock' ? 'object-contain' : fitMode === 'cover' ? 'object-cover' : 'object-contain'}`}
+            style={item.type === 'stock' ? { padding: '8%' } : undefined}
             sizes="(max-width: 640px) 100px, 140px"
             onLoadingComplete={(img) => {
+              if (item.type === 'stock') return;
               try {
                 const containerRatio = adjustedRatioNum;
                 const isAmazon = isAmazonHostedImage(item.image_url || '');
