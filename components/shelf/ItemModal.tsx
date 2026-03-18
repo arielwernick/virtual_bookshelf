@@ -2,7 +2,7 @@
 import Image from 'next/image';
 
 import { Item } from '@/lib/types/shelf';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { extractVideoId } from '@/lib/api/youtube';
 import { StarDisplay } from '@/components/ui/StarDisplay';
 import { getAspectRatio, getAspectRatioNumeric } from '@/lib/constants/aspectRatios';
@@ -44,6 +44,14 @@ function NoteSection({ notes, className = 'mb-4' }: NoteSectionProps) {
 }
 
 export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
+  // Track whether we pushed a history entry so we know whether to pop it on close
+  const pushedHistoryEntry = useRef(false);
+  // Stable ref so effects don't re-run when the parent passes a new inline arrow function
+  const onCloseRef = useRef(onClose);
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -59,7 +67,7 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
       }
     };
 
@@ -70,7 +78,31 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
+
+  // Push a history entry when the modal opens so the back button closes it
+  useEffect(() => {
+    if (isOpen) {
+      history.pushState({ itemModal: true }, '');
+      pushedHistoryEntry.current = true;
+
+      const handlePopState = () => {
+        pushedHistoryEntry.current = false;
+        onCloseRef.current();
+      };
+
+      window.addEventListener('popstate', handlePopState);
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+        // If the modal is closing without the back button (e.g. backdrop click,
+        // Escape key), pop the history entry we pushed so the URL stays clean
+        if (pushedHistoryEntry.current) {
+          pushedHistoryEntry.current = false;
+          history.back();
+        }
+      };
+    }
+  }, [isOpen]);
 
   // Image fit handling state
   const [imageError, setImageError] = useState(false);
