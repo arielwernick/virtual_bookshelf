@@ -46,6 +46,9 @@ function NoteSection({ notes, className = 'mb-4' }: NoteSectionProps) {
 export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
   // Track whether we pushed a history entry so we know whether to pop it on close
   const pushedHistoryEntry = useRef(false);
+  // Stable ref so effects don't re-run when the parent passes a new inline arrow function
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (isOpen) {
@@ -62,7 +65,7 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
       }
     };
 
@@ -73,7 +76,7 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   // Push a history entry when the modal opens so the back button closes it
   useEffect(() => {
@@ -83,7 +86,7 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
 
       const handlePopState = () => {
         pushedHistoryEntry.current = false;
-        onClose();
+        onCloseRef.current();
       };
 
       window.addEventListener('popstate', handlePopState);
@@ -97,7 +100,7 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
         }
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   // Image fit handling state
   const [imageError, setImageError] = useState(false);
