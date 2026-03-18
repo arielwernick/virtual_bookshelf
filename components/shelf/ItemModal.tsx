@@ -2,7 +2,7 @@
 import Image from 'next/image';
 
 import { Item } from '@/lib/types/shelf';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { extractVideoId } from '@/lib/api/youtube';
 import { StarDisplay } from '@/components/ui/StarDisplay';
 import { getAspectRatio, getAspectRatioNumeric } from '@/lib/constants/aspectRatios';
@@ -48,7 +48,9 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
   const pushedHistoryEntry = useRef(false);
   // Stable ref so effects don't re-run when the parent passes a new inline arrow function
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (isOpen) {
