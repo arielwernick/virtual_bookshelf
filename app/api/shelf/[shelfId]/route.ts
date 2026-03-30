@@ -3,6 +3,13 @@ import { getSession } from '@/lib/utils/session';
 import { getShelfById, getItemsByShelfId, updateShelf, deleteShelf } from '@/lib/db/queries';
 import type { Shelf } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
+import {
+  authRequiredError,
+  notFoundError,
+  forbiddenError,
+  validationError,
+  internalError,
+} from '@/lib/utils/errors';
 
 const logger = createLogger('ShelfById');
 type ShelfUpdateData = Partial<Pick<Shelf, 'name' | 'description' | 'is_public'>>;
@@ -22,18 +29,12 @@ export async function GET(
         // Get shelf
         const shelf = await getShelfById(shelfId);
         if (!shelf) {
-            return NextResponse.json(
-                { success: false, error: 'Shelf not found' },
-                { status: 404 }
-            );
+            return notFoundError('Shelf');
         }
 
         // Check if user owns shelf or shelf is public
         if (shelf.user_id !== session?.userId && !shelf.is_public) {
-            return NextResponse.json(
-                { success: false, error: 'Unauthorized' },
-                { status: 403 }
-            );
+            return forbiddenError();
         }
 
         // Get shelf's items
@@ -54,10 +55,7 @@ export async function GET(
         });
     } catch (error) {
         logger.errorWithException('Failed to fetch shelf', error);
-        return NextResponse.json(
-            { success: false, error: 'Failed to fetch shelf' },
-            { status: 500 }
-        );
+        return internalError('Failed to fetch shelf');
     }
 }
 
@@ -72,10 +70,7 @@ export async function PATCH(
     try {
         const session = await getSession();
         if (!session || !session.userId) {
-            return NextResponse.json(
-                { success: false, error: 'Not authenticated' },
-                { status: 401 }
-            );
+            return authRequiredError();
         }
 
         const { shelfId } = await params;
@@ -84,18 +79,12 @@ export async function PATCH(
         // Get shelf
         const shelf = await getShelfById(shelfId);
         if (!shelf) {
-            return NextResponse.json(
-                { success: false, error: 'Shelf not found' },
-                { status: 404 }
-            );
+            return notFoundError('Shelf');
         }
 
         // Check ownership
         if (shelf.user_id !== session.userId) {
-            return NextResponse.json(
-                { success: false, error: 'Unauthorized' },
-                { status: 403 }
-            );
+            return forbiddenError();
         }
 
         const updateData: ShelfUpdateData = {};
@@ -103,16 +92,10 @@ export async function PATCH(
         // Validate name if provided
         if (body.name !== undefined) {
             if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
-                return NextResponse.json(
-                    { success: false, error: 'Shelf name is required' },
-                    { status: 400 }
-                );
+                return validationError('Shelf name is required');
             }
             if (body.name.length > 100) {
-                return NextResponse.json(
-                    { success: false, error: 'Shelf name must be 100 characters or less' },
-                    { status: 400 }
-                );
+                return validationError('Shelf name must be 100 characters or less');
             }
             updateData.name = body.name.trim();
         }
@@ -120,16 +103,10 @@ export async function PATCH(
         // Validate description if provided
         if (body.description !== undefined) {
             if (body.description && typeof body.description !== 'string') {
-                return NextResponse.json(
-                    { success: false, error: 'Description must be a string' },
-                    { status: 400 }
-                );
+                return validationError('Description must be a string');
             }
             if (body.description && body.description.length > 1000) {
-                return NextResponse.json(
-                    { success: false, error: 'Description must be 1000 characters or less' },
-                    { status: 400 }
-                );
+                return validationError('Description must be 1000 characters or less');
             }
             updateData.description = body.description?.trim() || null;
         }
@@ -137,19 +114,13 @@ export async function PATCH(
         // Validate is_public if provided
         if (body.is_public !== undefined) {
             if (typeof body.is_public !== 'boolean') {
-                return NextResponse.json(
-                    { success: false, error: 'is_public must be a boolean' },
-                    { status: 400 }
-                );
+                return validationError('is_public must be a boolean');
             }
             updateData.is_public = body.is_public;
         }
 
         if (Object.keys(updateData).length === 0) {
-            return NextResponse.json(
-                { success: false, error: 'No fields to update' },
-                { status: 400 }
-            );
+            return validationError('No fields to update');
         }
 
         // Update shelf
@@ -167,10 +138,7 @@ export async function PATCH(
         });
     } catch (error) {
         logger.errorWithException('Failed to update shelf', error);
-        return NextResponse.json(
-            { success: false, error: 'Failed to update shelf' },
-            { status: 500 }
-        );
+        return internalError('Failed to update shelf');
     }
 }
 
@@ -185,10 +153,7 @@ export async function DELETE(
     try {
         const session = await getSession();
         if (!session || !session.userId) {
-            return NextResponse.json(
-                { success: false, error: 'Not authenticated' },
-                { status: 401 }
-            );
+            return authRequiredError();
         }
 
         const { shelfId } = await params;
@@ -196,18 +161,12 @@ export async function DELETE(
         // Get shelf
         const shelf = await getShelfById(shelfId);
         if (!shelf) {
-            return NextResponse.json(
-                { success: false, error: 'Shelf not found' },
-                { status: 404 }
-            );
+            return notFoundError('Shelf');
         }
 
         // Check ownership
         if (shelf.user_id !== session.userId) {
-            return NextResponse.json(
-                { success: false, error: 'Unauthorized' },
-                { status: 403 }
-            );
+            return forbiddenError();
         }
 
         // Delete shelf (cascades to items)
@@ -219,9 +178,6 @@ export async function DELETE(
         });
     } catch (error) {
         logger.errorWithException('Failed to delete shelf', error);
-        return NextResponse.json(
-            { success: false, error: 'Failed to delete shelf' },
-            { status: 500 }
-        );
+        return internalError('Failed to delete shelf');
     }
 }

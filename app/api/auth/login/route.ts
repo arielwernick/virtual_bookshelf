@@ -10,6 +10,11 @@ import {
   isRateLimitingEnabled 
 } from '@/lib/utils/rateLimit';
 import { createLogger } from '@/lib/utils/logger';
+import {
+  validationError,
+  invalidCredentialsError,
+  internalError,
+} from '@/lib/utils/errors';
 
 const logger = createLogger('AuthLogin');
 
@@ -30,18 +35,12 @@ export async function POST(request: Request) {
     // Validate inputs
     const usernameValidation = validateUsername(username);
     if (!usernameValidation.valid) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid username' },
-        { status: 400 }
-      );
+      return validationError('Invalid username');
     }
 
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.valid) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid password' },
-        { status: 400 }
-      );
+      return validationError('Invalid password');
     }
 
     const normalizedUsername = usernameValidation.normalized!;
@@ -49,27 +48,18 @@ export async function POST(request: Request) {
     // Get user
     const user = await getUserByUsername(normalizedUsername);
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid username or password' },
-        { status: 401 }
-      );
+      return invalidCredentialsError('Invalid username or password');
     }
 
     // Check if user has password (not Google-only)
     if (!user.password_hash) {
-      return NextResponse.json(
-        { success: false, error: 'This account uses Google authentication. Please sign in with Google.' },
-        { status: 401 }
-      );
+      return invalidCredentialsError('This account uses Google authentication. Please sign in with Google.');
     }
 
     // Verify password
     const isValid = await verifyPassword(password, user.password_hash);
     if (!isValid) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid username or password' },
-        { status: 401 }
-      );
+      return invalidCredentialsError('Invalid username or password');
     }
 
     // Set session cookie
@@ -87,9 +77,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     logger.errorWithException('Login failed', error);
-    return NextResponse.json(
-      { success: false, error: 'Login failed' },
-      { status: 500 }
-    );
+    return internalError('Login failed');
   }
 }
