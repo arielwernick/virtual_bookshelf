@@ -14,16 +14,51 @@ interface ShareModalProps {
 }
 
 type TabType = 'link' | 'embed';
+type EmbedStyle = 'auto' | 'transparent' | 'standard';
+
+const EMBED_STYLE_LABELS: Record<EmbedStyle, string> = {
+    auto: 'Auto-sizing (recommended)',
+    transparent: 'Transparent background',
+    standard: 'Standard (fixed height)',
+};
+
+const EMBED_STYLE_DESCRIPTIONS: Record<EmbedStyle, string> = {
+    auto: 'Transparent background and dynamically resizes to fit content. Requires script support on the host page.',
+    transparent: 'Transparent background with a fixed height. Works on hosts that strip <script> tags.',
+    standard: 'Opaque background with a fixed height. Simplest option, no styling overrides.',
+};
+
+function buildEmbedCode(style: EmbedStyle, embedUrl: string, shareToken: string): string {
+    if (style === 'standard') {
+        return `<iframe src="${embedUrl}" width="100%" height="800" style="border:none;border-radius:8px;" title="Bookshelf"></iframe>`;
+    }
+    if (style === 'transparent') {
+        return `<iframe src="${embedUrl}?bg=transparent" width="100%" height="800" style="border:none;border-radius:8px;background:transparent;" title="Bookshelf" allowtransparency="true"></iframe>`;
+    }
+    const iframeId = `bookshelf-${shareToken.slice(0, 8)}`;
+    return `<iframe id="${iframeId}" src="${embedUrl}?bg=transparent" width="100%" height="600" style="border:none;border-radius:8px;background:transparent;" title="Bookshelf" allowtransparency="true"></iframe>
+<script>
+(function(){
+  var f=document.getElementById('${iframeId}');
+  window.addEventListener('message',function(e){
+    if(e.data&&e.data.type==='bookshelf-height'&&e.source===f.contentWindow){
+      f.style.height=e.data.height+'px';
+    }
+  });
+})();
+</script>`;
+}
 
 export function ShareModal({ isOpen, onClose, shareToken, isPublic = false, onPublishToggle, onCopy }: ShareModalProps) {
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType>('link');
+    const [embedStyle, setEmbedStyle] = useState<EmbedStyle>('auto');
     const [isPublishing, setIsPublishing] = useState(false);
     const { showToast } = useToast();
 
     const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/s/${shareToken}`;
     const embedUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/embed/${shareToken}`;
-    const embedCode = `<iframe src="${embedUrl}" width="100%" height="800" style="border:none;border-radius:8px;" title="Bookshelf"></iframe>`;
+    const embedCode = buildEmbedCode(embedStyle, embedUrl, shareToken);
 
     const handleCopy = (text: string, type: 'link' | 'embed' = 'link') => {
         navigator.clipboard.writeText(text);
@@ -148,13 +183,34 @@ export function ShareModal({ isOpen, onClose, shareToken, isPublic = false, onPu
                         </p>
 
                         <div className="mb-4">
+                            <label htmlFor="embed-style" className="block text-sm font-medium text-gray-700 mb-2">
+                                Embed Style
+                            </label>
+                            <select
+                                id="embed-style"
+                                value={embedStyle}
+                                onChange={(e) => setEmbedStyle(e.target.value as EmbedStyle)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                            >
+                                {(Object.keys(EMBED_STYLE_LABELS) as EmbedStyle[]).map((style) => (
+                                    <option key={style} value={style}>
+                                        {EMBED_STYLE_LABELS[style]}
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="mt-1.5 text-xs text-gray-500">
+                                {EMBED_STYLE_DESCRIPTIONS[embedStyle]}
+                            </p>
+                        </div>
+
+                        <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Embed Code
                             </label>
                             <textarea
                                 value={embedCode}
                                 readOnly
-                                rows={4}
+                                rows={embedStyle === 'auto' ? 11 : 4}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-xs text-gray-600 focus:outline-none font-mono"
                             />
                             <button
