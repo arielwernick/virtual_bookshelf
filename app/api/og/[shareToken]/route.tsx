@@ -1,6 +1,7 @@
 import { ImageResponse } from '@vercel/og';
 import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
 import { createLogger } from '@/lib/utils/logger';
+import { fetchAsDataUrl, OG_CACHE_CONTROL } from '@/lib/og/imageLoader';
 import type { Item, ItemType } from '@/lib/types/shelf';
 
 const logger = createLogger('OGImage');
@@ -10,8 +11,6 @@ export const runtime = 'edge';
 const WIDTH = 1200;
 const HEIGHT = 630;
 const MAX_ITEMS = 5;
-const IMAGE_FETCH_TIMEOUT_MS = 2500;
-const CACHE_CONTROL = 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
 
 type PreparedItem = Item & { image_data: string | null };
 
@@ -38,7 +37,7 @@ export async function GET(
     if (request.headers.get('if-none-match') === etag) {
       return new Response(null, {
         status: 304,
-        headers: { ETag: etag, 'Cache-Control': CACHE_CONTROL },
+        headers: { ETag: etag, 'Cache-Control': OG_CACHE_CONTROL },
       });
     }
 
@@ -136,7 +135,7 @@ export async function GET(
       {
         width: WIDTH,
         height: HEIGHT,
-        headers: { 'Cache-Control': CACHE_CONTROL, ETag: etag },
+        headers: { 'Cache-Control': OG_CACHE_CONTROL, ETag: etag },
       }
     );
   } catch (error) {
@@ -290,35 +289,6 @@ async function prefetchCovers(items: Item[]): Promise<PreparedItem[]> {
       image_data: item.image_url ? await fetchAsDataUrl(item.image_url) : null,
     }))
   );
-}
-
-async function fetchAsDataUrl(url: string): Promise<string | null> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: { Accept: 'image/*' },
-    });
-    if (!res.ok) return null;
-    const buffer = await res.arrayBuffer();
-    const contentType = res.headers.get('content-type') || 'image/jpeg';
-    if (!contentType.startsWith('image/')) return null;
-    return `data:${contentType};base64,${uint8ToBase64(new Uint8Array(buffer))}`;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function uint8ToBase64(bytes: Uint8Array): string {
-  let binary = '';
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
-  }
-  return btoa(binary);
 }
 
 function truncate(text: string, max: number): string {
