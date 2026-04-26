@@ -1,9 +1,12 @@
 import { ImageResponse } from '@vercel/og';
 import { getPublicShelvesByUserId, getItemsByShelfId, getShelfByShareToken } from '@/lib/db/queries';
 import { getDemoUserId, getDemoShelfToken } from '@/lib/utils/env';
+import { fetchAsDataUrl, OG_CACHE_CONTROL } from '@/lib/og/imageLoader';
 import { Item } from '@/lib/types/shelf';
 
 export const runtime = 'edge';
+
+type PreparedItem = Item & { image_data: string | null };
 
 /**
  * Fetch demo items for the OG image
@@ -51,10 +54,29 @@ async function getDemoItems(): Promise<Item[]> {
  * 
  * Used when sharing the main site on LinkedIn, Twitter, etc.
  */
-export async function GET() {
-  // Fetch real demo items
+export async function GET(request: Request) {
   const demoItems = await getDemoItems();
   const hasRealItems = demoItems.length > 0;
+
+  const lastModified = demoItems.reduce<number>(
+    (max, item) => Math.max(max, item.updated_at.getTime()),
+    0
+  );
+  const etag = `W/"landing-${lastModified}-${demoItems.length}"`;
+
+  if (request.headers.get('if-none-match') === etag) {
+    return new Response(null, {
+      status: 304,
+      headers: { ETag: etag, 'Cache-Control': OG_CACHE_CONTROL },
+    });
+  }
+
+  const prepared: PreparedItem[] = await Promise.all(
+    demoItems.map(async (item) => ({
+      ...item,
+      image_data: item.image_url ? await fetchAsDataUrl(item.image_url) : null,
+    }))
+  );
 
   return new ImageResponse(
     (
@@ -118,24 +140,23 @@ export async function GET() {
             paddingRight: '20px',
           }}>
             {hasRealItems ? (
-              // Display real item covers
-              demoItems.map((item) => (
-                <div 
-                  key={item.id} 
-                  style={{ 
+              prepared.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
                     display: 'flex',
                     width: '120px',
                     height: '170px',
                     borderRadius: '4px',
                     overflow: 'hidden',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1)',
-                    background: item.image_url ? 'transparent' : getTypeGradient(item.type),
+                    background: item.image_data ? 'transparent' : getTypeGradient(item.type),
                   }}
                 >
-                  {item.image_url ? (
+                  {item.image_data ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={item.image_url}
+                      src={item.image_data}
                       alt={item.title}
                       style={{
                         width: '100%',
@@ -206,7 +227,11 @@ export async function GET() {
         </div>
       </div>
     ),
-    { width: 1200, height: 630 }
+    {
+      width: 1200,
+      height: 630,
+      headers: { 'Cache-Control': OG_CACHE_CONTROL, ETag: etag },
+    }
   );
 }
 
