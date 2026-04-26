@@ -167,16 +167,26 @@ export function EmbedShelf() {
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
       />
-      <div className="px-3 py-2 text-center text-[11px] opacity-70">
-        Powered by{' '}
+      <div className="flex justify-end px-3 pt-1 pb-3 sm:px-4 sm:pb-4">
         <Link
           href="/"
           target="_blank"
           rel="noopener noreferrer"
-          style={accent ? { color: accent } : undefined}
-          className="font-medium hover:underline"
+          aria-label="Powered by Virtual Bookshelf"
+          style={accent ? { backgroundColor: accent } : undefined}
+          className="inline-flex items-center gap-1.5 rounded-full bg-gray-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm hover:bg-black transition-colors"
         >
-          Virtual Bookshelf
+          <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="2" y="8" width="2" height="10" />
+            <rect x="4.5" y="6" width="2" height="12" />
+            <rect x="7" y="7" width="2" height="11" />
+            <rect x="9.5" y="5" width="2" height="13" />
+            <rect x="12" y="7" width="2" height="11" />
+            <rect x="14.5" y="6" width="2" height="12" />
+            <rect x="17" y="8" width="2" height="10" />
+            <rect x="19.5" y="7" width="2" height="11" />
+          </svg>
+          <span>Virtual Bookshelf</span>
         </Link>
       </div>
     </div>
