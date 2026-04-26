@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import { ShelfGrid } from '@/components/shelf/ShelfGrid';
 import { ItemModal } from '@/components/shelf/ItemModal';
 import { ShareModal } from '@/components/shelf/ShareModal';
-import { Confetti } from '@/components/Confetti';
 import { EmptyState, BookshelfIcon } from '@/components/ui/EmptyState';
 import { SkeletonItemGrid } from '@/components/ui/SkeletonLoader';
 import { Item } from '@/lib/types/shelf';
@@ -30,7 +29,6 @@ export default function ShelfPage() {
   const [error, setError] = useState('');
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
@@ -177,15 +175,9 @@ export default function ShelfPage() {
           });
           if (res.ok) {
             setShelfData(prev => prev ? { ...prev, is_public: isPublic } : null);
-            if (isPublic) {
-              setShowConfetti(true);
-              setTimeout(() => setShowConfetti(false), 3500);
-            }
           }
         } : undefined}
       />
-
-      {showConfetti && <Confetti />}
 
       <footer className="mt-16 border-t border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
