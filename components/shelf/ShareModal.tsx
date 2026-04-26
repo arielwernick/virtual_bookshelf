@@ -14,24 +14,19 @@ interface ShareModalProps {
 }
 
 type TabType = 'link' | 'embed';
-type EmbedStyle = 'auto' | 'transparent' | 'standard';
+type EmbedStyle = 'auto' | 'transparent';
 
 const EMBED_STYLE_LABELS: Record<EmbedStyle, string> = {
     auto: 'Auto-sizing (recommended)',
-    transparent: 'Transparent background',
-    standard: 'Standard (fixed height)',
+    transparent: 'Fixed height (no script)',
 };
 
 const EMBED_STYLE_DESCRIPTIONS: Record<EmbedStyle, string> = {
-    auto: 'Transparent background and dynamically resizes to fit content. Requires script support on the host page.',
-    transparent: 'Transparent background with a fixed height. Works on hosts that strip <script> tags.',
-    standard: 'Opaque background with a fixed height. Simplest option, no styling overrides.',
+    auto: 'Transparent background, resizes automatically to fit content.',
+    transparent: 'Use this if your site strips <script> tags (e.g. Squarespace, some Notion embeds). Transparent background, fixed height.',
 };
 
 function buildEmbedCode(style: EmbedStyle, embedUrl: string, shareToken: string): string {
-    if (style === 'standard') {
-        return `<iframe src="${embedUrl}" width="100%" height="800" style="border:none;border-radius:8px;" title="Bookshelf"></iframe>`;
-    }
     if (style === 'transparent') {
         return `<iframe src="${embedUrl}?bg=transparent" width="100%" height="800" style="border:none;border-radius:8px;background:transparent;" title="Bookshelf" allowtransparency="true"></iframe>`;
     }
