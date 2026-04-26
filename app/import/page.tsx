@@ -223,16 +223,16 @@ export default function ImportPage() {
   // If just created a shelf, show success state
   if (createdShelfId && showConfetti) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="brand-shell min-h-screen">
         <Confetti />
         <main className="max-w-4xl mx-auto px-4 py-8">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
+          <div className="brand-card p-6 md:p-8" data-reveal="zoom">
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              <h2 className="text-2xl font-bold text-[#1e1919] mb-2">
                 Shelf Created!
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-[#1e1919]/70 mb-4">
                 Redirecting you to your new shelf...
               </p>
             </div>
@@ -243,29 +243,30 @@ export default function ImportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="brand-shell min-h-screen">
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
+        <div className="brand-card p-6 md:p-8" data-reveal="zoom">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-              📋 Create Shelf from Text
+          <div className="mb-6" data-reveal="soft" data-stagger="1">
+            <p className="mb-2 text-xs uppercase tracking-[0.18em] text-[#0061fe] font-bold">Import Studio</p>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#1e1919]">
+              Create Shelf from Text
             </h1>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">
+            <p className="mt-2 text-[#1e1919]/70">
               Paste any text with links — reading lists, recommendations, articles to save — and we&apos;ll create a shelf for you.
             </p>
           </div>
 
           {/* Error display */}
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
+            <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm" data-reveal="soft">
               {error}
             </div>
           )}
 
           {/* Input state */}
           {state === 'input' && (
-            <div className="space-y-4">
+            <div className="space-y-4" data-reveal="soft" data-stagger="2">
               <div>
                 <label htmlFor="import-text" className="sr-only">
                   Paste text with links
@@ -286,10 +287,9 @@ https://www.goodreads.com/book/show/40121378
 Interesting podcast about current events.
 Good for staying informed.
 https://open.spotify.com/show/1234`}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 
-                             bg-white dark:bg-gray-900 text-gray-900 dark:text-white
-                             focus:ring-2 focus:ring-amber-500 focus:border-transparent
-                             placeholder:text-gray-400 dark:placeholder:text-gray-500
+                  className="brand-input w-full px-4 py-3 
+                             bg-white text-[#1e1919]
+                             placeholder:text-[#1e1919]/45
                              font-mono text-sm resize-y min-h-[200px]
                              disabled:opacity-50 disabled:cursor-not-allowed"
                 />
@@ -299,10 +299,9 @@ https://open.spotify.com/show/1234`}
                 type="button"
                 onClick={handleExtract}
                 disabled={!text.trim()}
-                className="w-full py-3 rounded-lg font-medium
-                           bg-amber-500 hover:bg-amber-600 text-white
-                           disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed
-                           transition-colors flex items-center justify-center gap-2"
+                className="brand-button w-full py-3 font-semibold
+                           disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed
+                           flex items-center justify-center gap-2"
               >
                 Create Shelf
               </button>
@@ -311,13 +310,13 @@ https://open.spotify.com/show/1234`}
 
           {/* Processing state */}
           {state === 'processing' && (
-            <div className="text-center py-8">
-              <div className="animate-spin h-8 w-8 border-3 border-amber-500 border-t-transparent rounded-full mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400 mb-1">
+            <div className="text-center py-8" data-reveal="soft" data-stagger="2">
+              <div className="animate-spin h-8 w-8 border-3 border-[#0061fe] border-t-transparent rounded-full mx-auto mb-4" />
+              <p className="text-[#1e1919]/70 mb-1">
                 {progress.step}
               </p>
               {progress.total > 0 && (
-                <p className="text-sm text-gray-500 dark:text-gray-500">
+                <p className="text-sm text-[#1e1919]/60">
                   {progress.current} of {progress.total} items
                 </p>
               )}
@@ -331,11 +330,11 @@ https://open.spotify.com/show/1234`}
                         key={item.url}
                         className={`p-3 rounded-lg border ${
                           item.loading
-                            ? 'border-gray-200 dark:border-gray-700 animate-pulse'
-                            : 'border-green-200 dark:border-green-800'
+                            ? 'border-blue-200/70 animate-pulse'
+                            : 'border-[#b4dc19]'
                         }`}
                       >
-                        <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                        <div className="text-sm text-[#1e1919]/70 truncate">
                           {index + 1}. {item.parsedTitle || item.url}
                         </div>
                       </div>
@@ -363,7 +362,7 @@ https://open.spotify.com/show/1234`}
               <button
                 type="button"
                 onClick={handleReset}
-                className="mt-4 w-full py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                className="mt-4 w-full py-2 text-sm text-[#1e1919]/70 hover:text-[#0061fe]"
               >
                 ← Start over with different text
               </button>
@@ -372,9 +371,9 @@ https://open.spotify.com/show/1234`}
 
           {/* Creating state */}
           {state === 'creating' && (
-            <div className="text-center py-8">
-              <div className="animate-spin h-8 w-8 border-3 border-amber-500 border-t-transparent rounded-full mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">
+            <div className="text-center py-8" data-reveal="soft" data-stagger="3">
+              <div className="animate-spin h-8 w-8 border-3 border-[#0061fe] border-t-transparent rounded-full mx-auto mb-4" />
+              <p className="text-[#1e1919]/70">
                 Creating your shelf...
               </p>
             </div>
@@ -382,7 +381,7 @@ https://open.spotify.com/show/1234`}
         </div>
 
         {/* Help text */}
-        <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+        <div className="mt-6 text-center text-sm text-[#1e1919]/65" data-reveal="soft" data-stagger="4">
           <p>
             Works great with LinkedIn posts, Twitter threads, newsletters, and any text with links.
           </p>

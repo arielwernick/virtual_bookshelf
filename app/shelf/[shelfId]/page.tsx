@@ -10,6 +10,12 @@ import { EmptyState, BookshelfIcon } from '@/components/ui/EmptyState';
 import { SkeletonItemGrid } from '@/components/ui/SkeletonLoader';
 import { Item } from '@/lib/types/shelf';
 import Link from 'next/link';
+import { Space_Grotesk } from 'next/font/google';
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['500', '600', '700'],
+});
 
 interface ShelfPageData {
   id: string;
@@ -69,24 +75,23 @@ export default function ShelfPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* Header Skeleton */}
-        <header className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex justify-between items-center mb-4">
+      <div className="brand-shell min-h-screen">
+        <header className="border-b border-[var(--db-ink)]/10 bg-[var(--db-coconut)]/85 backdrop-blur-md">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex justify-between items-end mb-4 gap-4 flex-wrap">
               <div>
-                <div className="h-9 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
-                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-6 w-28 bg-[var(--db-ink)]/10 rounded-full animate-pulse mb-3"></div>
+                <div className="h-12 w-72 bg-[var(--db-ink)]/10 rounded animate-pulse mb-2"></div>
+                <div className="h-4 w-24 bg-[var(--db-ink)]/10 rounded animate-pulse"></div>
               </div>
               <div className="flex gap-3">
-                <div className="h-10 w-28 bg-gray-200 rounded-lg animate-pulse"></div>
-                <div className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse"></div>
+                <div className="h-10 w-28 bg-[var(--db-ink)]/10 rounded-full animate-pulse"></div>
+                <div className="h-10 w-24 bg-[var(--db-ink)]/10 rounded-full animate-pulse"></div>
               </div>
             </div>
           </div>
         </header>
-        {/* Items Skeleton */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           <SkeletonItemGrid count={10} />
         </main>
       </div>
@@ -95,13 +100,17 @@ export default function ShelfPage() {
 
   if (error || !shelfData) {
     return (
-      <div className="min-h-screen bg-amber-50 flex items-center justify-center px-4">
-        <div className="text-center">
-          <h1 className="text-6xl font-bold text-amber-900 mb-4">404</h1>
-          <h2 className="text-2xl font-semibold text-amber-700 mb-2">Shelf Not Found</h2>
-          <p className="text-amber-600 mb-8">{error || "This bookshelf doesn't exist."}</p>
-          <Link href="/" className="inline-block px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium">
-            Go Home
+      <div className="brand-shell min-h-screen flex items-center justify-center px-4">
+        <div className="plane plane-paper p-12 text-center max-w-md">
+          <span className="tab-anchor" style={{ background: 'var(--db-crimson)', color: '#fff' }}>
+            404
+          </span>
+          <h1 className={`${spaceGrotesk.className} mt-5 text-5xl font-bold text-[var(--db-ink)] mb-3 tracking-[-0.03em] leading-none`}>
+            Shelf not found.
+          </h1>
+          <p className="text-[var(--db-ink)]/70 mb-8 font-medium">{error || "This bookshelf doesn't exist."}</p>
+          <Link href="/" className="brand-button brand-button-blue inline-flex px-6 py-3">
+            Go home
           </Link>
         </div>
       </div>
@@ -109,42 +118,51 @@ export default function ShelfPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center mb-4">
+    <div className="brand-shell min-h-screen">
+      <header className="border-b border-[var(--db-ink)]/10 bg-[var(--db-coconut)]/85 backdrop-blur-md" data-reveal="zoom">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="flex justify-between items-end gap-6 flex-wrap">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{shelfData.name}</h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <span className="tab-anchor" style={{ background: 'var(--db-blue)', color: '#fff' }}>
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--db-lime)]" />
+                Collection
+              </span>
+              <h1
+                className={`${spaceGrotesk.className} mt-4 font-bold tracking-[-0.035em] text-[var(--db-ink)] leading-[0.92]`}
+                style={{ fontSize: 'clamp(2.2rem, 5vw, 3.6rem)' }}
+              >
+                {shelfData.name}
+              </h1>
+              <p className="mt-3 text-sm font-semibold text-[var(--db-ink)]/60 uppercase tracking-[0.14em]">
                 {shelfData.items.length} {shelfData.items.length === 1 ? 'item' : 'items'}
               </p>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowShareModal(true)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                className="px-5 py-2.5 border border-[var(--db-ink)]/15 text-[var(--db-ink)] rounded-full hover:border-[var(--db-blue)] hover:text-[var(--db-blue)] hover:bg-white transition-all text-sm font-semibold"
               >
-                Share Shelf
+                Share
               </button>
               {isOwner && (
                 <Link
                   href={`/shelf/${shelfId}/edit`}
-                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+                  className="brand-button brand-button-blue px-5 py-2.5 text-sm"
                 >
-                  Edit Shelf
+                  Edit
                 </Link>
               )}
             </div>
           </div>
           {shelfData.description && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-gray-700">{shelfData.description}</p>
+            <div className="mt-6 pt-5 border-t border-[var(--db-ink)]/10 max-w-2xl" data-reveal="soft" data-stagger="1">
+              <p className="text-[var(--db-ink)]/80 text-lg leading-snug">{shelfData.description}</p>
             </div>
           )}
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-reveal="soft" data-stagger="2">
         {shelfData.items.length === 0 ? (
           <EmptyState
             icon={<BookshelfIcon />}
@@ -187,10 +205,10 @@ export default function ShelfPage() {
 
       {showConfetti && <Confetti />}
 
-      <footer className="mt-16 border-t border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-sm text-gray-500">
-            Powered by <Link href="/" className="font-medium text-gray-900 hover:underline">Virtual Bookshelf</Link>
+      <footer className="mt-16 border-t border-[var(--db-ink)]/10 bg-[var(--db-coconut)]/85 backdrop-blur-md" data-reveal="soft" data-stagger="3">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+          <p className="text-center text-sm text-[var(--db-ink)]/65">
+            Powered by <Link href="/" className="font-semibold text-[var(--db-blue)] hover:underline">Virtual Bookshelf</Link>
           </p>
         </div>
       </footer>

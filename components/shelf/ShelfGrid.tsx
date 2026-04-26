@@ -76,7 +76,7 @@ function ShelfRow({ items }: ShelfRowProps) {
   );
 
   return (
-    <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-lg border border-gray-100 dark:border-gray-800 shadow-xs overflow-hidden">
+    <div className="bg-white/75 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-[0_10px_26px_rgba(30,25,25,0.08)] overflow-hidden transition-all duration-300 hover:shadow-[0_14px_30px_rgba(30,25,25,0.12)]">
       <div
         className="px-3 py-3 sm:px-6 sm:py-5 flex flex-wrap"
         style={{
@@ -87,9 +87,9 @@ function ShelfRow({ items }: ShelfRowProps) {
         {content}
       </div>
       <div
-        className="h-1.5 sm:h-2 bg-gradient-to-r from-warm-brown via-muted-gold to-warm-brown"
+        className="h-1.5 sm:h-2 bg-gradient-to-r from-[#0061fe] via-[#14c8eb] to-[#0061fe]"
         style={{
-          boxShadow: '0 8px 16px rgba(139, 95, 71, 0.4), 0 4px 8px rgba(139, 95, 71, 0.3), inset 0 1px 0 rgba(212, 146, 26, 0.2)',
+          boxShadow: '0 8px 16px rgba(0, 97, 254, 0.33), 0 4px 8px rgba(0, 97, 254, 0.22), inset 0 1px 0 rgba(20, 200, 235, 0.3)',
         }}
       />
     </div>
@@ -282,23 +282,23 @@ export function ShelfGrid({ items, onItemClick, editMode = false, onDeleteItem, 
   };
 
   const activeColor: Record<string, string> = {
-    all:     'border-gray-900 dark:border-gray-100 text-gray-900 dark:text-gray-100',
-    book:    'border-blue-600 text-blue-600',
-    podcast: 'border-purple-600 text-purple-600',
-    music:   'border-green-600 text-green-600',
-    video:   'border-red-600 text-red-600',
-    link:    'border-orange-500 text-orange-500',
-    stock:   'border-purple-600 text-purple-600',
+    all:     'border-[#0061fe] bg-[#0061fe] text-white',
+    book:    'border-blue-600 bg-blue-600 text-white',
+    podcast: 'border-purple-600 bg-purple-600 text-white',
+    music:   'border-green-600 bg-green-600 text-white',
+    video:   'border-red-600 bg-red-600 text-white',
+    link:    'border-orange-500 bg-orange-500 text-white',
+    stock:   'border-indigo-600 bg-indigo-600 text-white',
   };
 
   const filterButton = (type: ItemType | 'all', label: string, count: number) => (
     <button
       key={type}
       onClick={() => setSelectedType(type)}
-      className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+      className={`px-4 py-2 font-semibold text-sm rounded-full border transition-all duration-200 ${
         selectedType === type
           ? activeColor[type]
-          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+          : 'border-[#d9d4cd] text-[#1e1919]/70 hover:text-[#0061fe] hover:border-[#0061fe] hover:bg-white'
       }`}
     >
       {label} ({count})
@@ -312,9 +312,9 @@ export function ShelfGrid({ items, onItemClick, editMode = false, onDeleteItem, 
       onEditNote={onEditNote}
       onItemClick={onItemClick}
     >
-      <div>
+      <div data-reveal="soft">
         {/* Filter tabs */}
-        <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex flex-wrap gap-2 mb-6 border-b border-[#dde8fc] pb-4">
           {filterButton('all', 'All', counts.all)}
           {filterButton('book', 'Books', counts.book)}
           {filterButton('podcast', 'Podcasts', counts.podcast)}

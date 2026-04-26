@@ -3,13 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { Space_Grotesk } from 'next/font/google';
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+});
 
 export function Navigation() {
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check auth status on mount and when pathname changes
     fetch('/api/auth/me')
       .then((res) => {
         setIsLoggedIn(res.ok);
@@ -19,8 +24,6 @@ export function Navigation() {
       });
   }, [pathname]);
 
-  const isHomePage = pathname === '/';
-
   const handleSignOut = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     window.location.href = '/';
@@ -28,83 +31,85 @@ export function Navigation() {
 
   return (
     <>
-      {/* Skip to main content link */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-gray-900 focus:text-white focus:rounded-md focus:shadow-lg"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-[var(--db-blue)] focus:text-white focus:rounded-full focus:shadow-lg"
       >
         Skip to main content
       </a>
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14">
-          {/* Logo / Home link */}
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors font-medium"
-            title="Virtual Bookshelf"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="currentColor"
-              viewBox="0 0 24 24"
+      <nav className="sticky top-0 z-40 border-b border-[var(--db-ink)]/10 bg-[var(--db-coconut)]/85 backdrop-blur-md">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* The "Tab" — a colored plane containing the glyph. Dropbox's fulcrum concept. */}
+            <Link
+              href="/"
+              className="group flex items-center gap-2.5"
+              title="Virtual Bookshelf"
             >
-              {/* Books with different heights */}
-              <rect x="2" y="8" width="2" height="10" />
-              <rect x="4.5" y="6" width="2" height="12" />
-              <rect x="7" y="7" width="2" height="11" />
-              <rect x="9.5" y="5" width="2" height="13" />
-              <rect x="12" y="7" width="2" height="11" />
-              <rect x="14.5" y="6" width="2" height="12" />
-              <rect x="17" y="8" width="2" height="10" />
-              <rect x="19.5" y="7" width="2" height="11" />
-              <line x1="1" y1="19" x2="23" y2="19" stroke="currentColor" strokeWidth="1.5" />
-            </svg>
-            {isHomePage && (
-              <span className="text-base font-semibold">Virtual Bookshelf</span>
-            )}
-          </Link>
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] bg-[var(--db-ink)] transition-transform duration-200 group-hover:scale-105 group-hover:rotate-[-3deg]">
+                <svg
+                  className="h-4.5 w-4.5 text-[var(--db-lime)]"
+                  width="18"
+                  height="18"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="5" width="3" height="14" rx="0.5" />
+                  <rect x="7.5" y="3" width="3" height="16" rx="0.5" />
+                  <rect x="12" y="6" width="3" height="13" rx="0.5" />
+                  <rect x="16.5" y="4" width="3" height="15" rx="0.5" />
+                </svg>
+              </span>
+              <span className={`${spaceGrotesk.className} text-[var(--db-ink)] text-[15px] font-bold tracking-[-0.02em] group-hover:text-[var(--db-blue)] transition-colors`}>
+                Virtual Bookshelf
+              </span>
+            </Link>
 
-          {/* Right side - auth actions */}
-          <div className="flex items-center gap-3">
-            {isLoggedIn === null ? (
-              // Loading state - show nothing to prevent flash
-              <div className="w-20 h-8" />
-            ) : isLoggedIn ? (
-              // Logged in
-              <>
-                <Link
-                  href="/import"
-                  className="text-sm text-gray-700 hover:text-gray-900 font-medium transition-colors"
-                >
-                  Import
-                </Link>
-                <Link
-                  href="/dashboard"
-                  className="text-sm text-gray-700 hover:text-gray-900 font-medium transition-colors"
-                >
-                  Dashboard
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              // Not logged in
-              <Link
-                href="/login"
-                className="text-sm text-gray-700 hover:text-gray-900 font-medium transition-colors"
-              >
-                Sign In
-              </Link>
-            )}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {isLoggedIn === null ? (
+                <div className="w-20 h-8" />
+              ) : isLoggedIn ? (
+                <>
+                  <Link
+                    href="/import"
+                    className="hidden sm:inline-flex items-center text-xs px-3 py-2 rounded-full text-[var(--db-ink)]/75 hover:text-[var(--db-ink)] hover:bg-[var(--db-ink)]/5 font-semibold uppercase tracking-[0.12em] transition-colors"
+                  >
+                    Import
+                  </Link>
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex items-center text-xs px-3 py-2 rounded-full text-[var(--db-ink)]/75 hover:text-[var(--db-ink)] hover:bg-[var(--db-ink)]/5 font-semibold uppercase tracking-[0.12em] transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={handleSignOut}
+                    className="inline-flex items-center text-xs px-4 py-2 rounded-full bg-[var(--db-ink)] text-[var(--db-coconut)] hover:bg-black font-semibold uppercase tracking-[0.12em] transition-all hover:-translate-y-[1px] shadow-[0_4px_14px_rgba(30,25,25,0.2)]"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center text-xs px-3 py-2 rounded-full text-[var(--db-ink)]/75 hover:text-[var(--db-ink)] hover:bg-[var(--db-ink)]/5 font-semibold uppercase tracking-[0.12em] transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="inline-flex items-center text-xs px-4 py-2 rounded-full bg-[var(--db-blue)] text-white hover:bg-[var(--db-blue-deep)] font-semibold uppercase tracking-[0.12em] transition-all hover:-translate-y-[1px] shadow-[0_4px_14px_rgba(0,97,254,0.3)]"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
     </>
   );
 }

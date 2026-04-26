@@ -1,18 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  
-  /* Clean amber color palette */
-  --warm-white: #fefcf8;
-  --warm-cream: #f9f7f4;
-  --warm-brown: #8b5f47;
-  --warm-latte: #e6d6c4;
-  --rich-brown: #3d2518;
-  --muted-gold: #d4921a;
-  --amber-700: #b45309;
-  --amber-800: #92400e;
+  /* === Dropbox-inspired core palette === */
+  --db-blue: #0061fe;
+  --db-blue-deep: #0052d4;
+  --db-blue-soft: #d5e4ff;
+  --db-ink: #1e1919;
+  --db-coconut: #f7f5f2;
+  --db-coconut-warm: #ede8df;
+  --db-paper: #fafaf7;
+
+  /* === Dropbox-inspired accent palette === */
+  --db-canopy: #0f503c;      /* deep forest green */
+  --db-canopy-soft: #c5e1cc;
+  --db-zen: #b4c8b2;         /* dusty seafoam */
+  --db-crimson: #c8102e;     /* signal red */
+  --db-crimson-soft: #f9cdd4;
+  --db-sunset: #ff8c42;      /* warm orange */
+  --db-tangerine: #fa551e;
+  --db-gold: #fac41f;        /* yolk yellow */
+  --db-lime: #b4dc19;
+  --db-ocean: #007fae;       /* deep teal-blue */
+  --db-plum: #5a2a82;        /* purple */
+  --db-azalea: #fccfd5;      /* pale pink */
+  --db-cloud: #dae3f3;
+
+  /* === Semantic tokens === */
+  --background: var(--db-coconut);
+  --foreground: var(--db-ink);
+
+  /* === Motion (Dropbox signature easing) === */
+  --db-ease: cubic-bezier(0.65, 0, 0.45, 1);
+  --db-ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --db-dur-fast: 180ms;
+  --db-dur: 360ms;
+  --db-dur-slow: 620ms;
+
+  /* Legacy names still referenced in app */
+  --brand-blue: var(--db-blue);
+  --brand-ink: var(--db-ink);
+  --brand-paper: var(--db-coconut);
+  --brand-lime: var(--db-lime);
 }
 
 @theme inline {
@@ -20,23 +48,28 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  
-  /* Amber color palette for Tailwind */
-  --color-warm-white: var(--warm-white);
-  --color-warm-cream: var(--warm-cream);
-  --color-warm-brown: var(--warm-brown);
-  --color-warm-latte: var(--warm-latte);
-  --color-rich-brown: var(--rich-brown);
-  --color-muted-gold: var(--muted-gold);
-  --color-amber-700: var(--amber-700);
-  --color-amber-800: var(--amber-800);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Dropbox-inspired named colors usable as Tailwind bg-db-*, text-db-*, border-db-* */
+  --color-db-blue: var(--db-blue);
+  --color-db-blue-deep: var(--db-blue-deep);
+  --color-db-blue-soft: var(--db-blue-soft);
+  --color-db-ink: var(--db-ink);
+  --color-db-coconut: var(--db-coconut);
+  --color-db-coconut-warm: var(--db-coconut-warm);
+  --color-db-paper: var(--db-paper);
+  --color-db-canopy: var(--db-canopy);
+  --color-db-canopy-soft: var(--db-canopy-soft);
+  --color-db-zen: var(--db-zen);
+  --color-db-crimson: var(--db-crimson);
+  --color-db-crimson-soft: var(--db-crimson-soft);
+  --color-db-sunset: var(--db-sunset);
+  --color-db-tangerine: var(--db-tangerine);
+  --color-db-gold: var(--db-gold);
+  --color-db-lime: var(--db-lime);
+  --color-db-ocean: var(--db-ocean);
+  --color-db-plum: var(--db-plum);
+  --color-db-azalea: var(--db-azalea);
+  --color-db-cloud: var(--db-cloud);
 }
 
 html {
@@ -46,18 +79,11 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), 'Inter', 'Segoe UI', sans-serif;
+  font-feature-settings: 'ss01', 'cv11';
 }
 
-/* Dark mode support - applies dark class based on system preference */
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-}
-
-/* Keyboard Focus Indicators */
-/* Ensure all interactive elements have visible focus states */
+/* Focus states — crisp Dropbox Blue ring */
 *:focus {
   outline: none;
 }
@@ -69,22 +95,9 @@ textarea:focus-visible,
 select:focus-visible,
 [role="button"]:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--db-blue);
   outline-offset: 2px;
   border-radius: 4px;
-}
-
-/* Dark mode focus indicators */
-@media (prefers-color-scheme: dark) {
-  a:focus-visible,
-  button:focus-visible,
-  input:focus-visible,
-  textarea:focus-visible,
-  select:focus-visible,
-  [role="button"]:focus-visible,
-  [tabindex]:focus-visible {
-    outline-color: #60a5fa;
-  }
 }
 
 /* Skip link styles */
@@ -109,4 +122,206 @@ select:focus-visible,
   overflow: visible;
   clip: auto;
   white-space: normal;
+}
+
+/* === Shell: coconut paper + subtle tab grid === */
+.brand-shell {
+  position: relative;
+  background: var(--db-coconut);
+  isolation: isolate;
+}
+
+.brand-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(to right, rgba(30, 25, 25, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 25, 25, 0.045) 1px, transparent 1px);
+  background-size: clamp(72px, 8vw, 124px) clamp(72px, 8vw, 124px);
+  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  pointer-events: none;
+}
+
+/* === Plane: THE core Dropbox layout primitive ===
+   A plane is a flat, confident rectangle that contains content.
+   It originates hierarchy — layout should feel like it's built from planes. */
+.plane {
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid rgba(30, 25, 25, 0.08);
+  overflow: hidden;
+  transition: transform var(--db-dur) var(--db-ease),
+              box-shadow var(--db-dur) var(--db-ease);
+}
+
+.plane-coconut { background: var(--db-coconut); color: var(--db-ink); }
+.plane-paper { background: var(--db-paper); color: var(--db-ink); }
+.plane-blue { background: var(--db-blue); color: #fff; border-color: var(--db-blue-deep); }
+.plane-ink { background: var(--db-ink); color: var(--db-coconut); border-color: #000; }
+.plane-canopy { background: var(--db-canopy); color: #fff; border-color: #0a3b2c; }
+.plane-crimson { background: var(--db-crimson); color: #fff; border-color: #9f0a24; }
+.plane-sunset { background: var(--db-sunset); color: var(--db-ink); border-color: #e0772f; }
+.plane-gold { background: var(--db-gold); color: var(--db-ink); border-color: #d4a514; }
+.plane-lime { background: var(--db-lime); color: var(--db-ink); border-color: #94b812; }
+.plane-ocean { background: var(--db-ocean); color: #fff; border-color: #00698e; }
+.plane-plum { background: var(--db-plum); color: #fff; border-color: #3f1d5c; }
+.plane-azalea { background: var(--db-azalea); color: var(--db-ink); border-color: #e9b5bd; }
+
+.plane-lift {
+  transition: transform var(--db-dur) var(--db-ease),
+              box-shadow var(--db-dur) var(--db-ease);
+}
+.plane-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 44px rgba(30, 25, 25, 0.12);
+}
+
+/* The "Tab" — a small plane that anchors a corner of a layout.
+   Mirrors Dropbox's Tab glyph concept: a fulcrum from which layout originates. */
+.tab-anchor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: var(--db-ink);
+  color: var(--db-coconut);
+}
+
+/* === Legacy helpers — kept so existing pages still render === */
+.brand-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid rgba(30, 25, 25, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 6px 20px rgba(30, 25, 25, 0.05);
+  transition: transform var(--db-dur) var(--db-ease),
+              box-shadow var(--db-dur) var(--db-ease);
+}
+
+.brand-card:hover {
+  box-shadow: 0 14px 32px rgba(30, 25, 25, 0.09);
+}
+
+.brand-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--db-ink);
+  color: #fff;
+  border-radius: 999px;
+  border: 1px solid var(--db-ink);
+  box-shadow: 0 6px 18px rgba(30, 25, 25, 0.22);
+  transition: transform var(--db-dur-fast) var(--db-ease),
+              box-shadow var(--db-dur-fast) var(--db-ease),
+              background-color var(--db-dur-fast) var(--db-ease);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.brand-button:hover {
+  background: #000;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(30, 25, 25, 0.3);
+}
+
+.brand-button:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.brand-button-blue {
+  background: var(--db-blue);
+  border-color: var(--db-blue-deep);
+  box-shadow: 0 8px 22px rgba(0, 97, 254, 0.3);
+}
+
+.brand-button-blue:hover {
+  background: var(--db-blue-deep);
+  box-shadow: 0 14px 32px rgba(0, 97, 254, 0.38);
+}
+
+.brand-input {
+  border: 1px solid rgba(30, 25, 25, 0.16);
+  background: #fff;
+  border-radius: 12px;
+  transition: border-color var(--db-dur-fast) var(--db-ease),
+              box-shadow var(--db-dur-fast) var(--db-ease);
+}
+
+.brand-input:focus {
+  border-color: var(--db-blue);
+  box-shadow: 0 0 0 3px rgba(0, 97, 254, 0.16);
+}
+
+/* === Reveal animations — Dropbox "wink, not confetti" === */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(18px) scale(0.99);
+  transition: opacity var(--db-dur-slow) var(--db-ease),
+              transform var(--db-dur-slow) var(--db-ease);
+  will-change: opacity, transform;
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+[data-reveal="soft"] {
+  transform: translateY(10px);
+  transition-duration: 500ms;
+}
+
+[data-reveal="zoom"] {
+  transform: translateY(14px) scale(0.97);
+}
+
+[data-reveal="left"] {
+  transform: translateX(-18px);
+}
+
+[data-reveal="right"] {
+  transform: translateX(18px);
+}
+
+[data-stagger="1"] { transition-delay: 80ms; }
+[data-stagger="2"] { transition-delay: 160ms; }
+[data-stagger="3"] { transition-delay: 240ms; }
+[data-stagger="4"] { transition-delay: 320ms; }
+[data-stagger="5"] { transition-delay: 400ms; }
+[data-stagger="6"] { transition-delay: 480ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .plane-lift:hover,
+  .brand-button:hover {
+    transform: none;
+  }
+}
+
+/* === Marquee for principles band === */
+@keyframes db-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.db-marquee {
+  display: flex;
+  width: max-content;
+  animation: db-marquee 48s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .db-marquee { animation: none; }
 }
