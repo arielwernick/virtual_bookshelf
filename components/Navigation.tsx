@@ -8,8 +8,10 @@ export function Navigation() {
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
+  const isEmbed = pathname?.startsWith('/embed') ?? false;
+
   useEffect(() => {
-    // Check auth status on mount and when pathname changes
+    if (isEmbed) return;
     fetch('/api/auth/me')
       .then((res) => {
         setIsLoggedIn(res.ok);
@@ -17,7 +19,9 @@ export function Navigation() {
       .catch(() => {
         setIsLoggedIn(false);
       });
-  }, [pathname]);
+  }, [pathname, isEmbed]);
+
+  if (isEmbed) return null;
 
   const isHomePage = pathname === '/';
 
