@@ -5,9 +5,57 @@ import { useRouter } from 'next/navigation';
 import { ImportPreviewList } from '@/components/import/ImportPreviewList';
 import { PreviewItem } from '@/components/import/ParsedItemPreview';
 import { ParsedItem } from '@/lib/utils/textParser';
-import { Confetti } from '@/components/Confetti';
 
 type ImportState = 'input' | 'processing' | 'preview' | 'creating';
+
+const importCelebrationStyles = `
+@keyframes import-celebration-card-in {
+    0% { opacity: 0; transform: translateY(8px) scale(0.97); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes import-celebration-circle-draw {
+    to { stroke-dashoffset: 0; }
+}
+@keyframes import-celebration-tick-draw {
+    to { stroke-dashoffset: 0; }
+}
+@keyframes import-celebration-fade-up {
+    0% { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+.import-celebration-card {
+    animation: import-celebration-card-in 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.import-celebration-check-circle {
+    stroke-dasharray: 251;
+    stroke-dashoffset: 251;
+    animation: import-celebration-circle-draw 0.6s cubic-bezier(0.65, 0, 0.45, 1) 0.1s forwards;
+}
+.import-celebration-check-tick {
+    stroke-dasharray: 80;
+    stroke-dashoffset: 80;
+    animation: import-celebration-tick-draw 0.34s cubic-bezier(0.65, 0, 0.45, 1) 0.55s forwards;
+}
+.import-celebration-headline {
+    opacity: 0;
+    animation: import-celebration-fade-up 0.4s ease-out 0.75s forwards;
+}
+.import-celebration-subtext {
+    opacity: 0;
+    animation: import-celebration-fade-up 0.4s ease-out 0.9s forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+    .import-celebration-card,
+    .import-celebration-check-circle,
+    .import-celebration-check-tick,
+    .import-celebration-headline,
+    .import-celebration-subtext {
+        animation: none;
+        opacity: 1;
+        stroke-dashoffset: 0;
+    }
+}
+`;
 
 export default function ImportPage() {
   const router = useRouter();
@@ -17,7 +65,6 @@ export default function ImportPage() {
   const [shelfTitle, setShelfTitle] = useState('');
   const [error, setError] = useState('');
   const [progress, setProgress] = useState({ current: 0, total: 0, step: '' });
-  const [showConfetti, setShowConfetti] = useState(false);
   const [createdShelfId, setCreatedShelfId] = useState<string | null>(null);
 
   const handleExtract = async () => {
@@ -196,14 +243,11 @@ export default function ImportPage() {
         return;
       }
 
-      // Success - show confetti and redirect
       setCreatedShelfId(json.data.shelf.id);
-      setShowConfetti(true);
 
-      // Redirect after a moment
       setTimeout(() => {
         router.push(`/shelf/${json.data.shelf.id}/edit`);
-      }, 2000);
+      }, 2200);
     } catch (err) {
       console.error('Create error:', err);
       setError('Failed to create shelf. Please try again.');
@@ -220,20 +264,38 @@ export default function ImportPage() {
     setProgress({ current: 0, total: 0, step: '' });
   };
 
-  // If just created a shelf, show success state
-  if (createdShelfId && showConfetti) {
+  if (createdShelfId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 dark:from-gray-900 dark:to-gray-800">
-        <Confetti />
+        <style>{importCelebrationStyles}</style>
         <main className="max-w-4xl mx-auto px-4 py-8">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Shelf Created!
+            <div className="import-celebration-card flex flex-col items-center text-center py-14 px-6">
+              <svg viewBox="0 0 96 96" className="w-20 h-20 mb-5" aria-hidden="true">
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="44"
+                  fill="none"
+                  stroke="#10b981"
+                  strokeWidth="3"
+                  className="import-celebration-check-circle"
+                />
+                <path
+                  d="M28 50 L42 64 L70 32"
+                  fill="none"
+                  stroke="#10b981"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="import-celebration-check-tick"
+                />
+              </svg>
+              <h2 className="import-celebration-headline text-2xl font-bold text-gray-900 dark:text-white">
+                Shelf created
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Redirecting you to your new shelf...
+              <p className="import-celebration-subtext mt-2 text-gray-600 dark:text-gray-400">
+                Taking you to your new shelf…
               </p>
             </div>
           </div>
