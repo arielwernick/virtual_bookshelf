@@ -31,13 +31,13 @@ export function ImportPreviewList({
   const canCreate = selectedCount > 0 && shelfTitle.trim().length > 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-reveal="soft" data-stagger="3">
       {/* Header with count and controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          Found <span className="font-semibold text-gray-900 dark:text-white">{totalCount}</span> links
+        <div className="text-sm text-[#1e1919]/70">
+          Found <span className="font-semibold text-[#1e1919]">{totalCount}</span> links
           {selectedCount !== totalCount && (
-            <>, <span className="font-semibold text-amber-600">{selectedCount}</span> selected</>
+            <>, <span className="font-semibold text-[#0061fe]">{selectedCount}</span> selected</>
           )}
         </div>
         
@@ -46,8 +46,8 @@ export function ImportPreviewList({
             type="button"
             onClick={onSelectAll}
             disabled={allSelected}
-            className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 
-                       hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed
+            className="px-3 py-1.5 text-sm rounded-full border border-[#d9d4cd] 
+                       hover:bg-[#f7f5f2] disabled:opacity-50 disabled:cursor-not-allowed
                        transition-colors"
           >
             Select All
@@ -56,8 +56,8 @@ export function ImportPreviewList({
             type="button"
             onClick={onDeselectAll}
             disabled={noneSelected}
-            className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 
-                       hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed
+            className="px-3 py-1.5 text-sm rounded-full border border-[#d9d4cd] 
+                       hover:bg-[#f7f5f2] disabled:opacity-50 disabled:cursor-not-allowed
                        transition-colors"
           >
             Deselect All
@@ -78,8 +78,8 @@ export function ImportPreviewList({
       </div>
 
       {/* Shelf title input */}
-      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-        <label htmlFor="shelf-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <div className="pt-4 border-t border-[#e8e4de]">
+        <label htmlFor="shelf-title" className="block text-sm font-semibold text-[#1e1919] mb-2">
           Shelf Title
         </label>
         <input
@@ -89,10 +89,7 @@ export function ImportPreviewList({
           onChange={(e) => onShelfTitleChange(e.target.value)}
           placeholder="e.g., Engineering Blogs, Startup Resources..."
           maxLength={100}
-          className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                     bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-                     focus:ring-2 focus:ring-amber-500 focus:border-transparent
-                     placeholder:text-gray-400 dark:placeholder:text-gray-500"
+          className="brand-input w-full px-4 py-2.5 text-[#1e1919] placeholder:text-[#1e1919]/45"
         />
       </div>
 
@@ -102,10 +99,9 @@ export function ImportPreviewList({
           type="button"
           onClick={onCreateShelf}
           disabled={!canCreate || creating}
-          className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium
-                     bg-amber-500 hover:bg-amber-600 text-white
-                     disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed
-                     transition-colors flex items-center justify-center gap-2"
+          className="brand-button w-full sm:w-auto px-6 py-3 font-semibold
+                     disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed
+                     flex items-center justify-center gap-2"
         >
           {creating ? (
             <>
