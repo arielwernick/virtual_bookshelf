@@ -28,6 +28,7 @@ function getRedis(): Redis {
 let _loginRateLimiter: Ratelimit | null = null;
 let _signupRateLimiter: Ratelimit | null = null;
 let _oauthRateLimiter: Ratelimit | null = null;
+let _externalApiRateLimiter: Ratelimit | null = null;
 
 /**
  * Rate limiter for login endpoint: 5 requests per minute
@@ -75,6 +76,23 @@ export function getOAuthRateLimiter(): Ratelimit {
     });
   }
   return _oauthRateLimiter;
+}
+
+/**
+ * Rate limiter for routes that fan out to paid/quota'd external APIs
+ * (Spotify, Google Books, YouTube, Yahoo Finance, Microlink): 30 requests
+ * per minute per IP. Protects upstream quotas from anonymous abuse.
+ */
+export function getExternalApiRateLimiter(): Ratelimit {
+  if (!_externalApiRateLimiter) {
+    _externalApiRateLimiter = new Ratelimit({
+      redis: getRedis(),
+      limiter: Ratelimit.slidingWindow(30, '1 m'),
+      analytics: true,
+      prefix: 'ratelimit:external_api',
+    });
+  }
+  return _externalApiRateLimiter;
 }
 
 /**
@@ -157,4 +175,5 @@ export function _resetRateLimitCache(): void {
   _loginRateLimiter = null;
   _signupRateLimiter = null;
   _oauthRateLimiter = null;
+  _externalApiRateLimiter = null;
 }
