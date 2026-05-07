@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clearSession } from '@/lib/utils/session';
 import { createLogger } from '@/lib/utils/logger';
+import { internalError } from '@/lib/utils/errors';
 
 const logger = createLogger('AuthLogout');
 
@@ -14,9 +15,6 @@ export async function POST() {
     });
   } catch (error) {
     logger.errorWithException('Logout failed', error);
-    return NextResponse.json(
-      { success: false, error: 'Logout failed' },
-      { status: 500 }
-    );
+    return internalError('Logout failed');
   }
 }

@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { getShelfsByUserId, getItemsByShelfId } from '@/lib/db/queries';
 import { createLogger } from '@/lib/utils/logger';
+import {
+  authRequiredError,
+  internalError,
+} from '@/lib/utils/errors';
 
 const logger = createLogger('ShelfDashboard');
 
@@ -15,10 +19,7 @@ export async function GET(_request: Request) {
     // Check for valid session
     const session = await getSession();
     if (!session || !session.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized - please log in first' },
-        { status: 401 }
-      );
+      return authRequiredError('Unauthorized - please log in first');
     }
 
     // Get all shelves for user
@@ -52,9 +53,6 @@ export async function GET(_request: Request) {
     });
   } catch (error) {
     logger.errorWithException('Failed to fetch dashboard', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch dashboard' },
-      { status: 500 }
-    );
+    return internalError('Failed to fetch dashboard');
   }
 }
