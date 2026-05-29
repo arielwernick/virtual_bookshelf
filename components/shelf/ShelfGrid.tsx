@@ -4,7 +4,7 @@ import { Item, ItemType } from '@/lib/types/shelf';
 import { ItemCard } from './ItemCard';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { ShelfProvider, useShelf } from '@/lib/contexts/ShelfContext';
+import { ShelfProvider } from '@/lib/contexts/ShelfContext';
 
 /**
  * Dynamically import the DnD-powered container so that @dnd-kit is only
@@ -36,9 +36,6 @@ interface ShelfRowProps {
  * Uses ShelfContext for callbacks (no prop drilling).
  */
 function ShelfRow({ items }: ShelfRowProps) {
-  const shelf = useShelf();
-  const onItemClick = shelf?.onItemClick;
-
   return (
     <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-lg border border-gray-100 dark:border-gray-800 shadow-xs overflow-hidden">
       <div
@@ -49,7 +46,7 @@ function ShelfRow({ items }: ShelfRowProps) {
         }}
       >
         {items.map((item) => (
-          <div key={item.id} className="w-[100px] sm:w-[140px] flex-shrink-0" onClick={() => onItemClick?.(item)}>
+          <div key={item.id} className="w-[100px] sm:w-[140px] flex-shrink-0">
             <ItemCard item={item} />
           </div>
         ))}
