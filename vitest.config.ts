@@ -22,6 +22,10 @@ export default defineConfig({
         '*.config.{ts,js,mjs}',
         'app/layout.tsx',
         'app/globals.css',
+        // Migration runner + CLI: the DB-touching paths are integration-tested
+        // against a real/ephemeral database, not unit-tested (see migrate.test.ts).
+        'lib/db/migrate.ts',
+        'scripts/**',
       ],
       thresholds: {
         statements: 70,

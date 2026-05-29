@@ -1,5 +1,9 @@
 -- Virtual Bookshelf Database Schema
--- Run this in your Neon SQL Editor to set up the database
+--
+-- DEPRECATED for manual use. Schema is now managed by the migration runner:
+-- run `npm run migrate:up` instead of pasting this file into the Neon editor.
+-- This file's contents are consolidated into `migrations/001_initial_schema.sql`
+-- and kept here for historical reference. See docs/migrations/MIGRATION.md.
 
 -- Enable pgcrypto extension for UUID generation
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
