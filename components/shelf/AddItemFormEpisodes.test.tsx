@@ -116,15 +116,16 @@ describe('AddItemForm - Episode Browsing', () => {
     // Click Browse Episodes
     fireEvent.click(screen.getByText('Browse Episodes →'));
 
-    await waitFor(() => {
-      // Use a more flexible text matching approach
-      const heading = screen.getByRole('heading', { level: 3 });
-      expect(heading.textContent).toContain('Episodes from');
-      expect(heading.textContent).toContain('Test Podcast Show');
-    });
+    // findByText retries until the async-rendered episode list is in the DOM,
+    // so the assertions below no longer race the render cycle that follows the
+    // heading (the source of CI flakiness).
+    expect(await screen.findByText(/Episode 1: Introduction/i)).toBeInTheDocument();
+
+    const heading = screen.getByRole('heading', { level: 3 });
+    expect(heading.textContent).toContain('Episodes from');
+    expect(heading.textContent).toContain('Test Podcast Show');
 
     // Check that episodes are displayed
-    expect(screen.getByText(/Episode 1: Introduction/i)).toBeInTheDocument();
     expect(screen.getByText(/Episode 2: Deep Dive/i)).toBeInTheDocument();
 
     // Check that episodes have duration info (don't need exact matching)
