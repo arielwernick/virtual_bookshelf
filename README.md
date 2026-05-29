@@ -60,10 +60,19 @@ DEMO_SHELF_TOKEN=your-admin-shelf-share-token
 
 ```bash
 npm install
+npm run migrate:up   # bootstrap / update the database schema (idempotent)
 npm run dev
 ```
 
 Visit [http://localhost:3000](http://localhost:3000) to see the app.
+
+### Database schema
+
+Schema is managed by an idempotent migration runner (see
+[docs/migrations/MIGRATION.md](docs/migrations/MIGRATION.md)). `npm run migrate:up`
+takes an empty database to the current schema and is safe to re-run against an
+existing one (no-op). For CI / ephemeral test databases, set `DATABASE_URL`
+inline and run `npm run db:bootstrap`.
 
 ## Scripts
 
@@ -76,6 +85,10 @@ Visit [http://localhost:3000](http://localhost:3000) to see the app.
 | `npm run test` | Run tests in watch mode |
 | `npm run test:run` | Run tests once |
 | `npm run test:ci` | Run tests with coverage |
+| `npm run migrate:up` | Apply pending DB migrations (idempotent) |
+| `npm run migrate:status` | Show applied / pending migrations |
+| `npm run migrate:down` | Roll back the most recent migration |
+| `npm run db:bootstrap` | Bring an empty DB to current schema |
 
 ## Project Structure
 

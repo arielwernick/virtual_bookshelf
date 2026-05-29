@@ -1,14 +1,21 @@
--- Virtual Bookshelf Database Schema
+-- Migration 001: Initial schema
 --
--- DEPRECATED for manual use. Schema is now managed by the migration runner:
--- run `npm run migrate:up` instead of pasting this file into the Neon editor.
--- This file's contents are consolidated into `migrations/001_initial_schema.sql`
--- and kept here for historical reference. See docs/migrations/MIGRATION.md.
+-- Consolidates the full current schema (formerly lib/db/schema.sql plus
+-- MIGRATION_001..006) into a single idempotent baseline.
+--
+-- IDEMPOTENT: this file is safe to run against an empty database (full
+-- bootstrap) AND against an existing, already-populated production database
+-- (no-op). Every statement is guarded with IF [NOT] EXISTS or a DO block, so
+-- re-applying it never errors and never destroys data.
 
--- Enable pgcrypto extension for UUID generation
+-- ---------------------------------------------------------------------------
+-- Extensions
+-- ---------------------------------------------------------------------------
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- Create users table
+-- ---------------------------------------------------------------------------
+-- users
+-- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username VARCHAR(50) UNIQUE,
@@ -24,12 +31,13 @@ CREATE TABLE IF NOT EXISTS users (
   CONSTRAINT users_auth_method CHECK (password_hash IS NOT NULL OR google_id IS NOT NULL)
 );
 
--- Create index on username for faster lookups
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
 
--- Create shelves table
+-- ---------------------------------------------------------------------------
+-- shelves
+-- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS shelves (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -42,23 +50,17 @@ CREATE TABLE IF NOT EXISTS shelves (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ============================================================================
--- IMPORTANT: If you have an existing database, you MUST run the migrations:
--- See: lib/db/MIGRATION_002_top5_shelf.sql
--- See: lib/db/MIGRATION_003_podcast_episodes.sql
--- See: lib/db/MIGRATION_006_stock_type.sql
--- ============================================================================
-
--- Create indexes for shelves
 CREATE INDEX IF NOT EXISTS idx_shelves_user_id ON shelves(user_id);
 CREATE INDEX IF NOT EXISTS idx_shelves_share_token ON shelves(share_token);
 
--- Create items table
+-- ---------------------------------------------------------------------------
+-- items
+-- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shelf_id UUID NOT NULL REFERENCES shelves(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  type VARCHAR(20) NOT NULL CHECK (type IN ('book', 'podcast', 'music', 'podcast_episode', 'video', 'link', 'stock')),
+  type VARCHAR(20) NOT NULL,
   title VARCHAR(255) NOT NULL,
   creator VARCHAR(255) NOT NULL,
   image_url TEXT,
@@ -70,16 +72,40 @@ CREATE TABLE IF NOT EXISTS items (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Add unique constraint to prevent duplicate order positions per shelf
-ALTER TABLE items ADD CONSTRAINT items_shelf_order_unique UNIQUE (shelf_id, order_index);
+-- The item-type CHECK is defined as a named constraint so it can be evolved by
+-- later migrations. Adding it via a guarded block keeps this file idempotent
+-- (ADD CONSTRAINT errors if the constraint already exists).
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'items_type_check'
+  ) THEN
+    ALTER TABLE items ADD CONSTRAINT items_type_check
+      CHECK (type IN ('book', 'podcast', 'music', 'podcast_episode', 'video', 'link', 'stock'));
+  END IF;
+END
+$$;
 
--- Create indexes for better query performance
+-- Unique (shelf_id, order_index) prevents duplicate ordering positions.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'items_shelf_order_unique'
+  ) THEN
+    ALTER TABLE items ADD CONSTRAINT items_shelf_order_unique
+      UNIQUE (shelf_id, order_index);
+  END IF;
+END
+$$;
+
 CREATE INDEX IF NOT EXISTS idx_items_shelf_id ON items(shelf_id);
 CREATE INDEX IF NOT EXISTS idx_items_user_id ON items(user_id);
 CREATE INDEX IF NOT EXISTS idx_items_shelf_type ON items(shelf_id, type);
 CREATE INDEX IF NOT EXISTS idx_items_order ON items(shelf_id, order_index);
 
--- Create function to update updated_at timestamp
+-- ---------------------------------------------------------------------------
+-- updated_at trigger
+-- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -88,17 +114,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create triggers to automatically update updated_at
+-- CREATE TRIGGER has no IF NOT EXISTS before PG 14, so drop-then-create keeps
+-- this idempotent across versions.
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at
   BEFORE UPDATE ON users
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_shelves_updated_at ON shelves;
 CREATE TRIGGER update_shelves_updated_at
   BEFORE UPDATE ON shelves
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_items_updated_at ON items;
 CREATE TRIGGER update_items_updated_at
   BEFORE UPDATE ON items
   FOR EACH ROW

@@ -10,7 +10,11 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:ci": "vitest run --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "migrate:up": "tsx scripts/migrate.ts up",
+    "migrate:down": "tsx scripts/migrate.ts down",
+    "migrate:status": "tsx scripts/migrate.ts status",
+    "db:bootstrap": "tsx scripts/migrate.ts up"
   },
   "dependencies": {
     "@dnd-kit/accessibility": "^3.1.1",
