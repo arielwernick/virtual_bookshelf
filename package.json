@@ -14,7 +14,7 @@
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
     "e2e:ui": "playwright test --ui",
-    "e2e:explore": "playwright test explore.spec.ts",
+    "e2e:explore": "playwright test explore.spec.ts explore-auth.auth.spec.ts",
     "e2e:report": "playwright show-report"
   },
   "dependencies": {

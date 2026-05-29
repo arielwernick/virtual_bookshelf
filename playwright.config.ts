@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { STORAGE_STATE } from './e2e/lib/auth';
 
 /**
  * Playwright configuration for Virtual Bookshelf.
@@ -34,9 +35,23 @@ export default defineConfig({
   },
 
   projects: [
+    // Authenticates + seeds once, persisting state for the authenticated project.
     {
-      name: 'chromium',
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+    },
+    // Public, unauthenticated surface (smoke + public exploration).
+    {
+      name: 'public',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: [/.*\.setup\.ts/, /.*\.auth\.spec\.ts/],
+    },
+    // Logged-in surface — reuses the session cookie produced by `setup`.
+    {
+      name: 'authenticated',
+      use: { ...devices['Desktop Chrome'], storageState: STORAGE_STATE },
+      testMatch: /.*\.auth\.spec\.ts/,
+      dependencies: ['setup'],
     },
   ],
 

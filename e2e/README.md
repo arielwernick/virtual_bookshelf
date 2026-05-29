@@ -4,9 +4,10 @@ This directory uses [Playwright](https://playwright.dev) to drive the real app
 in a browser. It serves two purposes:
 
 1. **Smoke tests** (`smoke.spec.ts`) — verify the public surface renders.
-2. **Agent UI exploration** (`explore.spec.ts`) — capture what an agent needs
-   to understand the UI without a human: screenshots, the ARIA/accessibility
-   tree, and a summary of every route's interactive controls.
+2. **Agent UI exploration** — capture what an agent needs to understand the UI
+   without a human: screenshots, the ARIA/accessibility tree, and a summary of
+   every route's interactive controls. Split into the public crawl
+   (`explore.spec.ts`) and the logged-in crawl (`explore-auth.auth.spec.ts`).
 
 ## Setup (one time)
 
@@ -43,7 +44,26 @@ target with `PLAYWRIGHT_BASE_URL` (e.g. against a deployed preview).
   view of the page (e.g. `heading "Sign in"`, `textbox "Email"`) that an agent
   reasons over rather than raw pixels or HTML.
 
-To explore a new route, add it to the `ROUTES` array in `explore.spec.ts`.
+To explore a new public route, add it to the `ROUTES` array in
+`explore.spec.ts`; for a logged-in route, add a case to
+`explore-auth.auth.spec.ts`.
 
-Artifacts and Playwright's own output are git-ignored — they are generated, not
-committed.
+## Authenticated exploration
+
+The logged-in surface (populated dashboard, shelf editor, import) is covered by
+the `authenticated` Playwright project:
+
+- `auth.setup.ts` runs once as a project dependency. It signs the test user up
+  via `/api/auth/signup` (falling back to `/api/auth/login` if they already
+  exist), seeds a shelf with a few items, and saves the session cookie to
+  `e2e/.auth/user.json` plus seed metadata to `e2e/.auth/seed.json`.
+- Authenticated specs (`*.auth.spec.ts`) reuse that cookie via
+  `storageState`, so they never click through the login form.
+
+The test account is created in whatever database `DATABASE_URL` points at, so
+**point this at a dev/local database, not production.** Override the credentials
+(e.g. to reuse a staging account) with `E2E_USERNAME`, `E2E_EMAIL`, and
+`E2E_PASSWORD`.
+
+Artifacts, saved auth state, and Playwright's own output are git-ignored — they
+are generated, not committed.
