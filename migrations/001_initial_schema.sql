@@ -1,12 +1,18 @@
 -- Migration 001: Initial schema
 --
--- Consolidates the full current schema (formerly lib/db/schema.sql plus
--- MIGRATION_001..006) into a single idempotent baseline.
+-- FAITHFUL SNAPSHOT of the production database schema (verified via
+-- information_schema introspection). The goal of this baseline is that a
+-- freshly bootstrapped database is byte-for-byte structurally identical to
+-- production, so ephemeral/test databases (see #147) match prod exactly.
 --
--- IDEMPOTENT: this file is safe to run against an empty database (full
--- bootstrap) AND against an existing, already-populated production database
--- (no-op). Every statement is guarded with IF [NOT] EXISTS or a DO block, so
--- re-applying it never errors and never destroys data.
+-- IMPORTANT: this file intentionally mirrors prod *as it is today*, including
+-- a couple of looser-than-ideal definitions (nullable users.email, no FK on
+-- items.shelf_id, shelf_type allowing 'top5'). Tightenings live in 002 so the
+-- baseline never diverges from reality. Do not "improve" the schema here.
+--
+-- IDEMPOTENT: safe to run against an empty database (full bootstrap) AND
+-- against an existing, already-populated database (no-op). Every statement is
+-- guarded with IF [NOT] EXISTS or a DO block.
 
 -- ---------------------------------------------------------------------------
 -- Extensions
@@ -19,16 +25,15 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username VARCHAR(50) UNIQUE,
-  email VARCHAR(255) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE,
   password_hash VARCHAR(255),
   google_id VARCHAR(100) UNIQUE,
-  share_token VARCHAR(128) UNIQUE NOT NULL DEFAULT encode(gen_random_uuid()::text::bytea, 'hex'),
+  share_token VARCHAR(128) UNIQUE NOT NULL
+    DEFAULT substr(encode(gen_random_uuid()::text::bytea, 'hex'), 1, 64),
   description TEXT,
   title VARCHAR(100),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  CONSTRAINT users_username_lowercase CHECK (username IS NULL OR username = lower(username)),
-  CONSTRAINT users_auth_method CHECK (password_hash IS NOT NULL OR google_id IS NOT NULL)
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
@@ -43,9 +48,11 @@ CREATE TABLE IF NOT EXISTS shelves (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR(100) NOT NULL,
   description TEXT,
-  share_token VARCHAR(128) UNIQUE NOT NULL DEFAULT encode(gen_random_uuid()::text::bytea, 'hex'),
+  share_token VARCHAR(128) UNIQUE NOT NULL
+    DEFAULT encode(gen_random_uuid()::text::bytea, 'hex'),
   is_public BOOLEAN DEFAULT FALSE,
-  shelf_type VARCHAR(20) NOT NULL DEFAULT 'standard' CHECK (shelf_type = 'standard'),
+  shelf_type VARCHAR(20) NOT NULL DEFAULT 'standard'
+    CHECK (shelf_type IN ('standard', 'top5')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -56,10 +63,13 @@ CREATE INDEX IF NOT EXISTS idx_shelves_share_token ON shelves(share_token);
 -- ---------------------------------------------------------------------------
 -- items
 -- ---------------------------------------------------------------------------
+-- NOTE: prod has NO foreign key on items.shelf_id (and 10 orphaned rows), and
+-- shelf_id is nullable. Reproduced faithfully here; adding the FK is deferred
+-- to a later migration after the orphans are cleaned up (see #150).
 CREATE TABLE IF NOT EXISTS items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  shelf_id UUID NOT NULL REFERENCES shelves(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  shelf_id UUID,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   type VARCHAR(20) NOT NULL,
   title VARCHAR(255) NOT NULL,
   creator VARCHAR(255) NOT NULL,
@@ -72,9 +82,8 @@ CREATE TABLE IF NOT EXISTS items (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- The item-type CHECK is defined as a named constraint so it can be evolved by
--- later migrations. Adding it via a guarded block keeps this file idempotent
--- (ADD CONSTRAINT errors if the constraint already exists).
+-- Named constraints are added via guarded blocks so the names match prod
+-- exactly (ADD CONSTRAINT errors if the constraint already exists).
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -86,7 +95,6 @@ BEGIN
 END
 $$;
 
--- Unique (shelf_id, order_index) prevents duplicate ordering positions.
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -102,6 +110,7 @@ CREATE INDEX IF NOT EXISTS idx_items_shelf_id ON items(shelf_id);
 CREATE INDEX IF NOT EXISTS idx_items_user_id ON items(user_id);
 CREATE INDEX IF NOT EXISTS idx_items_shelf_type ON items(shelf_id, type);
 CREATE INDEX IF NOT EXISTS idx_items_order ON items(shelf_id, order_index);
+CREATE INDEX IF NOT EXISTS idx_items_type ON items(type);
 
 -- ---------------------------------------------------------------------------
 -- updated_at trigger
