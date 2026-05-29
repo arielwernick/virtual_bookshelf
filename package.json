@@ -15,6 +15,11 @@
     "migrate:down": "tsx scripts/migrate.ts down",
     "migrate:status": "tsx scripts/migrate.ts status",
     "db:bootstrap": "tsx scripts/migrate.ts up"
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:ui": "playwright test --ui",
+    "e2e:explore": "playwright test explore.spec.ts explore-auth.auth.spec.ts",
+    "e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@dnd-kit/accessibility": "^3.1.1",
@@ -35,6 +40,7 @@
     "yahoo-finance2": "^3.13.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
