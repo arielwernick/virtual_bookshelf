@@ -1,15 +1,18 @@
-// Open Library API integration for book search (replaces Google Books which hit quota limits)
+// Google Books API integration for book search
 
-interface OpenLibraryDoc {
-  key: string;
+interface GoogleBooksVolumeInfo {
   title: string;
-  author_name?: string[];
-  cover_i?: number;
+  authors?: string[];
+  imageLinks?: {
+    thumbnail?: string;
+    smallThumbnail?: string;
+  };
+  infoLink?: string;
 }
 
-interface OpenLibraryResponse {
-  docs: OpenLibraryDoc[];
-  numFound: number;
+interface GoogleBooksItem {
+  id: string;
+  volumeInfo: GoogleBooksVolumeInfo;
 }
 
 export interface BookItem {
@@ -22,28 +25,31 @@ export interface BookItem {
 }
 
 export async function searchBooks(query: string): Promise<BookItem[]> {
-  const response = await fetch(
-    `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10&fields=key,title,author_name,cover_i`,
-    {
-      headers: { 'Accept': 'application/json' },
-    }
-  );
+  const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+  const url = new URL('https://www.googleapis.com/books/v1/volumes');
+  url.searchParams.set('q', query);
+  url.searchParams.set('maxResults', '10');
+  if (apiKey) url.searchParams.set('key', apiKey);
+
+  const response = await fetch(url.toString(), {
+    headers: { 'Accept': 'application/json' },
+  });
 
   if (!response.ok) {
-    throw new Error('Failed to search Open Library');
+    throw new Error('Failed to search Google Books');
   }
 
-  const data: OpenLibraryResponse = await response.json();
-  const docs = data.docs ?? [];
+  const data = await response.json();
+  const items: GoogleBooksItem[] = data.items || [];
 
-  return docs.map((doc) => ({
-    id: doc.key,
-    title: doc.title,
-    creator: doc.author_name?.join(', ') || 'Unknown Author',
-    imageUrl: doc.cover_i
-      ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
-      : '',
-    externalUrl: `https://openlibrary.org${doc.key}`,
+  return items.map((item) => ({
+    id: item.id,
+    title: item.volumeInfo.title,
+    creator: item.volumeInfo.authors?.join(', ') || 'Unknown Author',
+    imageUrl: item.volumeInfo.imageLinks?.thumbnail?.replace('http://', 'https://') ||
+              item.volumeInfo.imageLinks?.smallThumbnail?.replace('http://', 'https://') ||
+              '',
+    externalUrl: item.volumeInfo.infoLink || `https://books.google.com/books?id=${item.id}`,
     type: 'book' as const,
   }));
 }
