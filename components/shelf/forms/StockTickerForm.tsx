@@ -104,7 +104,7 @@ export function StockTickerForm({ onAdd, adding }: StockTickerFormProps) {
             <div>
               <p className="font-medium text-gray-900 dark:text-gray-100">{preview.name}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {ticker.trim().toUpperCase()} · {preview.price.toFixed(2)} {preview.currency}
+                {ticker.trim().toUpperCase()}{preview.price != null ? ` · ${preview.price.toFixed(2)} ${preview.currency}` : ''}
               </p>
             </div>
           </div>

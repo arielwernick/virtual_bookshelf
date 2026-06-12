@@ -79,7 +79,7 @@ export async function GET(request: Request) {
       }),
     ]);
 
-    if (!quote) {
+    if (!quote || quote.regularMarketPrice == null) {
       return NextResponse.json({ success: false, error: `No data found for ticker "${symbol}"` }, { status: 404 });
     }
 
