@@ -153,16 +153,20 @@ export function StockDrawer({ item }: StockDrawerProps) {
           <div className="flex flex-wrap gap-x-6 gap-y-2 items-baseline">
             <div>
               <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {quote.price.toFixed(2)}
+                {quote.price?.toFixed(2) ?? '—'}
               </span>
               <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">{quote.currency}</span>
             </div>
-            <div className={`text-sm font-medium ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-              {isPositive ? '+' : ''}{quote.change.toFixed(2)} ({isPositive ? '+' : ''}{quote.changePercent.toFixed(2)}%)
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              52W: {quote.fiftyTwoWeekLow.toFixed(2)} – {quote.fiftyTwoWeekHigh.toFixed(2)}
-            </div>
+            {quote.change != null && quote.changePercent != null && (
+              <div className={`text-sm font-medium ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {isPositive ? '+' : ''}{quote.change.toFixed(2)} ({isPositive ? '+' : ''}{quote.changePercent.toFixed(2)}%)
+              </div>
+            )}
+            {quote.fiftyTwoWeekLow != null && quote.fiftyTwoWeekHigh != null && (
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                52W: {quote.fiftyTwoWeekLow.toFixed(2)} – {quote.fiftyTwoWeekHigh.toFixed(2)}
+              </div>
+            )}
           </div>
         ) : (
           <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />

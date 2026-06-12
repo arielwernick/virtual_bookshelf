@@ -52,10 +52,14 @@ export async function GET(request: Request) {
   try {
     // Fetch quote and company profile in parallel
     const [quote, summary] = await Promise.all([
-      yahooFinance.quote(symbol, {
-        fields: ['regularMarketPrice', 'regularMarketChange', 'regularMarketChangePercent',
-                 'fiftyTwoWeekLow', 'fiftyTwoWeekHigh', 'shortName', 'longName', 'currency'],
-      }) as Promise<{
+      yahooFinance.quote(
+        symbol,
+        {
+          fields: ['regularMarketPrice', 'regularMarketChange', 'regularMarketChangePercent',
+                   'fiftyTwoWeekLow', 'fiftyTwoWeekHigh', 'shortName', 'longName', 'currency'],
+        },
+        { validateResult: false }
+      ) as Promise<{
         longName?: string;
         shortName?: string;
         regularMarketPrice?: number;
@@ -64,7 +68,7 @@ export async function GET(request: Request) {
         fiftyTwoWeekLow?: number;
         fiftyTwoWeekHigh?: number;
         currency?: string;
-      }>,
+      } | undefined>,
       yahooFinance.quoteSummary(
         symbol,
         { modules: ['assetProfile'] },
@@ -74,6 +78,10 @@ export async function GET(request: Request) {
         return null;
       }),
     ]);
+
+    if (!quote || quote.regularMarketPrice == null) {
+      return NextResponse.json({ success: false, error: `No data found for ticker "${symbol}"` }, { status: 404 });
+    }
 
     // Primary: Financial Modeling Prep has high-quality ticker-based logos, no API key needed
     const fmpLogoUrl = `https://financialmodelingprep.com/image-stock/${symbol}.png`;
