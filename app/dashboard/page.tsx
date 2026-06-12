@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { EmptyState, BookshelfIcon } from '@/components/ui/EmptyState';
 import { SkeletonShelfGrid } from '@/components/ui/SkeletonLoader';
 import { AddItemModal } from '@/components/shelf/AddItemModal';
+import { ShelfPreviewCard } from '@/components/shelf/ShelfPreviewCard';
+import type { ShelfPreviewItem } from '@/lib/types/shelf';
 
 interface Shelf {
   id: string;
@@ -14,6 +15,7 @@ interface Shelf {
   share_token: string;
   is_public: boolean;
   item_count: number;
+  preview_items: ShelfPreviewItem[];
   created_at: string;
   updated_at: string;
 }
@@ -258,28 +260,7 @@ export default function DashboardPage() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.shelves.map((shelf) => (
-              <Link
-                key={shelf.id}
-                href={`/shelf/${shelf.id}`}
-                className="bg-white dark:bg-gray-900 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 block group"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-gray-700 dark:group-hover:text-gray-300 mb-2">
-                  {shelf.name}
-                </h3>
-                {shelf.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                    {shelf.description}
-                  </p>
-                )}
-                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-100 dark:border-gray-800">
-                  <span>
-                    {shelf.item_count} item{shelf.item_count !== 1 ? 's' : ''}
-                  </span>
-                  <span className="text-xs">
-                    {shelf.is_public ? '🌍 Public' : '🔒 Private'}
-                  </span>
-                </div>
-              </Link>
+              <ShelfPreviewCard key={shelf.id} shelf={shelf} />
             ))}
           </div>
         )}

@@ -1,5 +1,5 @@
 import { sql, sqlQuery } from './client';
-import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems } from '../types/shelf';
+import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
 
 // ============================================================================
@@ -246,6 +246,65 @@ export async function getShelfsByUserId(userId: string): Promise<Shelf[]> {
   `;
 
   return result as Shelf[];
+}
+
+/**
+ * Get all of a user's shelves with total item counts and the first few items
+ * for cover previews, in a single query (avoids per-shelf item fetches).
+ *
+ * @param userId - User ID to fetch shelves for
+ * @param maxItemsPerShelf - Maximum number of preview items per shelf
+ * @returns Array of shelves with item_count and preview_items
+ */
+export async function getShelvesForDashboard(
+  userId: string,
+  maxItemsPerShelf: number = 6
+): Promise<DashboardShelf[]> {
+  interface RawDashboardShelf extends Shelf {
+    item_count: number;
+    preview_items: ShelfPreviewItem[];
+  }
+
+  const result = await sql`
+    SELECT
+      s.id,
+      s.user_id,
+      s.name,
+      s.description,
+      s.share_token,
+      s.is_public,
+      s.created_at,
+      s.updated_at,
+      (SELECT COUNT(*)::int FROM items WHERE shelf_id = s.id) as item_count,
+      COALESCE(
+        json_agg(
+          CASE WHEN i.id IS NOT NULL THEN
+            json_build_object(
+              'id', i.id,
+              'type', i.type,
+              'title', i.title,
+              'creator', i.creator,
+              'image_url', i.image_url
+            )
+          END
+          ORDER BY i.order_index ASC
+        ) FILTER (WHERE i.id IS NOT NULL),
+        '[]'::json
+      ) as preview_items
+    FROM shelves s
+    LEFT JOIN LATERAL (
+      SELECT id, type, title, creator, image_url, order_index FROM items
+      WHERE shelf_id = s.id
+      ORDER BY order_index ASC
+      LIMIT ${maxItemsPerShelf}
+    ) i ON true
+    WHERE s.user_id = ${userId}
+    GROUP BY s.id, s.user_id, s.name, s.description, s.share_token,
+             s.is_public, s.created_at, s.updated_at
+    ORDER BY s.created_at DESC
+  `;
+
+  return result as RawDashboardShelf[];
 }
 
 /**
