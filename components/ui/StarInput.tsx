@@ -41,8 +41,7 @@ export function StarInput({ value, onChange, size = 'md', label = 'Rating' }: St
 
   for (let i = 1; i <= 5; i++) {
     const isFilled = i <= displayRating;
-    const isHovered = hoverRating !== null && i <= hoverRating;
-    
+
     stars.push(
       <button
         key={i}

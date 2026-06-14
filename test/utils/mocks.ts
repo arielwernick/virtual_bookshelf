@@ -5,7 +5,7 @@
  * that are commonly used across multiple test files.
  */
 
-import { Item, Shelf, User, ItemType } from '@/lib/types/shelf';
+import { Item, Shelf, User } from '@/lib/types/shelf';
 
 /**
  * Creates a mock Item with default values that can be overridden
