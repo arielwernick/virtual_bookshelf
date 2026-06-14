@@ -151,21 +151,6 @@ export default function EditShelfPage() {
         }
     };
 
-    const handleReorder = async (itemIds: string[]) => {
-        try {
-            const res = await fetch(`/api/shelf/${shelfId}/reorder`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ item_ids: itemIds }),
-            });
-            if (res.ok) {
-                fetchShelf();
-            }
-        } catch (err) {
-            console.error('Reorder error:', err);
-        }
-    };
-
     const handleSaveNote = async (notes: string | null, rating: number | null) => {
         if (!noteEditItem) return;
         
