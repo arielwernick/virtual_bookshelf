@@ -67,13 +67,13 @@ describe('ShelfPreviewCard', () => {
     it('renders public badge for public shelves', () => {
       renderComponent({ is_public: true });
 
-      expect(screen.getByText('🌍 Public')).toBeInTheDocument();
+      expect(screen.getByText('Public')).toBeInTheDocument();
     });
 
     it('renders private badge for private shelves', () => {
       renderComponent({ is_public: false });
 
-      expect(screen.getByText('🔒 Private')).toBeInTheDocument();
+      expect(screen.getByText('Private')).toBeInTheDocument();
     });
 
     it('renders cover images for items with image_url', () => {
