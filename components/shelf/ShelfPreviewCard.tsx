@@ -146,8 +146,14 @@ export function ShelfPreviewCard({ shelf }: ShelfPreviewCardProps) {
             </>
           )}
         </div>
-        {/* Shelf ledge — matches the OG image generator (stone gradient) */}
-        <div className="h-2.5 rounded-sm bg-gradient-to-b from-stone-500 via-stone-600 to-stone-700 shadow-[0_4px_8px_rgba(0,0,0,0.2)]" />
+        {/* Shelf ledge — matches the shelf page ledge (ShelfGrid) */}
+        <div
+          className="h-1.5 sm:h-2 bg-gradient-to-r from-warm-brown via-muted-gold to-warm-brown"
+          style={{
+            boxShadow:
+              '0 8px 16px rgba(139, 95, 71, 0.4), 0 4px 8px rgba(139, 95, 71, 0.3), inset 0 1px 0 rgba(212, 146, 26, 0.2)',
+          }}
+        />
       </div>
 
       {/* Shelf info */}
