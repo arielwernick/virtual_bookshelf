@@ -112,8 +112,8 @@ describe('ShelfPreviewCard', () => {
       );
       renderComponent({ item_count: 11, preview_items: items });
 
-      // 5 visible books, 11 total -> +6 overflow
-      expect(screen.getByText('+6')).toBeInTheDocument();
+      // 4 visible tiles, 11 total -> +7 overflow
+      expect(screen.getByText('+7')).toBeInTheDocument();
     });
 
     it('does not show overflow spine when all items fit', () => {
@@ -125,7 +125,7 @@ describe('ShelfPreviewCard', () => {
       expect(screen.queryByText(/^\+\d+$/)).not.toBeInTheDocument();
     });
 
-    it('renders at most five preview books', () => {
+    it('caps visible tiles and shows overflow when items exceed the max', () => {
       const items = Array.from({ length: 6 }, (_, i) =>
         createMockPreviewItem({
           id: `item-${i}`,
@@ -135,8 +135,23 @@ describe('ShelfPreviewCard', () => {
       );
       renderComponent({ item_count: 6, preview_items: items });
 
+      // 6 > 5 -> show 4 tiles + "+2"
+      expect(screen.getAllByRole('img')).toHaveLength(4);
+      expect(screen.getByText('+2')).toBeInTheDocument();
+    });
+
+    it('renders five tiles with no overflow when exactly at the max', () => {
+      const items = Array.from({ length: 5 }, (_, i) =>
+        createMockPreviewItem({
+          id: `item-${i}`,
+          title: `Book ${i}`,
+          image_url: `https://example.com/cover-${i}.jpg`,
+        })
+      );
+      renderComponent({ item_count: 5, preview_items: items });
+
       expect(screen.getAllByRole('img')).toHaveLength(5);
-      expect(screen.getByText('+1')).toBeInTheDocument();
+      expect(screen.queryByText(/^\+\d+$/)).not.toBeInTheDocument();
     });
   });
 });
