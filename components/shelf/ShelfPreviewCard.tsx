@@ -71,7 +71,7 @@ function PreviewTile({ item }: { item: ShelfPreviewItem }) {
   if (src && !imageError) {
     return (
       <div
-        className={`relative min-w-0 self-end rounded-sm overflow-hidden shadow-md ring-1 ring-black/10 dark:ring-white/10 ${
+        className={`relative min-w-0 self-end rounded-sm overflow-hidden shadow-sm ring-1 ring-black/10 dark:ring-white/10 ${
           isLogo
             ? 'bg-white'
             : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700'
@@ -95,7 +95,7 @@ function PreviewTile({ item }: { item: ShelfPreviewItem }) {
   const label = isLogo ? item.creator : item.title;
   return (
     <div
-      className={`min-w-0 self-end rounded-sm shadow-md flex items-center justify-center overflow-hidden ${spineColor(item.title)}`}
+      className={`min-w-0 self-end rounded-sm shadow-sm flex items-center justify-center overflow-hidden ${spineColor(item.title)}`}
       style={style}
       title={item.title}
     >
@@ -146,9 +146,10 @@ export function ShelfPreviewCard({ shelf }: ShelfPreviewCardProps) {
             </>
           )}
         </div>
-        {/* Shelf ledge — matches the shelf page ledge (ShelfGrid), full width */}
+        {/* Shelf ledge — matches the shelf page ledge (ShelfGrid), full width.
+            Negative margin lets items rest on the lip instead of floating. */}
         <div
-          className="mt-1 h-2 bg-gradient-to-r from-warm-brown via-muted-gold to-warm-brown"
+          className="-mt-0.5 h-2 bg-gradient-to-r from-warm-brown via-muted-gold to-warm-brown"
           style={{
             boxShadow:
               '0 8px 16px rgba(139, 95, 71, 0.4), 0 4px 8px rgba(139, 95, 71, 0.3), inset 0 1px 0 rgba(212, 146, 26, 0.2)',
