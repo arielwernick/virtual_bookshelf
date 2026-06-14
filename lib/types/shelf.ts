@@ -48,6 +48,21 @@ export interface ShelfWithItems {
   items: Item[];
 }
 
+// Minimal item fields needed to render a shelf preview (dashboard library view)
+export interface ShelfPreviewItem {
+  id: string;
+  type: ItemType;
+  title: string;
+  creator: string;
+  image_url: string | null;
+}
+
+// Shelf plus total item count and leading items, for the dashboard library view
+export interface DashboardShelf extends Shelf {
+  item_count: number;
+  preview_items: ShelfPreviewItem[];
+}
+
 // Public-facing shelf data (without sensitive user info)
 export interface ShelfData {
   username: string | null;
