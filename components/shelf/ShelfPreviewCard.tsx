@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { ShelfPreviewItem } from '@/lib/types/shelf';
 import { stableHash } from '@/lib/utils/imageUtils';
+import { VisibilityBadge } from '@/components/ui/VisibilityBadge';
 
 /**
  * ShelfPreviewCard - Dashboard card that renders a shelf as a miniature
@@ -171,7 +172,7 @@ export function ShelfPreviewCard({ shelf }: ShelfPreviewCardProps) {
           <span>
             {shelf.item_count} item{shelf.item_count !== 1 ? 's' : ''}
           </span>
-          <span className="text-xs">{shelf.is_public ? '🌍 Public' : '🔒 Private'}</span>
+          <VisibilityBadge isPublic={shelf.is_public} />
         </div>
       </div>
     </Link>
