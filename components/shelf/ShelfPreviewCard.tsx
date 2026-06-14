@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { ItemType, ShelfPreviewItem } from '@/lib/types/shelf';
+import type { ShelfPreviewItem } from '@/lib/types/shelf';
 import { stableHash } from '@/lib/utils/imageUtils';
 
 /**
  * ShelfPreviewCard - Dashboard card that renders a shelf as a miniature
- * media shelf. Items stand bottom-aligned on a wooden ledge. Books show as
- * narrow portrait spines; all other media (podcast / music / podcast_episode /
- * stock / video / link) show as uniform square tiles so artwork isn't
+ * media shelf. Items stand bottom-aligned on a wooden ledge and flex to fill
+ * the card width, so the shelf always looks full regardless of item count.
+ * Books show as portrait (2:3) covers; all other media (podcast / music /
+ * podcast_episode / stock / video / link) show as squares so artwork isn't
  * distorted. Items without art become colored tiles showing the title.
  */
 
@@ -25,14 +26,12 @@ export interface ShelfPreviewCardProps {
   };
 }
 
-// Total tiles on the shelf never exceeds this, so wide rows can't overflow the
-// card. When there are more items, the last slot becomes a "+N" marker.
+// Total tiles on the shelf never exceeds this; extra items collapse into "+N".
 const MAX_VISIBLE = 5;
 
-// Tile footprint (px). Widths are small enough that 5 fit across the narrowest
-// 3-column card.
-const SPINE = { width: 40, height: 60 };
-const SQUARE = { width: 48, height: 48 };
+// Per-shape geometry. Tiles flex to fill the row but never exceed maxWidth.
+const BOOK = { aspect: '2 / 3', maxWidth: 54 };
+const SQUARE = { aspect: '1 / 1', maxWidth: 62 };
 
 const SPINE_COLORS = [
   'bg-rose-800',
@@ -55,36 +54,37 @@ function tileImageUrl(item: ShelfPreviewItem): string | null {
   return item.image_url;
 }
 
-function PreviewTile({ item, index }: { item: ShelfPreviewItem; index: number }) {
+function PreviewTile({ item }: { item: ShelfPreviewItem }) {
   const [imageError, setImageError] = useState(false);
 
   const isBook = item.type === 'book';
-  const base = isBook ? SPINE : SQUARE;
-  // Subtle, stable height variation for books gives the row an organic line.
-  const jitter = isBook ? stableHash(`${item.id}-${index}`, 7) - 3 : 0;
-  const width = base.width;
-  const height = base.height + jitter;
+  const isLogo = item.type === 'stock';
+  const shape = isBook ? BOOK : SQUARE;
+  const style: React.CSSProperties = {
+    flex: '1 1 0',
+    maxWidth: shape.maxWidth,
+    aspectRatio: shape.aspect,
+  };
 
   const src = tileImageUrl(item);
-  const isLogo = item.type === 'stock';
 
   if (src && !imageError) {
     return (
       <div
-        className={`relative shrink-0 rounded-sm overflow-hidden shadow-md ring-1 ring-black/10 dark:ring-white/10 ${
+        className={`relative min-w-0 self-end rounded-sm overflow-hidden shadow-md ring-1 ring-black/10 dark:ring-white/10 ${
           isLogo
             ? 'bg-white'
             : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700'
         }`}
-        style={{ width, height }}
+        style={style}
         title={item.title}
       >
         <Image
           src={src}
           alt={item.title}
           fill
-          sizes="48px"
-          className={isLogo ? 'object-contain p-1' : 'object-cover'}
+          sizes="64px"
+          className={isLogo ? 'object-contain p-1.5' : 'object-cover'}
           unoptimized={isLogo}
           onError={() => setImageError(true)}
         />
@@ -95,15 +95,15 @@ function PreviewTile({ item, index }: { item: ShelfPreviewItem; index: number })
   const label = isLogo ? item.creator : item.title;
   return (
     <div
-      className={`shrink-0 rounded-sm shadow-md flex items-center justify-center overflow-hidden ${spineColor(item.title)}`}
-      style={{ width, height }}
+      className={`min-w-0 self-end rounded-sm shadow-md flex items-center justify-center overflow-hidden ${spineColor(item.title)}`}
+      style={style}
       title={item.title}
     >
       <span
         className={
           isBook
             ? 'text-[9px] font-medium text-white/90 [writing-mode:vertical-rl] max-h-full overflow-hidden text-ellipsis whitespace-nowrap leading-none'
-            : 'text-[8px] font-medium text-white/90 text-center px-1 leading-tight line-clamp-3'
+            : 'text-[9px] font-medium text-white/90 text-center px-1 leading-tight line-clamp-3'
         }
       >
         {label}
@@ -124,21 +124,21 @@ export function ShelfPreviewCard({ shelf }: ShelfPreviewCardProps) {
       className="bg-white dark:bg-gray-900 rounded-lg shadow-sm hover:shadow-md transition-shadow block group overflow-hidden"
     >
       {/* Miniature media shelf */}
-      <div className="px-5 pt-5 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-900">
-        <div className="flex items-end justify-center gap-1 h-16">
+      <div className="pt-6 bg-gradient-to-b from-stone-50 to-white dark:from-gray-950 dark:to-gray-900">
+        <div className="flex items-end justify-center gap-2 px-5 min-h-[92px]">
           {visibleItems.length === 0 ? (
             <span className="self-center text-sm italic text-gray-400 dark:text-gray-500">
               This shelf is empty
             </span>
           ) : (
             <>
-              {visibleItems.map((item, index) => (
-                <PreviewTile key={item.id} item={item} index={index} />
+              {visibleItems.map((item) => (
+                <PreviewTile key={item.id} item={item} />
               ))}
               {overflowCount > 0 && (
                 <div
-                  className="shrink-0 rounded-sm border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-xs font-medium text-gray-500 dark:text-gray-400"
-                  style={{ width: SQUARE.width, height: SQUARE.height }}
+                  className="min-w-0 self-end rounded-sm border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-xs font-medium text-gray-500 dark:text-gray-400"
+                  style={{ flex: '1 1 0', maxWidth: SQUARE.maxWidth, aspectRatio: SQUARE.aspect }}
                 >
                   +{overflowCount}
                 </div>
@@ -146,9 +146,9 @@ export function ShelfPreviewCard({ shelf }: ShelfPreviewCardProps) {
             </>
           )}
         </div>
-        {/* Shelf ledge — matches the shelf page ledge (ShelfGrid) */}
+        {/* Shelf ledge — matches the shelf page ledge (ShelfGrid), full width */}
         <div
-          className="h-1.5 sm:h-2 bg-gradient-to-r from-warm-brown via-muted-gold to-warm-brown"
+          className="mt-1 h-2 bg-gradient-to-r from-warm-brown via-muted-gold to-warm-brown"
           style={{
             boxShadow:
               '0 8px 16px rgba(139, 95, 71, 0.4), 0 4px 8px rgba(139, 95, 71, 0.3), inset 0 1px 0 rgba(212, 146, 26, 0.2)',
