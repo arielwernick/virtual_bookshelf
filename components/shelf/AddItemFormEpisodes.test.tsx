@@ -123,8 +123,9 @@ describe('AddItemForm - Episode Browsing', () => {
       expect(heading.textContent).toContain('Test Podcast Show');
     });
 
-    // Check that episodes are displayed
-    expect(screen.getByText(/Episode 1: Introduction/i)).toBeInTheDocument();
+    // The heading renders immediately (even while loading), but the episode
+    // cards mount only after the async fetch resolves — wait for them.
+    expect(await screen.findByText(/Episode 1: Introduction/i)).toBeInTheDocument();
     expect(screen.getByText(/Episode 2: Deep Dive/i)).toBeInTheDocument();
 
     // Check that episodes have duration info (don't need exact matching)
