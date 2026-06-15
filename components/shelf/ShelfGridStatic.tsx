@@ -1,49 +1,19 @@
 /**
- * ShelfGridStatic - Server-renderable shelf grid for SSR
+ * ShelfGridStatic - Server-rendered shelf grid for the shared /s/ page.
  *
- * Renders items in a visual "bookshelf" layout without client-side JavaScript.
- * Simpler than ShelfGrid - no drag-and-drop, no dynamic resize calculations.
- *
- * No 'use client' directive - safe for SSR
+ * Item markup (ItemCardStatic) is rendered into the initial HTML so crawlers
+ * and AI can read items without executing JavaScript. The visual row grouping
+ * is delegated to ShelfRowsResponsive, a thin client layer that sizes rows to
+ * the viewer's width (it falls back to a fixed split before hydration, so the
+ * server HTML stays stable). Without that, a row of fixed-width cards wraps
+ * onto a second visual line under a single ledge.
  */
 
 import { Item } from '@/lib/types/shelf';
-import { ItemCardStatic } from './ItemCardStatic';
-import { SSR_SAFE_ITEMS_PER_ROW, splitIntoRows } from '@/lib/utils/shelfLayout';
+import { ShelfRowsResponsive } from './ShelfRowsResponsive';
 
 interface ShelfGridStaticProps {
   items: Item[];
-}
-
-/**
- * ShelfRowStatic - A single shelf displaying items with a visual divider
- */
-function ShelfRowStatic({ items }: { items: Item[] }) {
-  return (
-    <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-lg border border-gray-100 dark:border-gray-800 shadow-xs overflow-hidden">
-      <div
-        className="px-3 py-3 sm:px-6 sm:py-5 flex flex-wrap"
-        style={{
-          gap: '0.5rem',
-          alignItems: 'flex-end',
-        }}
-      >
-        {items.map((item) => (
-          <div key={item.id} className="w-[100px] sm:w-[140px] flex-shrink-0">
-            <ItemCardStatic item={item} />
-          </div>
-        ))}
-      </div>
-      {/* Shelf divider - the wooden "shelf" visual */}
-      <div
-        className="h-1.5 sm:h-2 bg-gradient-to-r from-warm-brown via-muted-gold to-warm-brown"
-        style={{
-          boxShadow:
-            '0 8px 16px rgba(139, 95, 71, 0.4), 0 4px 8px rgba(139, 95, 71, 0.3), inset 0 1px 0 rgba(212, 146, 26, 0.2)',
-        }}
-      />
-    </div>
-  );
 }
 
 export function ShelfGridStatic({ items }: ShelfGridStaticProps) {
@@ -70,16 +40,5 @@ export function ShelfGridStatic({ items }: ShelfGridStaticProps) {
     );
   }
 
-  // No DOM measurement here (server-rendered, no-JS friendly): use a
-  // desktop-safe fixed count that fits a max-w-7xl page without wrapping.
-  // flex-wrap still handles overflow gracefully on narrower screens.
-  const rows = splitIntoRows(items, SSR_SAFE_ITEMS_PER_ROW);
-
-  return (
-    <div className="space-y-4" role="list" aria-label="Bookshelf items">
-      {rows.map((rowItems, index) => (
-        <ShelfRowStatic key={index} items={rowItems} />
-      ))}
-    </div>
-  );
+  return <ShelfRowsResponsive items={items} />;
 }
