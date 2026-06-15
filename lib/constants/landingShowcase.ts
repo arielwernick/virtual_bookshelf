@@ -12,7 +12,7 @@
 
 import { ItemType } from '@/lib/types/shelf';
 
-/** One tile per media type a shelf can hold ("Shelve anything" grid). */
+/** One tile per media type a shelf can hold ("Shelve anything" row). */
 export interface CapabilityTile {
   type: ItemType;
   /** Short plural label, e.g. "Books". */
@@ -68,49 +68,6 @@ export const CAPABILITY_TILES: CapabilityTile[] = [
     tagline: 'Track a ticker with a live price, 1-year chart, and headlines.',
     accent: 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300',
     live: true,
-  },
-];
-
-/** Icon keys understood by `FeatureHighlights`. */
-export type FeatureIcon = 'note' | 'drag' | 'lock' | 'share' | 'image' | 'search';
-
-/** "More than a list" — what you can do with a shelf beyond collecting items. */
-export interface FeatureHighlight {
-  icon: FeatureIcon;
-  title: string;
-  description: string;
-}
-
-export const FEATURE_HIGHLIGHTS: FeatureHighlight[] = [
-  {
-    icon: 'note',
-    title: 'Notes & ratings',
-    description: 'Add a personal note and a star rating to anything on your shelf.',
-  },
-  {
-    icon: 'drag',
-    title: 'Arrange by hand',
-    description: 'Drag items into the exact order you want them seen.',
-  },
-  {
-    icon: 'lock',
-    title: 'Public or private',
-    description: 'Keep a shelf to yourself, or make it public with one toggle.',
-  },
-  {
-    icon: 'share',
-    title: 'Share & embed',
-    description: 'Every shelf gets a clean link, and embeds into any site.',
-  },
-  {
-    icon: 'image',
-    title: 'Auto preview images',
-    description: 'Links unfurl on social with a generated cover of your shelf.',
-  },
-  {
-    icon: 'search',
-    title: 'Found by search & AI',
-    description: 'Shelves render server-side, so crawlers and assistants can read them.',
   },
 ];
 

@@ -4,7 +4,6 @@ import { getDemoShelfToken, getDemoUserId } from '@/lib/utils/env';
 import { DemoShelf } from '@/components/home/DemoShelf';
 import { RotatingDemoShelf, ShelfPreview } from '@/components/home/RotatingDemoShelf';
 import { CapabilityShowcase } from '@/components/home/CapabilityShowcase';
-import { FeatureHighlights } from '@/components/home/FeatureHighlights';
 import { HOW_IT_WORKS } from '@/lib/constants/landingShowcase';
 
 const MAX_DEMO_SHELVES = 5;
@@ -101,10 +100,9 @@ export default async function Home() {
           </section>
         )}
 
-        {/* Capability + feature showcase */}
+        {/* Capability showcase */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
           <CapabilityShowcase />
-          <FeatureHighlights />
 
           {/* How it works */}
           <section aria-labelledby="how-heading" className="mb-20 sm:mb-28">
