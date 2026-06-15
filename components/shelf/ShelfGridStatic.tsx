@@ -9,6 +9,7 @@
 
 import { Item } from '@/lib/types/shelf';
 import { ItemCardStatic } from './ItemCardStatic';
+import { SSR_SAFE_ITEMS_PER_ROW, splitIntoRows } from '@/lib/utils/shelfLayout';
 
 interface ShelfGridStaticProps {
   items: Item[];
@@ -45,18 +46,6 @@ function ShelfRowStatic({ items }: { items: Item[] }) {
   );
 }
 
-/**
- * Split items into rows for static rendering
- * Uses a simple calculation based on estimated container width
- */
-function splitIntoRows(items: Item[], itemsPerRow: number = 6): Item[][] {
-  const rows: Item[][] = [];
-  for (let i = 0; i < items.length; i += itemsPerRow) {
-    rows.push(items.slice(i, i + itemsPerRow));
-  }
-  return rows;
-}
-
 export function ShelfGridStatic({ items }: ShelfGridStaticProps) {
   if (items.length === 0) {
     return (
@@ -81,10 +70,10 @@ export function ShelfGridStatic({ items }: ShelfGridStaticProps) {
     );
   }
 
-  // Split into rows - use responsive estimation
-  // On SSR, we don't know exact viewport, so use a reasonable default
-  // The flex-wrap will naturally handle overflow on smaller screens
-  const rows = splitIntoRows(items, 8);
+  // No DOM measurement here (server-rendered, no-JS friendly): use a
+  // desktop-safe fixed count that fits a max-w-7xl page without wrapping.
+  // flex-wrap still handles overflow gracefully on narrower screens.
+  const rows = splitIntoRows(items, SSR_SAFE_ITEMS_PER_ROW);
 
   return (
     <div className="space-y-4" role="list" aria-label="Bookshelf items">

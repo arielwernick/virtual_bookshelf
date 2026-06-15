@@ -2,9 +2,10 @@
 
 import { Item, ItemType } from '@/lib/types/shelf';
 import { ItemCard } from './ItemCard';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { ShelfProvider } from '@/lib/contexts/ShelfContext';
+import { useShelfRows } from '@/lib/hooks/useShelfRows';
 
 /**
  * Dynamically import the DnD-powered container so that @dnd-kit is only
@@ -14,18 +15,6 @@ const ShelfContainerDnd = dynamic(
   () => import('./ShelfContainerDnd').then(m => m.ShelfContainerDnd),
   { ssr: false },
 );
-
-/**
- * splitIntoRows - splits a flat items array into rows of at most `itemsPerRow`
- * items, used for the static (view-mode) shelf layout.
- */
-function splitIntoRows(items: Item[], itemsPerRow: number = 8): Item[][] {
-  const rows: Item[][] = [];
-  for (let i = 0; i < items.length; i += itemsPerRow) {
-    rows.push(items.slice(i, i + itemsPerRow));
-  }
-  return rows;
-}
 
 interface ShelfRowProps {
   items: Item[];
@@ -66,14 +55,15 @@ interface ShelfContainerProps {
 }
 
 /**
- * ShelfContainer - Static view-mode container.
- * Items are split into rows using a simple calculation with no DOM measurement
- * so that @dnd-kit is never imported on the viewer bundle.
+ * ShelfContainer - View-mode container (no @dnd-kit on the viewer bundle).
+ * Rows are sized to the live container width via useShelfRows so a shelf never
+ * wraps its items onto a second visual line under one ledge.
  */
 function ShelfContainer({ items }: ShelfContainerProps) {
-  const rows = splitIntoRows(items);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rows = useShelfRows(items, containerRef);
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div ref={containerRef} className="space-y-4 sm:space-y-6">
       {rows.map((rowItems, index) => (
         <ShelfRow key={`shelf-${index}`} items={rowItems} />
       ))}
