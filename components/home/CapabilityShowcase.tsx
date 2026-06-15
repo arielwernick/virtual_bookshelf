@@ -1,16 +1,16 @@
 /**
  * CapabilityShowcase — the "Shelve anything" section of the landing page.
  *
- * Renders one tile per media type a shelf can hold. Server component with no
- * remote images so it always renders crisply and instantly, independent of any
- * demo data. The novel live-stock capability is pulled out into a wider banner
- * so the remaining six tiles form a clean grid and the standout feature reads.
+ * A compact, scannable row of labeled icons, one per media type a shelf can
+ * hold. Server component with no remote images, so it always renders crisply
+ * and instantly. The novel live-stock capability gets a small "Live" tick.
+ * Each icon carries its longer description as a hover title.
  */
 
-import { CAPABILITY_TILES, type CapabilityTile } from '@/lib/constants/landingShowcase';
+import { CAPABILITY_TILES } from '@/lib/constants/landingShowcase';
 import type { ItemType } from '@/lib/types/shelf';
 
-function Icon({ type, className = 'w-6 h-6' }: { type: ItemType; className?: string }) {
+function Icon({ type, className = 'w-7 h-7' }: { type: ItemType; className?: string }) {
   const common = {
     className,
     viewBox: '0 0 24 24',
@@ -78,65 +78,7 @@ function Icon({ type, className = 'w-6 h-6' }: { type: ItemType; className?: str
   }
 }
 
-function CapabilityCard({ tile }: { tile: CapabilityTile }) {
-  return (
-    <div className="flex items-start gap-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm transition-shadow hover:shadow-md">
-      <span className={`flex-shrink-0 grid place-items-center w-11 h-11 rounded-lg ${tile.accent}`}>
-        <Icon type={tile.type} />
-      </span>
-      <div className="min-w-0">
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100">{tile.label}</h3>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{tile.tagline}</p>
-      </div>
-    </div>
-  );
-}
-
-function LiveStockBanner({ tile }: { tile: CapabilityTile }) {
-  return (
-    <div className="relative overflow-hidden rounded-xl border border-violet-200 dark:border-violet-900/60 bg-gradient-to-br from-violet-50 to-white dark:from-violet-950/40 dark:to-gray-900 p-6 shadow-sm">
-      <div className="flex items-start gap-4">
-        <span className={`flex-shrink-0 grid place-items-center w-11 h-11 rounded-lg ${tile.accent}`}>
-          <Icon type={tile.type} />
-        </span>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{tile.label}</h3>
-            <span className="inline-flex items-center gap-1 rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-              <span className="block w-1.5 h-1.5 rounded-full bg-white animate-pulse" aria-hidden="true" />
-              Live
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-md">
-            {tile.tagline} Tap a ticker on a shelf to open a real-time quote, a one-year
-            candlestick chart, and the latest headlines.
-          </p>
-        </div>
-      </div>
-
-      {/* Decorative sparkline hinting at the live chart (purely visual). */}
-      <svg
-        className="pointer-events-none absolute -right-2 bottom-0 h-20 w-48 text-violet-300/70 dark:text-violet-700/50"
-        viewBox="0 0 200 80"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M0 60 L25 52 L50 58 L75 38 L100 44 L125 24 L150 30 L175 12 L200 18"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  );
-}
-
 export function CapabilityShowcase() {
-  const tiles = CAPABILITY_TILES.filter((t) => !t.live);
-  const liveTile = CAPABILITY_TILES.find((t) => t.live);
-
   return (
     <section aria-labelledby="capabilities-heading" className="mb-20 sm:mb-28">
       <div className="text-center mb-10">
@@ -144,21 +86,30 @@ export function CapabilityShowcase() {
           Shelve anything
         </h2>
         <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-          One shelf holds it all — and pulls in covers, artwork, and details automatically.
+          One shelf holds it all — covers, artwork, and details pull in automatically.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {tiles.map((tile) => (
-          <CapabilityCard key={tile.type} tile={tile} />
+      <ul className="flex flex-wrap items-start justify-center gap-x-6 gap-y-7 sm:gap-x-10">
+        {CAPABILITY_TILES.map((tile) => (
+          <li
+            key={tile.type}
+            className="flex w-20 flex-col items-center gap-2.5 text-center"
+            title={tile.tagline}
+          >
+            <span className={`grid place-items-center w-14 h-14 rounded-2xl ${tile.accent}`}>
+              <Icon type={tile.type} />
+            </span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{tile.label}</span>
+            {tile.live && (
+              <span className="-mt-1 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" aria-hidden="true" />
+                Live
+              </span>
+            )}
+          </li>
         ))}
-      </div>
-
-      {liveTile && (
-        <div className="mt-4">
-          <LiveStockBanner tile={liveTile} />
-        </div>
-      )}
+      </ul>
     </section>
   );
 }
