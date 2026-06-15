@@ -10,6 +10,15 @@ interface DemoShelfProps {
   shareToken: string;
 }
 
+// Stock items derive their logo from the ticker (creator) at render time —
+// their image_url is null. Mirrors ItemCardStatic / ShelfPreviewCard.
+function itemImageUrl(item: Item): string | null {
+  if (item.type === 'stock') {
+    return `https://financialmodelingprep.com/image-stock/${encodeURIComponent(item.creator)}.png`;
+  }
+  return item.image_url;
+}
+
 /**
  * A simplified shelf display for the home page demo
  * Clickable to view the full demo shelf
@@ -45,14 +54,14 @@ export function DemoShelf({ items, shelfName, shareToken }: DemoShelfProps) {
                 key={item.id}
                 className="flex-shrink-0 w-[80px] sm:w-[100px] group-hover:scale-[1.02] transition-transform"
               >
-                <div className="relative aspect-[2/3] rounded overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-md">
-                  {item.image_url ? (
+                <div className={`relative aspect-[2/3] rounded overflow-hidden shadow-md ${item.type === 'stock' ? 'bg-white' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                  {itemImageUrl(item) ? (
                     <Image
-                      src={item.image_url}
+                      src={itemImageUrl(item)!}
                       alt={item.title}
                       fill
                       sizes="100px"
-                      className="object-cover"
+                      className={item.type === 'stock' ? 'object-contain p-2' : 'object-cover'}
                       unoptimized
                     />
                   ) : (
