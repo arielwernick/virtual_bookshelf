@@ -10,6 +10,16 @@ export interface ShelfPreview {
   items: Item[];
 }
 
+// Stock items derive their logo from the ticker (creator) at render time —
+// their image_url is null. Mirrors ItemCardStatic / ShelfPreviewCard so stocks
+// show a logo in the preview gallery instead of a bare text tile.
+function itemImageUrl(item: Item): string | null {
+  if (item.type === 'stock') {
+    return `https://financialmodelingprep.com/image-stock/${encodeURIComponent(item.creator)}.png`;
+  }
+  return item.image_url;
+}
+
 interface RotatingDemoShelfProps {
   shelves: ShelfPreview[];
   autoRotateInterval?: number; // ms, default 3000
@@ -208,14 +218,14 @@ export function RotatingDemoShelf({
                       transitionDelay: `${itemIndex * 30}ms`,
                     }}
                   >
-                    <div className="relative aspect-[2/3] rounded overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-md group-hover:shadow-lg transition-shadow duration-300">
-                      {item.image_url ? (
+                    <div className={`relative aspect-[2/3] rounded overflow-hidden shadow-md group-hover:shadow-lg transition-shadow duration-300 ${item.type === 'stock' ? 'bg-white' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                      {itemImageUrl(item) ? (
                         <Image
-                          src={item.image_url}
+                          src={itemImageUrl(item)!}
                           alt={item.title}
                           fill
                           sizes="100px"
-                          className="object-cover"
+                          className={item.type === 'stock' ? 'object-contain p-2' : 'object-cover'}
                           unoptimized
                         />
                       ) : (
