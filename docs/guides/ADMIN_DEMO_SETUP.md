@@ -6,12 +6,45 @@ This guide explains how to set up and maintain the demo shelf displayed on the V
 
 The demo shelf on the home page showcases the app's functionality to new visitors. Instead of using automated scripts, we use an **admin account approach** where an admin user creates and maintains the demo shelf through the normal app UI.
 
+The home page shows **all public shelves** from the admin account in a rotating
+gallery, configured with a single `DEMO_USER_ID` env var. You can populate that
+account two ways:
+
+- **Seed script** (fastest) — `npm run seed` creates a curated set of sample
+  shelves spanning every item type. Best for bootstrapping a new environment.
+- **Manual curation** (most control) — create and edit shelves through the normal
+  app UI. Best for ongoing tweaks; no redeploy needed.
+
 ### Benefits
 
 - **No deployments needed** to update demo content
 - **Visual curation** - add items through the same UI visitors will use
 - **Easy updates** - swap items, reorder, or refresh anytime
-- **Production-safe** - no scripts to run in production environments
+- **Covers every capability** - the seed spans books, podcasts, episodes, music,
+  videos, links, and live stock tickers
+
+## Quick Start: Seed Script
+
+From a machine with `DATABASE_URL` pointing at the target database:
+
+```bash
+npm run seed
+```
+
+This creates (or refreshes) an admin account and five public sample shelves, then
+prints the admin user id:
+
+```
+DEMO_USER_ID=<uuid>
+```
+
+Set that value in your environment (`.env.local` locally, or your hosting
+provider's env settings) and reload the home page. The script is **idempotent** —
+re-running it clears and recreates the admin account's shelves.
+
+Optional overrides (env vars): `SEED_ADMIN_EMAIL`, `SEED_ADMIN_USERNAME`,
+`SEED_ADMIN_PASSWORD`. Always set a real `SEED_ADMIN_PASSWORD` for any database
+that is reachable.
 
 ## Initial Setup (Production)
 
