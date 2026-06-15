@@ -16,6 +16,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useShelf } from '@/lib/contexts/ShelfContext';
+import { useShelfRows } from '@/lib/hooks/useShelfRows';
 
 interface SortableItemProps {
   item: Item;
@@ -91,91 +92,10 @@ interface ShelfContainerDndProps {
 export function ShelfContainerDnd({ items }: ShelfContainerDndProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [orderedItems, setOrderedItems] = useState(items);
-  const [shelves, setShelves] = useState<Item[][]>([]);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Track container width changes with debouncing
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const updateWidth = () => {
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.clientWidth);
-      }
-    };
-
-    updateWidth();
-
-    const handleResize = () => {
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current);
-      }
-      resizeTimeoutRef.current = setTimeout(updateWidth, 150);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Recalculate shelves when items, order, or container width changes
-  useEffect(() => {
-    if (!containerRef.current || orderedItems.length === 0) {
-      setShelves([orderedItems]);
-      return;
-    }
-
-    const isMobile = window.innerWidth < 640;
-    const itemWidth = isMobile ? 100 : 140;
-    const gap = isMobile ? 8 : 16;
-    const padding = isMobile ? 12 : 24;
-
-    const tempContainer = document.createElement('div');
-    tempContainer.style.cssText = `
-      display: flex;
-      flex-wrap: wrap;
-      gap: ${gap}px;
-      padding: ${padding}px;
-      position: absolute;
-      visibility: hidden;
-      width: ${containerRef.current.clientWidth}px;
-    `;
-
-    orderedItems.forEach(() => {
-      const item = document.createElement('div');
-      item.style.cssText = `width: ${itemWidth}px; flex-shrink: 0; height: ${isMobile ? 150 : 200}px;`;
-      tempContainer.appendChild(item);
-    });
-
-    document.body.appendChild(tempContainer);
-
-    const shelfMap: Item[][] = [];
-    let currentShelf: Item[] = [];
-    let currentY = (tempContainer.children[0] as HTMLElement)?.offsetTop ?? 0;
-
-    Array.from(tempContainer.children).forEach((child, index) => {
-      const childY = (child as HTMLElement).offsetTop;
-      if (childY > currentY && currentShelf.length > 0) {
-        shelfMap.push([...currentShelf]);
-        currentShelf = [orderedItems[index]];
-        currentY = childY;
-      } else {
-        currentShelf.push(orderedItems[index]);
-      }
-    });
-
-    if (currentShelf.length > 0) {
-      shelfMap.push(currentShelf);
-    }
-
-    document.body.removeChild(tempContainer);
-    setShelves(shelfMap);
-  }, [orderedItems, containerWidth]);
+  // Size rows to the live container width (shared with view mode) so a shelf
+  // never wraps its items onto a second visual line under one ledge.
+  const shelves = useShelfRows(orderedItems, containerRef);
 
   useEffect(() => {
     setOrderedItems(items);
