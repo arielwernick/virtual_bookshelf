@@ -84,7 +84,7 @@ export default async function Home() {
 
         {/* Live demo gallery — real, click-through example shelves */}
         {hasDemo && demoShelves && (
-          <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 sm:pb-28">
+          <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
             <p className="text-center text-sm font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-5">
               Real shelves · tap to explore
             </p>
@@ -101,7 +101,7 @@ export default async function Home() {
         )}
 
         {/* Capability showcase */}
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <CapabilityShowcase />
 
           {/* How it works */}
