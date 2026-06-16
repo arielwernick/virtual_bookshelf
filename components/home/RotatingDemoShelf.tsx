@@ -296,7 +296,7 @@ export function RotatingDemoShelf({
       </div>
 
       {/* Navigation dots and helper text */}
-      <div className="mt-4 flex flex-col items-center gap-3">
+      <div className="mt-3 flex flex-col items-center gap-2">
         {/* Dots - only show if multiple shelves */}
         {shelfCount > 1 && (
           <div className="flex gap-2" role="tablist" aria-label="Shelf navigation">

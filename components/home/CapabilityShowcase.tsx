@@ -80,7 +80,7 @@ function Icon({ type, className = 'w-7 h-7' }: { type: ItemType; className?: str
 
 export function CapabilityShowcase() {
   return (
-    <section aria-label="Supported item types" className="mb-20 sm:mb-28">
+    <section aria-label="Supported item types" className="mb-12 sm:mb-16">
       <ul className="flex flex-wrap items-start justify-center gap-x-6 gap-y-7 sm:gap-x-10">
         {CAPABILITY_TILES.map((tile) => (
           <li
