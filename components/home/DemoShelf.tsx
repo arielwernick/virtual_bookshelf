@@ -24,8 +24,8 @@ function itemImageUrl(item: Item): string | null {
  * Clickable to view the full demo shelf
  */
 export function DemoShelf({ items, shelfName, shareToken }: DemoShelfProps) {
-  // Show up to 12 items to fill two rows on desktop
-  const displayItems = items.slice(0, 12);
+  // Preview a single row; the full shelf lives behind "Click to explore".
+  const displayItems = items.slice(0, 8);
   const shelfUrl = `/s/${shareToken}`;
 
   return (
@@ -43,10 +43,11 @@ export function DemoShelf({ items, shelfName, shareToken }: DemoShelfProps) {
           </span>
         </div>
 
-        {/* Shelf items */}
-        <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
+        {/* Shelf items — a single row that clips (never wraps), so a full
+            shelf can't spill onto a second visual line under one ledge. */}
+        <div className="relative bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
           <div
-            className="px-4 py-4 flex flex-wrap gap-3"
+            className="px-4 py-4 flex gap-3 overflow-hidden"
             style={{ alignItems: 'flex-end' }}
           >
             {displayItems.map((item) => (
@@ -75,6 +76,8 @@ export function DemoShelf({ items, shelfName, shareToken }: DemoShelfProps) {
               </div>
             ))}
           </div>
+          {/* Soft right-edge fade hints more items live on the full shelf. */}
+          <div className="pointer-events-none absolute right-0 top-0 bottom-1.5 w-12 bg-gradient-to-l from-white dark:from-gray-900 to-transparent" />
 
           {/* Shelf divider */}
           <div

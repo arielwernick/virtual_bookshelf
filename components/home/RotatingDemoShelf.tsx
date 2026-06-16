@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Item, Shelf } from '@/lib/types/shelf';
+import { splitIntoRows } from '@/lib/utils/shelfLayout';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -39,6 +40,7 @@ export function RotatingDemoShelf({
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
+  const ITEMS_PER_ROW = 6;
 
   const shelfCount = shelves.length;
 
@@ -127,7 +129,12 @@ export function RotatingDemoShelf({
   if (shelfCount === 0) return null;
 
   const currentShelf = shelves[activeIndex];
-  const displayItems = currentShelf.items.slice(0, 12);
+  // Preview up to MAX_PREVIEW_ROWS ledges; the full shelf lives behind
+  // "Click to explore". Items overflow onto a second ledge rather than wrapping
+  // awkwardly under one.
+  const MAX_PREVIEW_ROWS = 2;
+  const previewItems = currentShelf.items.slice(0, ITEMS_PER_ROW * MAX_PREVIEW_ROWS);
+  const rows = splitIntoRows(previewItems, ITEMS_PER_ROW);
   const shelfUrl = `/s/${currentShelf.shelf.share_token}`;
 
   // Animation classes based on direction
@@ -204,49 +211,51 @@ export function RotatingDemoShelf({
               </span>
             </div>
 
-            {/* Shelf items */}
+            {/* Shelf items — split into rows that each rest on their own wooden
+                ledge, so a fuller shelf reads as a real multi-shelf bookshelf
+                instead of wrapping under a single ledge. */}
             <div className="bg-gradient-to-b from-white dark:from-gray-900 to-gray-50/50 dark:to-gray-800/50">
-              <div
-                className="px-4 py-4 flex flex-wrap gap-3"
-                style={{ alignItems: 'flex-end' }}
-              >
-                {displayItems.map((item, itemIndex) => (
-                  <div
-                    key={item.id}
-                    className="flex-shrink-0 w-[80px] sm:w-[100px] transform transition-transform duration-300 group-hover:scale-[1.02]"
-                    style={{ 
-                      transitionDelay: `${itemIndex * 30}ms`,
-                    }}
-                  >
-                    <div className={`relative aspect-[2/3] rounded overflow-hidden shadow-md group-hover:shadow-lg transition-shadow duration-300 ${item.type === 'stock' ? 'bg-white' : 'bg-gray-100 dark:bg-gray-800'}`}>
-                      {itemImageUrl(item) ? (
-                        <Image
-                          src={itemImageUrl(item)!}
-                          alt={item.title}
-                          fill
-                          sizes="100px"
-                          className={item.type === 'stock' ? 'object-contain p-2' : 'object-cover'}
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center p-2 bg-gradient-to-br from-gray-100 dark:from-gray-800 to-gray-200 dark:to-gray-700">
-                          <span className="text-xs text-gray-500 dark:text-gray-400 text-center line-clamp-3 font-medium">
-                            {item.title}
-                          </span>
+              {rows.map((row, rowIndex) => (
+                <div key={rowIndex}>
+                  <div className="px-4 pt-4 flex gap-3" style={{ alignItems: 'flex-end' }}>
+                    {row.map((item, itemIndex) => (
+                      <div
+                        key={item.id}
+                        className="flex-shrink-0 w-[80px] sm:w-[100px] transform transition-transform duration-300 group-hover:scale-[1.02]"
+                        style={{ transitionDelay: `${itemIndex * 30}ms` }}
+                      >
+                        <div className={`relative aspect-[2/3] rounded overflow-hidden shadow-md group-hover:shadow-lg transition-shadow duration-300 ${item.type === 'stock' ? 'bg-white' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                          {itemImageUrl(item) ? (
+                            <Image
+                              src={itemImageUrl(item)!}
+                              alt={item.title}
+                              fill
+                              sizes="100px"
+                              className={item.type === 'stock' ? 'object-contain p-2' : 'object-cover'}
+                              unoptimized
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center p-2 bg-gradient-to-br from-gray-100 dark:from-gray-800 to-gray-200 dark:to-gray-700">
+                              <span className="text-xs text-gray-500 dark:text-gray-400 text-center line-clamp-3 font-medium">
+                                {item.title}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
 
-              {/* Shelf divider - wooden shelf look */}
-              <div
-                className="h-2 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700"
-                style={{
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                }}
-              />
+                  {/* Wooden ledge under this row */}
+                  <div
+                    className="h-2 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700"
+                    style={{
+                      boxShadow:
+                        '0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                    }}
+                  />
+                </div>
+              ))}
             </div>
           </Link>
         </div>
