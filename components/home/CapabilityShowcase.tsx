@@ -80,16 +80,7 @@ function Icon({ type, className = 'w-7 h-7' }: { type: ItemType; className?: str
 
 export function CapabilityShowcase() {
   return (
-    <section aria-labelledby="capabilities-heading" className="mb-20 sm:mb-28">
-      <div className="text-center mb-10">
-        <h2 id="capabilities-heading" className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-          Shelve anything
-        </h2>
-        <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-          One shelf holds it all — covers, artwork, and details pull in automatically.
-        </p>
-      </div>
-
+    <section aria-label="Supported item types" className="mb-20 sm:mb-28">
       <ul className="flex flex-wrap items-start justify-center gap-x-6 gap-y-7 sm:gap-x-10">
         {CAPABILITY_TILES.map((tile) => (
           <li

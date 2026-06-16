@@ -5,11 +5,6 @@ import { CAPABILITY_TILES } from '@/lib/constants/landingShowcase';
 
 describe('CapabilityShowcase', () => {
   describe('Rendering', () => {
-    it('renders the section heading', () => {
-      render(<CapabilityShowcase />);
-      expect(screen.getByRole('heading', { name: 'Shelve anything' })).toBeInTheDocument();
-    });
-
     it('renders a labeled icon for every media type', () => {
       render(<CapabilityShowcase />);
       for (const tile of CAPABILITY_TILES) {
