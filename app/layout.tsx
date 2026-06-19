@@ -16,13 +16,16 @@ const geistMono = Geist_Mono({
 });
 
 // Base URL for OG images
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.vercel.app';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
 
 export const metadata: Metadata = {
   title: "Virtual Bookshelf",
   description: "Curate and share your favorite books, podcasts, and music in a beautiful digital bookshelf.",
   keywords: ["bookshelf", "books", "podcasts", "music", "recommendations", "share", "curate"],
   authors: [{ name: "Virtual Bookshelf" }],
+  alternates: {
+    canonical: baseUrl,
+  },
   openGraph: {
     title: "Virtual Bookshelf - Your bookshelf, everywhere you are",
     description: "Curate your favorite books, podcasts, and music. Share a link anywhere.",
