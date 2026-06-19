@@ -11,6 +11,19 @@ const MAX_ITEMS_PER_SHELF = 12;
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
 
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'What is Virtual Bookshelf?', acceptedAnswer: { '@type': 'Answer', text: 'Virtual Bookshelf is a tool to curate and share shelves of books, podcasts, music, videos, links, and live stock tickers. Create a shelf, get a shareable link, and paste it anywhere — your bio, newsletter, LinkedIn, or portfolio.' } },
+    { '@type': 'Question', name: 'What can I put on a shelf?', acceptedAnswer: { '@type': 'Answer', text: 'Books, podcasts, podcast episodes, music albums, YouTube videos, any link, and live stock tickers.' } },
+    { '@type': 'Question', name: 'How do I share my shelf?', acceptedAnswer: { '@type': 'Answer', text: 'Every shelf gets a public link. Paste it in your bio, newsletter, LinkedIn, or anywhere you want people to find it.' } },
+    { '@type': 'Question', name: 'Is Virtual Bookshelf free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes, Virtual Bookshelf is free to use.' } },
+    { '@type': 'Question', name: 'What happened to Bento.me?', acceptedAnswer: { '@type': 'Answer', text: 'Bento.me shut down in February 2026 after being acquired by Linktree. Virtual Bookshelf is a great alternative for creators who want to showcase what they are reading, watching, and listening to with rich cover art and metadata.' } },
+    { '@type': 'Question', name: 'How is Virtual Bookshelf different from Linktree?', acceptedAnswer: { '@type': 'Answer', text: 'Linktree shows a list of links. Virtual Bookshelf shows rich content — cover art, metadata, and live prices — for everything on your shelf.' } },
+  ],
+};
+
 const organizationSchema = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -78,6 +91,10 @@ export default async function Home() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <main id="main-content" className="flex-1">
         {/* Hero */}
@@ -151,6 +168,25 @@ export default async function Home() {
                 </li>
               ))}
             </ol>
+          </section>
+
+          {/* FAQ */}
+          <section aria-labelledby="faq-heading" className="max-w-2xl mx-auto mb-20 sm:mb-28">
+            <h2 id="faq-heading" className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight text-center mb-10">
+              Frequently asked questions
+            </h2>
+            <dl className="space-y-8">
+              {faqSchema.mainEntity.map((item) => (
+                <div key={item.name}>
+                  <dt className="font-semibold text-gray-900 dark:text-gray-100 text-base sm:text-lg">
+                    {item.name}
+                  </dt>
+                  <dd className="mt-2 text-gray-600 dark:text-gray-400 leading-relaxed">
+                    {item.acceptedAnswer.text}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </section>
 
           {/* Final CTA */}
