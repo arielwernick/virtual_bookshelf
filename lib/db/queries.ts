@@ -431,6 +431,19 @@ export async function updateShelf(
 }
 
 /**
+ * Get all public shelves (for sitemap generation)
+ */
+export async function getPublicShelves(): Promise<{ share_token: string; updated_at: Date }[]> {
+  const result = await sql`
+    SELECT share_token, updated_at FROM shelves
+    WHERE is_public = true
+    ORDER BY updated_at DESC
+  `;
+
+  return result as { share_token: string; updated_at: Date }[];
+}
+
+/**
  * Delete shelf (cascades to items)
  */
 export async function deleteShelf(shelfId: string): Promise<boolean> {

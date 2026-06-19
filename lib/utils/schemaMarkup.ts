@@ -100,7 +100,7 @@ function sortItemsByOrder(items: Item[]): Item[] {
 function createCollectionSchema(shelf: Shelf, itemSchemas: SchemaObject[], username?: string | null): SchemaObject {
   const schema: SchemaObject = {
     '@context': 'https://schema.org',
-    '@type': 'Collection',
+    '@type': 'ItemList',
     name: shelf.name,
     itemListElement: itemSchemas,
     numberOfItems: itemSchemas.length,

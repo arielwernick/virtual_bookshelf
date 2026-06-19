@@ -9,6 +9,26 @@ import { HOW_IT_WORKS } from '@/lib/constants/landingShowcase';
 const MAX_DEMO_SHELVES = 5;
 const MAX_ITEMS_PER_SHELF = 12;
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
+
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      name: 'Virtual Bookshelf',
+      url: baseUrl,
+      logo: `${baseUrl}/favicon.svg`,
+    },
+    {
+      '@type': 'WebSite',
+      name: 'Virtual Bookshelf',
+      url: baseUrl,
+      description: 'Curate shelves of books, podcasts, music, videos, links and stocks. Share a single link anywhere.',
+    },
+  ],
+};
+
 /**
  * Fetch demo shelves for the home page
  *
@@ -55,6 +75,10 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 flex flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
       <main id="main-content" className="flex-1">
         {/* Hero */}
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-10 text-center">
