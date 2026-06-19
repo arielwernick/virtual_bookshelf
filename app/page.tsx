@@ -42,6 +42,8 @@ const organizationSchema = {
   ],
 };
 
+const EMBED_DESTINATIONS = ['Custom sites', 'Notion', 'Squarespace', 'Any HTML page'];
+
 /**
  * Fetch demo shelves for the home page
  *
@@ -168,6 +170,45 @@ export default async function Home() {
                 </li>
               ))}
             </ol>
+          </section>
+
+          {/* Embed anywhere */}
+          <section aria-labelledby="embed-heading" className="mb-20 sm:mb-28">
+            <div className="text-center mb-10">
+              <h2 id="embed-heading" className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                Embed it anywhere
+              </h2>
+              <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Drop a live shelf or playlist straight into your own website or a
+                Notion page. Paste one snippet and it stays in sync — update the
+                shelf, and every embed updates with it.
+              </p>
+            </div>
+
+            <div className="max-w-2xl mx-auto">
+              <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 overflow-hidden shadow-sm">
+                <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-gray-200 dark:border-gray-800">
+                  <span className="w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-700" aria-hidden="true" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-700" aria-hidden="true" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-700" aria-hidden="true" />
+                  <span className="ml-2 text-xs font-medium text-gray-400 dark:text-gray-500">Embed code</span>
+                </div>
+                <pre className="px-4 py-4 overflow-x-auto text-xs sm:text-sm font-mono text-gray-700 dark:text-gray-300">
+                  <code>{`<iframe\n  src="${baseUrl}/embed/your-shelf"\n  width="100%" height="600" loading="lazy"\n></iframe>`}</code>
+                </pre>
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+                {EMBED_DESTINATIONS.map((dest) => (
+                  <span
+                    key={dest}
+                    className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
+                  >
+                    {dest}
+                  </span>
+                ))}
+              </div>
+            </div>
           </section>
 
           {/* FAQ */}
