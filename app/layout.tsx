@@ -19,16 +19,19 @@ const geistMono = Geist_Mono({
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
 
 export const metadata: Metadata = {
-  title: "Virtual Bookshelf",
-  description: "Curate and share your favorite books, podcasts, and music in a beautiful digital bookshelf.",
-  keywords: ["bookshelf", "books", "podcasts", "music", "recommendations", "share", "curate"],
+  title: {
+    default: 'Virtual Bookshelf',
+    template: '%s | Virtual Bookshelf',
+  },
+  description: 'Curate shelves of books, podcasts, music, videos, links — even live stock tickers. Share a single link anywhere.',
+  keywords: ['bookshelf', 'books', 'podcasts', 'music', 'videos', 'links', 'stocks', 'curate', 'share', 'reading list', 'watchlist'],
   authors: [{ name: "Virtual Bookshelf" }],
   alternates: {
-    canonical: baseUrl,
+    canonical: '/',
   },
   openGraph: {
-    title: "Virtual Bookshelf - Your bookshelf, everywhere you are",
-    description: "Curate your favorite books, podcasts, and music. Share a link anywhere.",
+    title: 'Virtual Bookshelf — A shelf for everything you love',
+    description: 'Curate shelves of books, podcasts, music, videos, links — even live stock tickers. Share a single link anywhere.',
     type: "website",
     siteName: "Virtual Bookshelf",
     locale: "en_US",
@@ -44,8 +47,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Virtual Bookshelf - Your bookshelf, everywhere you are",
-    description: "Curate your favorite books, podcasts, and music. Share a link anywhere.",
+    title: 'Virtual Bookshelf — A shelf for everything you love',
+    description: 'Curate shelves of books, podcasts, music, videos, links — even live stock tickers. Share a single link anywhere.',
     images: [`${baseUrl}/api/og/landing`],
   },
   icons: {
