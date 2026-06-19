@@ -133,10 +133,10 @@ export default async function Home() {
   const hasDemo = Boolean(demoShelves && demoShelves.length > 0);
 
   // Use a real demo shelf for the Embed section's example link so it clicks
-  // through to a live shelf, just like the preview cards. Uses the second shelf
-  // in the admin user's public set; falls back to a placeholder when fewer than
-  // two demo shelves are available (e.g. local dev without env).
-  const embedExampleToken = demoShelves?.[1]?.shelf.share_token ?? null;
+  // through to a live shelf, just like the preview cards. Uses the first shelf
+  // in the admin user's public set; falls back to a placeholder when no demo
+  // data is available (e.g. local dev without env).
+  const embedExampleToken = demoShelves?.[0]?.shelf.share_token ?? null;
   const embedExampleUrl = embedExampleToken
     ? `${baseUrl.replace(/^https?:\/\//, '')}/s/${embedExampleToken}`
     : SHELF_LINK_EXAMPLE;
