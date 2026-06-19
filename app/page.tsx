@@ -42,7 +42,8 @@ const organizationSchema = {
   ],
 };
 
-const EMBED_DESTINATIONS = ['Custom sites', 'Notion', 'Squarespace', 'Any HTML page'];
+const EMBED_DESTINATIONS = ['Notion', 'Squarespace', 'Webflow', 'WordPress'];
+const SHELF_LINK_EXAMPLE = `${baseUrl.replace(/^https?:\/\//, '')}/s/your-shelf`;
 
 /**
  * Fetch demo shelves for the home page
@@ -179,26 +180,38 @@ export default async function Home() {
                 Embed it anywhere
               </h2>
               <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Drop a live shelf or playlist straight into your own website or a
-                Notion page. Paste one snippet and it stays in sync — update the
-                shelf, and every embed updates with it.
+                Every shelf gets a public link. Drop it into Notion or a site builder
+                and it embeds live — cover art, metadata, and prices included. Change
+                the shelf, and every embed updates with it.
               </p>
             </div>
 
-            <div className="max-w-2xl mx-auto">
-              <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 overflow-hidden shadow-sm">
-                <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-gray-200 dark:border-gray-800">
-                  <span className="w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-700" aria-hidden="true" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-700" aria-hidden="true" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-700" aria-hidden="true" />
-                  <span className="ml-2 text-xs font-medium text-gray-400 dark:text-gray-500">Embed code</span>
-                </div>
-                <pre className="px-4 py-4 overflow-x-auto text-xs sm:text-sm font-mono text-gray-700 dark:text-gray-300">
-                  <code>{`<iframe\n  src="${baseUrl}/embed/your-shelf"\n  width="100%" height="600" loading="lazy"\n></iframe>`}</code>
-                </pre>
+            <div className="max-w-xl mx-auto">
+              {/* The link — the no-code path */}
+              <div className="flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-4 py-3.5 shadow-sm">
+                <svg
+                  className="w-5 h-5 shrink-0 text-gray-400 dark:text-gray-500"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1" />
+                  <path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1" />
+                </svg>
+                <span className="font-mono text-sm text-gray-700 dark:text-gray-300 truncate">
+                  {SHELF_LINK_EXAMPLE}
+                </span>
+                <span className="ml-auto text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                  Public link
+                </span>
               </div>
 
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+              {/* Where it works */}
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
                 {EMBED_DESTINATIONS.map((dest) => (
                   <span
                     key={dest}
@@ -207,6 +220,26 @@ export default async function Home() {
                     {dest}
                   </span>
                 ))}
+              </div>
+
+              {/* The custom-site path, demoted */}
+              <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                Building a custom site? Grab a ready-made{' '}
+                <code className="font-mono text-[0.8125rem] text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5">
+                  &lt;iframe&gt;
+                </code>{' '}
+                from any shelf&apos;s Share menu.
+              </p>
+
+              {/* Somewhere to go */}
+              <div className="mt-8 text-center">
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center gap-1.5 font-medium text-gray-900 dark:text-gray-100 hover:underline"
+                >
+                  Create a shelf and grab your link
+                  <span aria-hidden="true">→</span>
+                </Link>
               </div>
             </div>
           </section>
