@@ -85,9 +85,60 @@ async function getDemoShelvesData(): Promise<ShelfPreview[] | null> {
   }
 }
 
+/**
+ * The "public link" bar shown in the Embed section. When a real demo shelf is
+ * available it renders as a link that clicks through to the live shelf (just
+ * like the preview cards); otherwise it falls back to a static placeholder.
+ */
+function EmbedLinkBar({ url, href }: { url: string; href: string | null }) {
+  const base =
+    'flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-4 py-3.5 shadow-sm';
+  const inner = (
+    <>
+      <svg
+        className="w-5 h-5 shrink-0 text-gray-400 dark:text-gray-500"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1" />
+        <path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1" />
+      </svg>
+      <span className="font-mono text-sm text-gray-700 dark:text-gray-300 truncate">{url}</span>
+      <span className="ml-auto text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap transition-colors group-hover:text-gray-600 dark:group-hover:text-gray-400">
+        {href ? 'Click to explore →' : 'Public link'}
+      </span>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={`${base} group transition hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md`}
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return <div className={base}>{inner}</div>;
+}
+
 export default async function Home() {
   const demoShelves = await getDemoShelvesData();
   const hasDemo = Boolean(demoShelves && demoShelves.length > 0);
+
+  // Use a real demo shelf for the Embed section's example link so it clicks
+  // through to a live shelf, just like the preview cards. Falls back to a
+  // placeholder when no demo data is available (e.g. local dev without env).
+  const embedExampleToken = demoShelves?.[0]?.shelf.share_token ?? null;
+  const embedExampleUrl = embedExampleToken
+    ? `${baseUrl.replace(/^https?:\/\//, '')}/s/${embedExampleToken}`
+    : SHELF_LINK_EXAMPLE;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 flex flex-col">
@@ -187,28 +238,11 @@ export default async function Home() {
             </div>
 
             <div className="max-w-xl mx-auto">
-              {/* The link — the no-code path */}
-              <div className="flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-4 py-3.5 shadow-sm">
-                <svg
-                  className="w-5 h-5 shrink-0 text-gray-400 dark:text-gray-500"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1" />
-                  <path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1" />
-                </svg>
-                <span className="font-mono text-sm text-gray-700 dark:text-gray-300 truncate">
-                  {SHELF_LINK_EXAMPLE}
-                </span>
-                <span className="ml-auto text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap">
-                  Public link
-                </span>
-              </div>
+              {/* The link — the no-code path, clicks through to a live shelf */}
+              <EmbedLinkBar
+                url={embedExampleUrl}
+                href={embedExampleToken ? `/s/${embedExampleToken}` : null}
+              />
 
               {/* Where it works */}
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
