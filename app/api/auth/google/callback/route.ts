@@ -8,6 +8,7 @@ import {
 } from '@/lib/db/queries';
 import { setSessionCookie } from '@/lib/utils/session';
 import { createLogger } from '@/lib/utils/logger';
+import { trackServerEvent } from '@/lib/utils/analytics';
 
 const logger = createLogger('OAuthCallback');
 
@@ -107,6 +108,7 @@ export async function GET(request: Request) {
 
     // Check if user exists
     let user = await getUserByEmail(email);
+    const isNewUser = !user;
 
     if (!user) {
       // Create new user
@@ -128,10 +130,19 @@ export async function GET(request: Request) {
         googleId,
         name,
       });
+
+      // Track account creation as a custom event in Vercel Analytics
+      // (only on the new-user branch — existing users here are logins/links)
+      await trackServerEvent('Account Created', { method: 'google' }, request);
     } else if (!user.google_id) {
       // Link Google to existing account
       logger.debug('Linking Google account to existing user');
       user = await updateUserGoogleId(user.id, googleId);
+    }
+
+    // Existing users reaching this point are logging in, not signing up
+    if (!isNewUser) {
+      await trackServerEvent('User Login', { method: 'google' }, request);
     }
 
     // Set session cookie

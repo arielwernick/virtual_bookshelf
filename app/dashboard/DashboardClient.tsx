@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { track } from '@vercel/analytics';
 import { EmptyState, BookshelfIcon } from '@/components/ui/EmptyState';
 import { SkeletonShelfGrid } from '@/components/ui/SkeletonLoader';
 import { AddItemModal } from '@/components/shelf/AddItemModal';
@@ -87,6 +88,9 @@ export default function DashboardClient() {
         setCreatingShelf(false);
         return;
       }
+
+      // Track shelf creation as a custom event in Vercel Analytics
+      track('Shelf Created', { has_description: Boolean(shelfDescription) });
 
       // Store new shelf info for modal
       setNewShelfId(json.data.id);
