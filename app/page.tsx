@@ -28,8 +28,16 @@ const faqSchema = {
     { '@type': 'Question', name: 'Is Virtual Bookshelf free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes, Virtual Bookshelf is free to use.' } },
     { '@type': 'Question', name: 'What happened to Bento.me?', acceptedAnswer: { '@type': 'Answer', text: 'Bento.me shut down in February 2026 after being acquired by Linktree. Virtual Bookshelf is a great alternative for creators who want to showcase what they are reading, watching, and listening to with rich cover art and metadata.' } },
     { '@type': 'Question', name: 'How is Virtual Bookshelf different from Linktree?', acceptedAnswer: { '@type': 'Answer', text: 'Linktree shows a list of links. Virtual Bookshelf shows rich content — cover art, metadata, and live prices — for everything on your shelf.' } },
+    { '@type': 'Question', name: 'Is Virtual Bookshelf a Goodreads alternative?', acceptedAnswer: { '@type': 'Answer', text: 'For sharing the books you love, yes. Virtual Bookshelf is a beautiful, shareable bookshelf you control — with no ads or Amazon account — though it focuses on curating and sharing rather than reviews and reading tracking.' } },
   ],
 };
+
+// Maps an FAQ question to its dedicated comparison landing page for internal linking.
+const FAQ_COMPARISON_LINKS: { match: string; href: string; label: string }[] = [
+  { match: 'Bento', href: '/bento-alternative', label: 'See the full Bento.me comparison →' },
+  { match: 'Linktree', href: '/linktree-alternative', label: 'See the full Linktree comparison →' },
+  { match: 'Goodreads', href: '/goodreads-alternative', label: 'See the Goodreads comparison →' },
+];
 
 const organizationSchema = {
   '@context': 'https://schema.org',
@@ -299,6 +307,17 @@ export default async function Home() {
                   </dt>
                   <dd className="mt-2 text-gray-600 dark:text-gray-400 leading-relaxed">
                     {item.acceptedAnswer.text}
+                    {(() => {
+                      const link = FAQ_COMPARISON_LINKS.find((l) => item.name.includes(l.match));
+                      return link ? (
+                        <>
+                          {' '}
+                          <Link href={link.href} className="text-gray-900 dark:text-gray-100 font-medium hover:underline">
+                            {link.label}
+                          </Link>
+                        </>
+                      ) : null;
+                    })()}
                   </dd>
                 </div>
               ))}
