@@ -11,6 +11,13 @@ const MAX_ITEMS_PER_SHELF = 12;
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
 
+// Self-referential canonical for the home page. Without this, the page would
+// emit no canonical (the global one was removed to stop subpages inheriting it),
+// so be explicit to consolidate any UTM/social variants back to the root.
+export const metadata = {
+  alternates: { canonical: '/' },
+};
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',

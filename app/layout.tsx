@@ -19,16 +19,14 @@ const geistMono = Geist_Mono({
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(baseUrl),
   title: {
-    default: 'Virtual Bookshelf',
+    default: 'Virtual Bookshelf — your books, podcasts & music in one link',
     template: '%s | Virtual Bookshelf',
   },
   description: 'Curate shelves of books, podcasts, music, videos, links — even live stock tickers. Share a single link anywhere.',
   keywords: ['bookshelf', 'books', 'podcasts', 'music', 'videos', 'links', 'stocks', 'curate', 'share', 'reading list', 'watchlist'],
   authors: [{ name: "Virtual Bookshelf" }],
-  alternates: {
-    canonical: '/',
-  },
   openGraph: {
     title: 'Virtual Bookshelf — A shelf for everything you love',
     description: 'Curate shelves of books, podcasts, music, videos, links — even live stock tickers. Share a single link anywhere.',
