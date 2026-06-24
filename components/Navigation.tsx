@@ -13,12 +13,9 @@ export function Navigation() {
   useEffect(() => {
     if (isEmbed) return;
     fetch('/api/auth/me')
-      .then((res) => {
-        setIsLoggedIn(res.ok);
-      })
-      .catch(() => {
-        setIsLoggedIn(false);
-      });
+      .then((res) => res.json())
+      .then((data) => { setIsLoggedIn(data.authenticated === true); })
+      .catch(() => { setIsLoggedIn(false); });
   }, [pathname, isEmbed]);
 
   if (isEmbed) return null;
