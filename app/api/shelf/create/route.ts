@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { createShelf } from '@/lib/db/queries';
 import { createLogger } from '@/lib/utils/logger';
+import {
+  authRequiredError,
+  validationError,
+  internalError,
+} from '@/lib/utils/errors';
 
 const logger = createLogger('ShelfCreate');
 
@@ -15,10 +20,7 @@ export async function POST(request: Request) {
     // Check for valid session
     const session = await getSession();
     if (!session || !session.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized - please log in first' },
-        { status: 401 }
-      );
+      return authRequiredError('Unauthorized - please log in first');
     }
 
     const body = await request.json();
@@ -26,32 +28,20 @@ export async function POST(request: Request) {
 
     // Validate shelf name
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Shelf name is required' },
-        { status: 400 }
-      );
+      return validationError('Shelf name is required');
     }
 
     if (name.trim().length > 100) {
-      return NextResponse.json(
-        { success: false, error: 'Shelf name must be 100 characters or less' },
-        { status: 400 }
-      );
+      return validationError('Shelf name must be 100 characters or less');
     }
 
     // Validate optional description
     if (description && typeof description !== 'string') {
-      return NextResponse.json(
-        { success: false, error: 'Description must be a string' },
-        { status: 400 }
-      );
+      return validationError('Description must be a string');
     }
 
     if (description && description.length > 1000) {
-      return NextResponse.json(
-        { success: false, error: 'Description must be 1000 characters or less' },
-        { status: 400 }
-      );
+      return validationError('Description must be 1000 characters or less');
     }
 
     // Create shelf
@@ -73,9 +63,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     logger.errorWithException('Failed to create shelf', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to create shelf' },
-      { status: 500 }
-    );
+    return internalError('Failed to create shelf');
   }
 }

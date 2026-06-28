@@ -8,6 +8,11 @@ import {
 } from '@/lib/db/queries';
 import { setSessionCookie } from '@/lib/utils/session';
 import { createLogger } from '@/lib/utils/logger';
+import {
+  validationError,
+  forbiddenError,
+  externalServiceError,
+} from '@/lib/utils/errors';
 
 const logger = createLogger('OAuthCallback');
 
@@ -31,18 +36,12 @@ export async function GET(request: Request) {
     // If Google returned an error
     if (error) {
       logger.error('Google returned error', { error });
-      return NextResponse.json(
-        { success: false, error: `Authentication failed: ${error}` },
-        { status: 400 }
-      );
+      return validationError(`Authentication failed: ${error}`);
     }
 
     // Validate parameters
     if (!code || !state) {
-      return NextResponse.json(
-        { success: false, error: 'Missing authorization code or state' },
-        { status: 400 }
-      );
+      return validationError('Missing authorization code or state');
     }
 
     // Verify state token (CSRF protection)
@@ -53,10 +52,7 @@ export async function GET(request: Request) {
     
     if (state !== storedState) {
       logger.error('State mismatch - possible CSRF attempt');
-      return NextResponse.json(
-        { success: false, error: 'Invalid state token' },
-        { status: 403 }
-      );
+      return forbiddenError('Invalid state token');
     }
 
     // Exchange code for tokens
@@ -74,10 +70,7 @@ export async function GET(request: Request) {
 
     if (!tokenResponse.ok) {
       logger.error('Token exchange failed');
-      return NextResponse.json(
-        { success: false, error: 'Failed to exchange token' },
-        { status: 500 }
-      );
+      return externalServiceError('Google OAuth');
     }
 
     const { access_token } = await tokenResponse.json();
@@ -89,20 +82,14 @@ export async function GET(request: Request) {
 
     if (!userInfoResponse.ok) {
       logger.error('User info fetch failed');
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch user info' },
-        { status: 500 }
-      );
+      return externalServiceError('Google OAuth');
     }
 
     const googleUser = await userInfoResponse.json();
     const { sub: googleId, email, name } = googleUser;
 
     if (!email || !googleId) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid user data from Google' },
-        { status: 400 }
-      );
+      return validationError('Invalid user data from Google');
     }
 
     // Check if user exists
@@ -151,9 +138,6 @@ export async function GET(request: Request) {
     return response;
   } catch (error) {
     logger.errorWithException('Authentication failed', error);
-    return NextResponse.json(
-      { success: false, error: 'Authentication failed' },
-      { status: 500 }
-    );
+    return externalServiceError('Google OAuth');
   }
 }
