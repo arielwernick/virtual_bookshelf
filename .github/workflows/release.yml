@@ -35,36 +35,75 @@ jobs:
 
       - name: Generate changelog
         id: changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "## What's Changed" > changelog.md
-          echo "" >> changelog.md
-          
           # Get commits since last tag (or all commits if no tag)
           if [ -n "${{ steps.previous_tag.outputs.tag }}" ]; then
             RANGE="${{ steps.previous_tag.outputs.tag }}..HEAD"
           else
             RANGE="HEAD"
           fi
-          
-          # Group commits by type
-          echo "### ✨ Features" >> changelog.md
-          git log $RANGE --pretty=format:"- %s (%h)" --grep="^feat" >> changelog.md || true
-          echo "" >> changelog.md
-          echo "" >> changelog.md
-          
-          echo "### 🐛 Bug Fixes" >> changelog.md
-          git log $RANGE --pretty=format:"- %s (%h)" --grep="^fix" >> changelog.md || true
-          echo "" >> changelog.md
-          echo "" >> changelog.md
-          
-          echo "### 🔧 Other Changes" >> changelog.md
-          git log $RANGE --pretty=format:"- %s (%h)" --grep="^chore\|^docs\|^refactor\|^style\|^test" >> changelog.md || true
-          echo "" >> changelog.md
-          echo "" >> changelog.md
-          
-          echo "---" >> changelog.md
-          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.previous_tag.outputs.tag }}...${{ steps.version.outputs.version }}" >> changelog.md
-          
+
+          # For each commit in range, resolve the PR that introduced it (if any)
+          # via the commit->PRs API, so notes carry PR links/numbers/authors
+          # instead of relying on commit-message prefix discipline.
+          ENTRIES="entries.jsonl"
+          > "$ENTRIES"
+          for sha in $(git log $RANGE --pretty=format:"%H" --reverse); do
+            pr_json=$(gh api "repos/${{ github.repository }}/commits/$sha/pulls" \
+              -H "Accept: application/vnd.github+json" 2>/dev/null || echo "[]")
+            pr=$(echo "$pr_json" | jq -c '[.[] | select(.merged_at != null)] | .[0] // empty')
+
+            if [ -n "$pr" ]; then
+              echo "$pr" | jq -c --arg sha "$sha" '{
+                sha: $sha,
+                number: .number,
+                title: .title,
+                url: .html_url,
+                author: .user.login
+              }' >> "$ENTRIES"
+            else
+              subject=$(git log -1 --pretty=format:"%s" "$sha")
+              author=$(git log -1 --pretty=format:"%an" "$sha")
+              jq -nc --arg sha "$sha" --arg title "$subject" --arg author "$author" \
+                '{sha: $sha, number: null, title: $title, url: null, author: $author}' >> "$ENTRIES"
+            fi
+          done
+
+          # Dedupe by PR number (a PR can span multiple commits), keep first occurrence
+          jq -s 'unique_by(if .number then ("pr-" + (.number|tostring)) else .sha end)' "$ENTRIES" > entries.json
+
+          format_entry() {
+            jq -r 'if .url then "- " + .title + " ([#" + (.number|tostring) + "](" + .url + ") by @" + .author + ")"
+                   else "- " + .title + " (" + (.sha[0:7]) + ")"
+                   end'
+          }
+
+          {
+            echo "## What's Changed"
+            echo ""
+
+            echo "### ✨ Features"
+            jq -c '.[] | select(.title | test("^feat(\\(.+\\))?:"; "i"))' entries.json | format_entry
+            echo ""
+
+            echo "### 🐛 Bug Fixes"
+            jq -c '.[] | select(.title | test("^fix(\\(.+\\))?:"; "i"))' entries.json | format_entry
+            echo ""
+
+            echo "### 🔧 Other Changes"
+            jq -c '.[] | select(.title | test("^(chore|docs|refactor|style|test)(\\(.+\\))?:"; "i"))' entries.json | format_entry
+            echo ""
+
+            echo "### 📦 Uncategorized"
+            jq -c '.[] | select(.title | test("^(feat|fix|chore|docs|refactor|style|test)(\\(.+\\))?:"; "i") | not)' entries.json | format_entry
+            echo ""
+
+            echo "---"
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.previous_tag.outputs.tag }}...${{ steps.version.outputs.version }}"
+          } > changelog.md
+
           # Output for the release
           cat changelog.md
 
