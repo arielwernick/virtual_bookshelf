@@ -50,7 +50,6 @@ const organizationSchema = {
 };
 
 const EMBED_DESTINATIONS = ['Notion', 'Squarespace', 'Webflow', 'WordPress'];
-const SHELF_LINK_EXAMPLE = `${baseUrl.replace(/^https?:\/\//, '')}/s/your-shelf`;
 
 /**
  * Fetch demo shelves for the home page
@@ -93,60 +92,40 @@ async function getDemoShelvesData(): Promise<ShelfPreview[] | null> {
 }
 
 /**
- * The "public link" bar shown in the Embed section. When a real demo shelf is
- * available it renders as a link that clicks through to the live shelf (just
- * like the preview cards); otherwise it falls back to a static placeholder.
+ * Static, non-interactive preview of an embedded shelf — a teaser, not a live
+ * iframe. The whole card links to /embed-anywhere where the real interactive
+ * demo (newsletter/email/website, live and clickable) lives.
  */
-function EmbedLinkBar({ url, href }: { url: string; href: string | null }) {
-  const base =
-    'flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-4 py-3.5 shadow-sm';
-  const inner = (
-    <>
-      <svg
-        className="w-5 h-5 shrink-0 text-gray-400 dark:text-gray-500"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1" />
-        <path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1" />
-      </svg>
-      <span className="font-mono text-sm text-gray-700 dark:text-gray-300 truncate">{url}</span>
-      <span className="ml-auto text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap transition-colors group-hover:text-gray-600 dark:group-hover:text-gray-400">
-        {href ? 'Click to explore →' : 'Public link'}
-      </span>
-    </>
+function EmbedPreviewCard() {
+  return (
+    <Link
+      href="/embed-anywhere"
+      className="group block rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 shadow-sm overflow-hidden transition hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md"
+    >
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+        <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+        <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+        <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+        <span className="ml-2 text-xs text-gray-400 dark:text-gray-500 truncate">yoursite.com</span>
+      </div>
+      <div className="relative px-5 py-6 sm:px-6 grid grid-cols-3 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="rounded-lg bg-gray-100 dark:bg-gray-800 aspect-square" />
+        ))}
+        <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-gray-900/70 backdrop-blur-[1px]">
+          <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium shadow-md transition group-hover:scale-105">
+            See it embedded, live
+            <span aria-hidden="true">→</span>
+          </span>
+        </div>
+      </div>
+    </Link>
   );
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className={`${base} group transition hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md`}
-      >
-        {inner}
-      </Link>
-    );
-  }
-  return <div className={base}>{inner}</div>;
 }
 
 export default async function Home() {
   const demoShelves = await getDemoShelvesData();
   const hasDemo = Boolean(demoShelves && demoShelves.length > 0);
-
-  // Use a real demo shelf for the Embed section's example link so it clicks
-  // through to a live shelf, just like the preview cards. Uses the first shelf
-  // in the admin user's public set; falls back to a placeholder when no demo
-  // data is available (e.g. local dev without env).
-  const embedExampleToken = demoShelves?.[0]?.shelf.share_token ?? null;
-  const embedExampleUrl = embedExampleToken
-    ? `${baseUrl.replace(/^https?:\/\//, '')}/s/${embedExampleToken}`
-    : SHELF_LINK_EXAMPLE;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 flex flex-col">
@@ -246,20 +225,8 @@ export default async function Home() {
             </div>
 
             <div className="max-w-xl mx-auto">
-              {/* The actual embed — a live, clickable shelf, not a mockup */}
-              {embedExampleToken ? (
-                <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 p-2 shadow-sm">
-                  <iframe
-                    src={`${baseUrl}/embed/${embedExampleToken}?theme=light`}
-                    title="Live embedded shelf example"
-                    className="w-full rounded-lg"
-                    style={{ height: 420, border: 'none' }}
-                    loading="lazy"
-                  />
-                </div>
-              ) : (
-                <EmbedLinkBar url={embedExampleUrl} href={null} />
-              )}
+              {/* A teaser preview — clicks through to the live, interactive demo */}
+              <EmbedPreviewCard />
 
               {/* Where it works */}
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
@@ -291,11 +258,6 @@ export default async function Home() {
                   Create a shelf and grab your link
                   <span aria-hidden="true">→</span>
                 </Link>
-                <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                  <Link href="/embed-anywhere" className="hover:underline hover:text-gray-700 dark:hover:text-gray-300">
-                    See it embedded in a newsletter, email, and website →
-                  </Link>
-                </p>
               </div>
             </div>
           </section>
