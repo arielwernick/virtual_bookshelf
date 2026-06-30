@@ -155,28 +155,18 @@ export default function CurateConferenceResourcesPage() {
               </div>
 
               {/* After */}
-              <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20 p-6">
+              <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20 p-6 flex flex-col">
                 <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-4">After — Virtual Bookshelf shelf</p>
-                <div className="space-y-3">
-                  {[
-                    { title: 'AI-Native Engineering Leadership', speaker: 'Gregor Ojstersek', color: 'bg-violet-100 dark:bg-violet-900/30' },
-                    { title: 'We Thought AI Transformation Was About Adopting Agents', speaker: 'Vinay Perneti', color: 'bg-blue-100 dark:bg-blue-900/30' },
-                    { title: 'What Actually Works: AI Coding Patterns from the Top 1%', speaker: 'Andrew Churchill', color: 'bg-amber-100 dark:bg-amber-900/30' },
-                  ].map((item) => (
-                    <div key={item.title} className={`flex items-center gap-3 rounded-xl ${item.color} p-3`}>
-                      <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 shrink-0 flex items-center justify-center">
-                        <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{item.title}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{item.speaker}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400 pt-1 font-medium">✓ Lives at one URL forever · auto-fills thumbnails · embeddable</p>
+                <div className="rounded-xl overflow-hidden border border-emerald-200/60 dark:border-emerald-900/60 bg-white dark:bg-gray-900">
+                  <iframe
+                    src={`${baseUrl}/embed/hnDScsft`}
+                    title="Engineering Leadership Live — real embedded shelf"
+                    className="w-full"
+                    style={{ height: '360px', border: 'none' }}
+                    loading="lazy"
+                  />
                 </div>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 pt-3 font-medium">✓ This is a real, live shelf — not a mockup. Lives at one URL, auto-fills thumbnails, embeddable.</p>
               </div>
             </div>
           </section>
