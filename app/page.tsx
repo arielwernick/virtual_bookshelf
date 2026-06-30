@@ -282,6 +282,11 @@ export default async function Home() {
                   Create a shelf and grab your link
                   <span aria-hidden="true">→</span>
                 </Link>
+                <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                  <Link href="/embed-anywhere" className="hover:underline hover:text-gray-700 dark:hover:text-gray-300">
+                    See it embedded in a newsletter, email, and website →
+                  </Link>
+                </p>
               </div>
             </div>
           </section>
