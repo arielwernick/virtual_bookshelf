@@ -246,11 +246,20 @@ export default async function Home() {
             </div>
 
             <div className="max-w-xl mx-auto">
-              {/* The link — the no-code path, clicks through to a live shelf */}
-              <EmbedLinkBar
-                url={embedExampleUrl}
-                href={embedExampleToken ? `/s/${embedExampleToken}` : null}
-              />
+              {/* The actual embed — a live, clickable shelf, not a mockup */}
+              {embedExampleToken ? (
+                <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 p-2 shadow-sm">
+                  <iframe
+                    src={`${baseUrl}/embed/${embedExampleToken}?theme=light`}
+                    title="Live embedded shelf example"
+                    className="w-full rounded-lg"
+                    style={{ height: 420, border: 'none' }}
+                    loading="lazy"
+                  />
+                </div>
+              ) : (
+                <EmbedLinkBar url={embedExampleUrl} href={null} />
+              )}
 
               {/* Where it works */}
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
