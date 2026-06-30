@@ -8,7 +8,7 @@ export function Navigation() {
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
-  const isEmbed = pathname?.startsWith('/embed') ?? false;
+  const isEmbed = pathname === '/embed' || (pathname?.startsWith('/embed/') ?? false);
 
   useEffect(() => {
     if (isEmbed) return;
