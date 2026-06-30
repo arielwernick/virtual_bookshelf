@@ -67,7 +67,7 @@ function EmailMock() {
       <div className="px-6 sm:px-10 py-8 space-y-5">
         <p className="text-gray-600 dark:text-gray-400 leading-relaxed">Hi team,</p>
         <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-          I pulled together the Config 2025 sessions I think are most relevant to what we're building. Everything's linked below — just click through.
+          I pulled together the Config 2025 sessions I think are most relevant to what we&apos;re building. Everything&apos;s linked below — just click through.
         </p>
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-950">
           <EmbedFrame src={EMAIL_SRC} title="Config 2025 — embedded resource shelf" height={460} />
@@ -92,7 +92,7 @@ function WebsiteMock() {
       <div className="px-6 sm:px-10 py-8 space-y-5">
         <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Keynote recordings & resources</h3>
         <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-          Missed a session, or want to revisit one? All keynote recordings and resources from this year's summit are below.
+          Missed a session, or want to revisit one? All keynote recordings and resources from this year&apos;s summit are below.
         </p>
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-950">
           <EmbedFrame src={WEBSITE_SRC} title="Data + AI Summit 2025 — embedded resource shelf" height={460} />
