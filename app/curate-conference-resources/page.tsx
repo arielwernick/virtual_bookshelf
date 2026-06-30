@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CapabilityShowcase } from '@/components/home/CapabilityShowcase';
+import { LiveShelfExamples } from '@/components/landing/LiveShelfExamples';
 import { faqPageJsonLd, breadcrumbJsonLd, type FaqItem } from '@/lib/utils/landingSchema';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
@@ -122,23 +123,10 @@ export default function CurateConferenceResourcesPage() {
             <div className="text-center mb-8">
               <h2 id="example-heading" className={h2Class}>See what a conference shelf looks like</h2>
               <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                This is a real shelf — live, browsable, and shareable with one link.
+                These are real shelves — live, browsable, and shareable with one link. Switch between events below.
               </p>
             </div>
-            <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-lg bg-white dark:bg-gray-900">
-              <iframe
-                src={`${baseUrl}/embed/hnDScsft`}
-                title="Engineering Leadership Live — conference resource shelf example"
-                className="w-full"
-                style={{ height: '560px', border: 'none' }}
-                loading="lazy"
-              />
-            </div>
-            <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
-              <Link href={`${baseUrl}/s/hnDScsft`} className="hover:underline" target="_blank" rel="noopener noreferrer">
-                Engineering Leadership Live SF — view the full shelf →
-              </Link>
-            </p>
+            <LiveShelfExamples />
           </section>
 
           {/* Before / after */}
