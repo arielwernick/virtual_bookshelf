@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { AlternativeLandingPage } from '@/components/landing/AlternativeLandingPage';
+import Link from 'next/link';
+import { CapabilityShowcase } from '@/components/home/CapabilityShowcase';
 import { faqPageJsonLd, breadcrumbJsonLd, type FaqItem } from '@/lib/utils/landingSchema';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
@@ -54,110 +55,237 @@ const FAQ: FaqItem[] = [
   },
 ];
 
+const primaryCta =
+  'inline-block px-8 py-3.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-all font-medium text-lg shadow-md hover:shadow-lg';
+const h2Class = 'text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight';
+
+const jsonLd = [
+  faqPageJsonLd(FAQ),
+  breadcrumbJsonLd([
+    { name: 'Home', url: baseUrl },
+    { name: 'Curate conference resources', url: `${baseUrl}/curate-conference-resources` },
+  ]),
+];
+
 export default function CurateConferenceResourcesPage() {
   return (
-    <AlternativeLandingPage
-      breadcrumbLabel="Curate conference resources"
-      h1="Turn your conference recap into a shareable resource shelf"
-      heroSubhead="Stop sharing flat lists of links. Add your talks, recordings, and articles — cover art and titles fill in automatically — then share one beautiful URL with your community."
-      intro={{
-        heading: 'What is the best way to share conference resources?',
-        paragraphs: [
-          'After a great event, the instinct is to paste every link into a LinkedIn post or newsletter. The result is a wall of text that nobody saves and most people skip.',
-          'A Virtual Bookshelf shelf does the same thing visually — each talk or article becomes a rich card with a thumbnail, title, and your own note. Share one URL and your audience can browse, click, and bookmark what matters to them.',
-        ],
-      }}
-      reasons={{
-        heading: 'Built for the way people actually share event resources',
-        sub: 'Rich cards, automatic metadata, one link — everything a flat post is not.',
-        items: [
-          {
-            title: 'Visual cards, not a link dump',
-            body: 'Every recording, article, or speaker link becomes a card with a real thumbnail and title — far easier to scan than a bulleted list.',
-          },
-          {
-            title: 'Metadata fills in automatically',
-            body: 'Paste a YouTube link, a newsletter article, or a podcast episode URL and the title, thumbnail, and description populate themselves. No manual work.',
-          },
-          {
-            title: 'One link for everything',
-            body: 'Share a single URL in your post, bio, or email. Embed the live shelf in Notion or your own site. Update once and everywhere refreshes.',
-          },
-        ],
-      }}
-      comparison={{
-        heading: 'Virtual Bookshelf vs. a LinkedIn post vs. a Google Doc',
-        sub: 'How the common options stack up for sharing event resources.',
-        columns: [
-          { name: 'Virtual Bookshelf', highlight: true },
-          { name: 'LinkedIn post' },
-          { name: 'Google Doc / Notion' },
-        ],
-        rows: [
-          {
-            feature: 'Visual cards with thumbnails',
-            cells: [['Yes — automatic', true], ['No', false], ['No', false]],
-          },
-          {
-            feature: 'Shareable with one link',
-            cells: [['Yes', true], ['Yes (post URL)', true], ['Yes (doc URL)', true]],
-          },
-          {
-            feature: 'Works as a bio link',
-            cells: [['Yes', true], ['No', false], ['Poor UX', null]],
-          },
-          {
-            feature: 'Embeddable on any site',
-            cells: [['Yes', true], ['No', false], ['Limited', null]],
-          },
-          {
-            feature: 'Add personal notes per item',
-            cells: [['Yes', true], ['Only in caption', null], ['Yes', true]],
-          },
-          {
-            feature: 'Stays live and updatable',
-            cells: [['Yes', true], ['Buried in feed', false], ['Yes', true]],
-          },
-          {
-            feature: 'Free to use',
-            cells: [['Yes', true], ['Yes', true], ['Free + paid tiers', null]],
-          },
-        ],
-        note: 'Comparison reflects general platform capabilities as of June 2026.',
-      }}
-      steps={{
-        heading: 'Build your conference shelf in minutes',
-        sub: 'Most event recaps take less than ten minutes to shelve.',
-        items: [
-          {
-            n: 1,
-            title: 'Create a shelf',
-            body: 'Sign up free and name your shelf — "Engineering Leadership Live 2026" or whatever fits your event.',
-          },
-          {
-            n: 2,
-            title: 'Add talks and links',
-            body: 'Paste each recording, article, or speaker link. Thumbnails, titles, and descriptions fill in automatically.',
-          },
-          {
-            n: 3,
-            title: 'Share your URL',
-            body: 'Drop the shelf link in your LinkedIn post, newsletter, or bio. Embed it on your site if you want it live anywhere else.',
-          },
-        ],
-      }}
-      faq={{ heading: 'Frequently asked questions', items: FAQ }}
-      cta={{
-        heading: 'Shelve your next conference recap',
-        sub: 'Free to use. Looks great. Takes minutes. Your community will actually read it.',
-      }}
-      jsonLd={[
-        faqPageJsonLd(FAQ),
-        breadcrumbJsonLd([
-          { name: 'Home', url: baseUrl },
-          { name: 'Curate conference resources', url: `${baseUrl}/curate-conference-resources` },
-        ]),
-      ]}
-    />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 flex flex-col">
+      {jsonLd.map((schema, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      ))}
+
+      <main id="main-content" className="flex-1">
+        {/* Hero */}
+        <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-10 text-center">
+          <nav aria-label="Breadcrumb" className="mb-6">
+            <ol className="flex items-center justify-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+              <li><Link href="/" className="hover:text-gray-700 dark:hover:text-gray-300">Home</Link></li>
+              <li aria-hidden="true">/</li>
+              <li className="text-gray-700 dark:text-gray-300 font-medium">Curate conference resources</li>
+            </ol>
+          </nav>
+
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4 tracking-tight">
+            Turn your conference recap into a shareable resource shelf
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto">
+            Stop sharing flat lists of links. Add your talks, recordings, and articles — cover art and titles fill in automatically — then share one beautiful URL with your community.
+          </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/signup" className={primaryCta}>Create your shelf — free</Link>
+            <Link href="#live-example" className="inline-block px-8 py-3.5 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium text-lg">
+              See a live example
+            </Link>
+          </div>
+        </section>
+
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* AEO direct-answer intro */}
+          <section aria-labelledby="intro-heading" className="max-w-2xl mx-auto mb-20 sm:mb-24">
+            <h2 id="intro-heading" className={`${h2Class} mb-4`}>
+              What is the best way to share conference resources?
+            </h2>
+            <div className="space-y-4 text-gray-600 dark:text-gray-400 leading-relaxed">
+              <p>
+                After a great event, the instinct is to paste every link into a LinkedIn post or newsletter. The result is a wall of text that nobody saves and most people scroll past.
+              </p>
+              <p>
+                A Virtual Bookshelf shelf gives the same content a visual home — each talk or article becomes a rich card with a thumbnail, title, and your own note. Share one URL and your audience can browse, click, and bookmark what matters to them.
+              </p>
+            </div>
+          </section>
+
+          {/* Live example embed */}
+          <section id="live-example" aria-labelledby="example-heading" className="mb-20 sm:mb-28 scroll-mt-24">
+            <div className="text-center mb-8">
+              <h2 id="example-heading" className={h2Class}>See what a conference shelf looks like</h2>
+              <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                This is a real shelf — live, browsable, and shareable with one link.
+              </p>
+            </div>
+            <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-lg bg-white dark:bg-gray-900">
+              <iframe
+                src={`${baseUrl}/embed/hnDScsft`}
+                title="Engineering Leadership Live — conference resource shelf example"
+                className="w-full"
+                style={{ height: '560px', border: 'none' }}
+                loading="lazy"
+              />
+            </div>
+            <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+              <Link href={`${baseUrl}/s/hnDScsft`} className="hover:underline" target="_blank" rel="noopener noreferrer">
+                Engineering Leadership Live SF — view the full shelf →
+              </Link>
+            </p>
+          </section>
+
+          {/* Before / after */}
+          <section aria-labelledby="before-after-heading" className="mb-20 sm:mb-28">
+            <div className="text-center mb-10">
+              <h2 id="before-after-heading" className={h2Class}>From flat text to a living resource page</h2>
+              <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                The same content — one format people save, one they scroll past.
+              </p>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2">
+              {/* Before */}
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/50 p-6">
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4">Before — LinkedIn post</p>
+                <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400 font-mono leading-relaxed">
+                  <p>🎤 Gregor Ojstersek — AI-Native Engineering Leadership</p>
+                  <p>Recording: lnkd.in/ej3qDUYZ</p>
+                  <p>Article: lnkd.in/eHS5JkYN</p>
+                  <p className="pt-1">🎤 Vinay Perneti — We Thought AI Transformation Was About Adopting Agents. We Were Wrong.</p>
+                  <p>Recording: lnkd.in/eMSUcBQj</p>
+                  <p>Article: lnkd.in/d9gMipvC</p>
+                  <p className="pt-1">🎤 Andrew Churchill — What Actually Works: AI Coding Patterns from the Top 1%...</p>
+                  <p>Recording: lnkd.in/eX4dVZ8y</p>
+                  <p className="text-gray-300 dark:text-gray-600">↓ buried in the feed after 24 hours</p>
+                </div>
+              </div>
+
+              {/* After */}
+              <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/40 dark:bg-emerald-950/20 p-6">
+                <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-4">After — Virtual Bookshelf shelf</p>
+                <div className="space-y-3">
+                  {[
+                    { title: 'AI-Native Engineering Leadership', speaker: 'Gregor Ojstersek', color: 'bg-violet-100 dark:bg-violet-900/30' },
+                    { title: 'We Thought AI Transformation Was About Adopting Agents', speaker: 'Vinay Perneti', color: 'bg-blue-100 dark:bg-blue-900/30' },
+                    { title: 'What Actually Works: AI Coding Patterns from the Top 1%', speaker: 'Andrew Churchill', color: 'bg-amber-100 dark:bg-amber-900/30' },
+                  ].map((item) => (
+                    <div key={item.title} className={`flex items-center gap-3 rounded-xl ${item.color} p-3`}>
+                      <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 shrink-0 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{item.title}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{item.speaker}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 pt-1 font-medium">✓ Lives at one URL forever · auto-fills thumbnails · embeddable</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Capability showcase */}
+          <CapabilityShowcase />
+
+          {/* Why / 3 reasons */}
+          <section aria-labelledby="reasons-heading" className="mb-20 sm:mb-28">
+            <div className="text-center mb-10">
+              <h2 id="reasons-heading" className={h2Class}>Built for the way people actually share event resources</h2>
+              <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Rich cards, automatic metadata, one link — everything a flat post is not.
+              </p>
+            </div>
+            <ul className="grid gap-6 sm:grid-cols-3">
+              {[
+                {
+                  title: 'Visual cards, not a link dump',
+                  body: 'Every recording, article, or speaker link becomes a card with a real thumbnail and title — far easier to scan than a bulleted list.',
+                },
+                {
+                  title: 'Metadata fills in automatically',
+                  body: 'Paste a YouTube link, a newsletter article, or a podcast episode URL and the title, thumbnail, and description populate themselves. No manual work.',
+                },
+                {
+                  title: 'One link for everything',
+                  body: 'Share a single URL in your post, bio, or email. Embed the live shelf in Notion or your own site. Update once and everywhere refreshes.',
+                },
+              ].map((r) => (
+                <li key={r.title} className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/50 p-6">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">{r.title}</h3>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{r.body}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Steps */}
+          <section aria-labelledby="steps-heading" className="mb-20 sm:mb-28">
+            <div className="text-center mb-10">
+              <h2 id="steps-heading" className={h2Class}>Build your conference shelf in minutes</h2>
+              <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Most event recaps take less than ten minutes to shelve.</p>
+            </div>
+            <ol className="grid gap-6 sm:grid-cols-3">
+              {[
+                { n: 1, title: 'Create a shelf', body: 'Sign up free and name your shelf — "Engineering Leadership Live 2026" or whatever fits your event.' },
+                { n: 2, title: 'Add talks and links', body: 'Paste each recording, article, or speaker link. Thumbnails, titles, and descriptions fill in automatically.' },
+                { n: 3, title: 'Share your URL', body: 'Drop the shelf link in your LinkedIn post, newsletter, or bio. Embed it on your site if you want it live anywhere else.' },
+              ].map((step) => (
+                <li key={step.n} className="text-center">
+                  <span className="mx-auto grid place-items-center w-10 h-10 rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-semibold">{step.n}</span>
+                  <h3 className="mt-4 font-semibold text-gray-900 dark:text-gray-100">{step.title}</h3>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{step.body}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {/* FAQ */}
+          <section aria-labelledby="faq-heading" className="max-w-2xl mx-auto mb-20 sm:mb-28">
+            <h2 id="faq-heading" className={`${h2Class} text-center mb-10`}>Frequently asked questions</h2>
+            <dl className="space-y-8">
+              {FAQ.map((item) => (
+                <div key={item.q}>
+                  <dt className="font-semibold text-gray-900 dark:text-gray-100 text-base sm:text-lg">{item.q}</dt>
+                  <dd className="mt-2 text-gray-600 dark:text-gray-400 leading-relaxed">{item.a}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          {/* Final CTA */}
+          <section className="text-center pb-20 sm:pb-28">
+            <h2 className={h2Class}>Shelve your next conference recap</h2>
+            <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+              Free to use. Looks great. Takes minutes. Your community will actually read it.
+            </p>
+            <div className="mt-7">
+              <Link href="/signup" className={primaryCta}>Create your shelf — free</Link>
+              <p className="mt-5 text-sm text-gray-600 dark:text-gray-400">
+                Already have an account?{' '}
+                <Link href="/login" className="text-gray-900 dark:text-gray-100 hover:underline font-medium">Sign in</Link>
+              </p>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <footer className="border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400">
+            <p>© {new Date().getFullYear()} Virtual Bookshelf</p>
+            <Link href="/" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors font-medium">Back to home</Link>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }
