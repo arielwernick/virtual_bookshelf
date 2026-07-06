@@ -10,6 +10,13 @@ import { generateShelfSchemaJson } from '@/lib/utils/schemaMarkup';
 // Mutations trigger immediate refreshes via revalidateSharedShelf().
 export const revalidate = 300;
 
+// Without generateStaticParams a dynamic route is always rendered on demand
+// and `revalidate` is ignored. Returning [] pre-builds nothing but opts every
+// visited token into on-demand static generation + caching (ISR).
+export async function generateStaticParams(): Promise<{ shareToken: string }[]> {
+  return [];
+}
+
 // Dedupe queries shared by generateMetadata and the page render
 const getCachedShelf = cache(getShelfByShareToken);
 const getCachedItems = cache(getItemsByShelfId);
