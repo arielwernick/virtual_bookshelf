@@ -3,6 +3,7 @@ import { getSession } from '@/lib/utils/session';
 import { getShelfById, getItemsByShelfId, updateShelf, deleteShelf } from '@/lib/db/queries';
 import type { Shelf } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
+import { revalidateSharedShelf } from '@/lib/utils/revalidateShelf';
 
 const logger = createLogger('ShelfById');
 type ShelfUpdateData = Partial<Pick<Shelf, 'name' | 'description' | 'is_public'>>;
@@ -154,6 +155,7 @@ export async function PATCH(
 
         // Update shelf
         const updatedShelf = await updateShelf(shelfId, updateData);
+        revalidateSharedShelf(shelf.share_token);
 
         return NextResponse.json({
             success: true,
@@ -212,6 +214,7 @@ export async function DELETE(
 
         // Delete shelf (cascades to items)
         await deleteShelf(shelfId);
+        revalidateSharedShelf(shelf.share_token);
 
         return NextResponse.json({
             success: true,

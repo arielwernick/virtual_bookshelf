@@ -1,9 +1,18 @@
+import { cache } from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getShelfByShareToken, getItemsByShelfId, getUserById } from '@/lib/db/queries';
 import { ShelfGridStatic } from '@/components/shelf/ShelfGridStatic';
 import { SharedShelfInteractive } from './SharedShelfInteractive';
 import { generateShelfSchemaJson } from '@/lib/utils/schemaMarkup';
+
+// Serve cached HTML and re-render in the background at most every 5 minutes.
+// Mutations trigger immediate refreshes via revalidateSharedShelf().
+export const revalidate = 300;
+
+// Dedupe queries shared by generateMetadata and the page render
+const getCachedShelf = cache(getShelfByShareToken);
+const getCachedItems = cache(getItemsByShelfId);
 
 interface PageProps {
   params: Promise<{ shareToken: string }>;
@@ -35,8 +44,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { shareToken } = await params;
   
   try {
-    const shelf = await getShelfByShareToken(shareToken);
-    
+    const shelf = await getCachedShelf(shareToken);
+
     if (!shelf || !shelf.is_public) {
       return {
         title: 'Shelf Not Found',
@@ -45,7 +54,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       };
     }
 
-    const items = await getItemsByShelfId(shelf.id);
+    const items = await getCachedItems(shelf.id);
     const itemCount = items.length;
     const itemText = itemCount === 1 ? '1 item' : `${itemCount} items`;
     
@@ -99,16 +108,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  */
 async function getShelfData(shareToken: string) {
   try {
-    const shelf = await getShelfByShareToken(shareToken);
+    const shelf = await getCachedShelf(shareToken);
 
     if (!shelf || !shelf.is_public) {
       return null;
     }
 
-    const items = await getItemsByShelfId(shelf.id);
-    
-    // Fetch user data to get the creator's username for schema markup
-    const user = await getUserById(shelf.user_id);
+    // Items are deduped with generateMetadata; the creator's username
+    // (for schema markup) is independent, so fetch it in parallel
+    const [items, user] = await Promise.all([
+      getCachedItems(shelf.id),
+      getUserById(shelf.user_id),
+    ]);
     const username = user?.username || null;
 
     return {
