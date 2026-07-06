@@ -1,9 +1,25 @@
+import { cache } from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getShelfByShareToken, getItemsByShelfId, getUserById } from '@/lib/db/queries';
 import { ShelfGridStatic } from '@/components/shelf/ShelfGridStatic';
 import { SharedShelfInteractive } from './SharedShelfInteractive';
 import { generateShelfSchemaJson } from '@/lib/utils/schemaMarkup';
+
+// Serve cached HTML and re-render in the background at most every 5 minutes.
+// Mutations trigger immediate refreshes via revalidateSharedShelf().
+export const revalidate = 300;
+
+// Without generateStaticParams a dynamic route is always rendered on demand
+// and `revalidate` is ignored. Returning [] pre-builds nothing but opts every
+// visited token into on-demand static generation + caching (ISR).
+export async function generateStaticParams(): Promise<{ shareToken: string }[]> {
+  return [];
+}
+
+// Dedupe queries shared by generateMetadata and the page render
+const getCachedShelf = cache(getShelfByShareToken);
+const getCachedItems = cache(getItemsByShelfId);
 
 interface PageProps {
   params: Promise<{ shareToken: string }>;
@@ -35,16 +51,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { shareToken } = await params;
   
   try {
-    const shelf = await getShelfByShareToken(shareToken);
-    
+    const shelf = await getCachedShelf(shareToken);
+
     if (!shelf || !shelf.is_public) {
       return {
-        title: 'Shelf Not Found | Virtual Bookshelf',
+        title: 'Shelf Not Found',
         description: 'This shelf could not be found.',
+        robots: { index: false },
       };
     }
 
-    const items = await getItemsByShelfId(shelf.id);
+    const items = await getCachedItems(shelf.id);
     const itemCount = items.length;
     const itemText = itemCount === 1 ? '1 item' : `${itemCount} items`;
     
@@ -58,8 +75,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const ogImageUrl = `${baseUrl}/api/og/${shareToken}`;
 
     return {
-      title: `${shelf.name} | Virtual Bookshelf`,
+      title: shelf.name,
       description,
+      alternates: { canonical: `/s/${shareToken}` },
       openGraph: {
         title: shelf.name,
         description,
@@ -85,7 +103,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch (error) {
     console.error('Error generating metadata:', error);
     return {
-      title: 'Virtual Bookshelf',
+      title: { absolute: 'Virtual Bookshelf' },
       description: 'Curate and share your favorite books, podcasts, and music.',
     };
   }
@@ -97,16 +115,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  */
 async function getShelfData(shareToken: string) {
   try {
-    const shelf = await getShelfByShareToken(shareToken);
+    const shelf = await getCachedShelf(shareToken);
 
     if (!shelf || !shelf.is_public) {
       return null;
     }
 
-    const items = await getItemsByShelfId(shelf.id);
-    
-    // Fetch user data to get the creator's username for schema markup
-    const user = await getUserById(shelf.user_id);
+    // Items are deduped with generateMetadata; the creator's username
+    // (for schema markup) is independent, so fetch it in parallel
+    const [items, user] = await Promise.all([
+      getCachedItems(shelf.id),
+      getUserById(shelf.user_id),
+    ]);
     const username = user?.username || null;
 
     return {

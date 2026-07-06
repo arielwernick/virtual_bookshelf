@@ -4,6 +4,7 @@ import { createItem, getNextOrderIndex, getShelfById } from '@/lib/db/queries';
 import { validateItemType, validateText, validateUrl, validateNotes, validateRating } from '@/lib/utils/validation';
 import { CreateItemData } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
+import { revalidateSharedShelf } from '@/lib/utils/revalidateShelf';
 
 const logger = createLogger('ItemsCreate');
 
@@ -137,6 +138,7 @@ export async function POST(request: Request) {
     };
 
     const item = await createItem(shelf_id, itemData, session.userId);
+    revalidateSharedShelf(shelf.share_token);
 
     return NextResponse.json({
       success: true,
