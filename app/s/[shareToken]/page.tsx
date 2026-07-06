@@ -39,8 +39,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     
     if (!shelf || !shelf.is_public) {
       return {
-        title: 'Shelf Not Found | Virtual Bookshelf',
+        title: 'Shelf Not Found',
         description: 'This shelf could not be found.',
+        robots: { index: false },
       };
     }
 
@@ -58,8 +59,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const ogImageUrl = `${baseUrl}/api/og/${shareToken}`;
 
     return {
-      title: `${shelf.name} | Virtual Bookshelf`,
+      title: shelf.name,
       description,
+      alternates: { canonical: `/s/${shareToken}` },
       openGraph: {
         title: shelf.name,
         description,
@@ -85,7 +87,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch (error) {
     console.error('Error generating metadata:', error);
     return {
-      title: 'Virtual Bookshelf',
+      title: { absolute: 'Virtual Bookshelf' },
       description: 'Curate and share your favorite books, podcasts, and music.',
     };
   }
