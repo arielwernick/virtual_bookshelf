@@ -4,6 +4,7 @@ import { extractVideoId, getVideoDetails } from '@/lib/api/youtube';
 import { fetchLinkMetadata, isYouTubeUrl, MicrolinkQuotaExceededError } from '@/lib/api/microlink';
 import { sql } from '@/lib/db/client';
 import { createLogger } from '@/lib/utils/logger';
+import { revalidateSharedShelf } from '@/lib/utils/revalidateShelf';
 
 const logger = createLogger('ItemsFromUrl');
 
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
 
     // Verify shelf exists and belongs to user
     const shelfResult = await sql`
-      SELECT id FROM shelves
+      SELECT id, share_token FROM shelves
       WHERE id = ${shelf_id}
       AND user_id = ${session.userId}
       LIMIT 1
@@ -115,6 +116,7 @@ export async function POST(request: Request) {
         )
         RETURNING *
       `;
+      revalidateSharedShelf(shelfResult[0].share_token as string);
 
       return NextResponse.json({
         success: true,
@@ -174,6 +176,7 @@ export async function POST(request: Request) {
       )
       RETURNING *
     `;
+    revalidateSharedShelf(shelfResult[0].share_token as string);
 
     return NextResponse.json({
       success: true,

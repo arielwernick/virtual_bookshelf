@@ -4,6 +4,7 @@ import { getItemById, updateItem, deleteItem, getShelfById } from '@/lib/db/quer
 import { validateText, validateUrl, validateNotes, validateRating } from '@/lib/utils/validation';
 import { UpdateItemData } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
+import { revalidateSharedShelf } from '@/lib/utils/revalidateShelf';
 
 const logger = createLogger('ItemById');
 
@@ -136,6 +137,7 @@ export async function PATCH(
 
     // Update item
     const updatedItem = await updateItem(id, updateData);
+    revalidateSharedShelf(shelf.share_token);
 
     return NextResponse.json({
       success: true,
@@ -190,6 +192,7 @@ export async function DELETE(
 
     // Delete item
     await deleteItem(id);
+    revalidateSharedShelf(shelf.share_token);
 
     return NextResponse.json({
       success: true,
