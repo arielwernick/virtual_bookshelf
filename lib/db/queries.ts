@@ -1,5 +1,5 @@
 import { sql, sqlQuery } from './client';
-import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem } from '../types/shelf';
+import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
 
 // ============================================================================
@@ -598,4 +598,127 @@ export async function getItemCountForShelf(shelfId: string): Promise<number> {
   `;
 
   return parseInt(result[0].count as string, 10);
+}
+
+// ============================================================================
+// OAUTH QUERIES (MCP connector authorization server)
+// ============================================================================
+
+/**
+ * Register a new OAuth client (dynamic client registration, RFC 7591)
+ */
+export async function createOAuthClient(
+  clientId: string,
+  clientName: string,
+  redirectUris: string[]
+): Promise<OAuthClient> {
+  const result = await sql`
+    INSERT INTO oauth_clients (client_id, client_name, redirect_uris)
+    VALUES (${clientId}, ${clientName}, ${redirectUris})
+    RETURNING *
+  `;
+
+  return result[0] as OAuthClient;
+}
+
+/**
+ * Get an OAuth client by its public client_id
+ */
+export async function getOAuthClientByClientId(clientId: string): Promise<OAuthClient | null> {
+  const result = await sql`
+    SELECT * FROM oauth_clients WHERE client_id = ${clientId}
+  `;
+
+  return (result[0] as OAuthClient) || null;
+}
+
+/**
+ * Store a hashed authorization code issued by the consent page
+ */
+export async function createOAuthAuthorizationCode(data: {
+  codeHash: string;
+  clientId: string;
+  userId: string;
+  redirectUri: string;
+  codeChallenge: string;
+  scope: string;
+  expiresAt: Date;
+}): Promise<OAuthAuthorizationCode> {
+  const result = await sql`
+    INSERT INTO oauth_authorization_codes
+      (code_hash, client_id, user_id, redirect_uri, code_challenge, scope, expires_at)
+    VALUES
+      (${data.codeHash}, ${data.clientId}, ${data.userId}, ${data.redirectUri},
+       ${data.codeChallenge}, ${data.scope}, ${data.expiresAt.toISOString()})
+    RETURNING *
+  `;
+
+  return result[0] as OAuthAuthorizationCode;
+}
+
+/**
+ * Atomically consume (delete and return) an authorization code by hash.
+ * Single-use by construction: a second exchange finds no row.
+ * Returns null if the code does not exist; caller must still check expiry.
+ */
+export async function consumeOAuthAuthorizationCode(
+  codeHash: string
+): Promise<OAuthAuthorizationCode | null> {
+  const result = await sql`
+    DELETE FROM oauth_authorization_codes
+    WHERE code_hash = ${codeHash}
+    RETURNING *
+  `;
+
+  return (result[0] as OAuthAuthorizationCode) || null;
+}
+
+/**
+ * Store a hashed opaque access token
+ */
+export async function createOAuthAccessToken(data: {
+  tokenHash: string;
+  clientId: string;
+  userId: string;
+  scope: string;
+  expiresAt: Date;
+}): Promise<OAuthAccessToken> {
+  const result = await sql`
+    INSERT INTO oauth_access_tokens (token_hash, client_id, user_id, scope, expires_at)
+    VALUES (${data.tokenHash}, ${data.clientId}, ${data.userId}, ${data.scope},
+            ${data.expiresAt.toISOString()})
+    RETURNING *
+  `;
+
+  return result[0] as OAuthAccessToken;
+}
+
+/**
+ * Look up a live access token by hash, touching last_used_at.
+ * Returns null for unknown or expired tokens.
+ */
+export async function getLiveOAuthAccessToken(
+  tokenHash: string
+): Promise<OAuthAccessToken | null> {
+  const result = await sql`
+    UPDATE oauth_access_tokens
+    SET last_used_at = NOW()
+    WHERE token_hash = ${tokenHash} AND expires_at > NOW()
+    RETURNING *
+  `;
+
+  return (result[0] as OAuthAccessToken) || null;
+}
+
+/**
+ * Revoke all connector tokens for a user (e.g. "disconnect Claude")
+ */
+export async function deleteOAuthAccessTokensForUser(userId: string): Promise<number> {
+  const result = await sql`
+    DELETE FROM oauth_access_tokens
+    WHERE user_id = ${userId}
+    RETURNING id
+  `;
+
+  return result.length;
 }
