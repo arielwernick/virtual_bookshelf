@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { getPublicShelves } from '@/lib/db/queries'
+import { buildSharePath } from '@/lib/utils/slug'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const shelves = await getPublicShelves()
 
   const shelfUrls = shelves.map(shelf => ({
-    url: `${baseUrl}/s/${shelf.share_token}`,
+    url: `${baseUrl}${buildSharePath(shelf.name, shelf.share_token)}`,
     lastModified: shelf.updated_at,
     changeFrequency: 'weekly' as const,
     priority: 0.8,
@@ -16,8 +17,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     { url: baseUrl, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
+    { url: `${baseUrl}/bento-alternative`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${baseUrl}/linktree-alternative`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${baseUrl}/goodreads-alternative`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/login`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${baseUrl}/signup`, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/curate-conference-resources`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${baseUrl}/embed-anywhere`, changeFrequency: 'monthly', priority: 0.9 },
     ...shelfUrls,
   ]
 }

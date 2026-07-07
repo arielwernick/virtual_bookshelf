@@ -95,7 +95,7 @@ describe('DemoShelf', () => {
     expect(screen.getByText('Test Album')).toBeInTheDocument();
   });
 
-  it('links to the share page', () => {
+  it('links to the share page with the slugged SEO URL', () => {
     render(
       <DemoShelf
         items={mockItems}
@@ -105,7 +105,7 @@ describe('DemoShelf', () => {
     );
 
     const links = screen.getAllByRole('link');
-    expect(links[0]).toHaveAttribute('href', '/s/abc123');
+    expect(links[0]).toHaveAttribute('href', '/s/my-reading-list-abc123');
   });
 
   it('limits display to 8 items', () => {
