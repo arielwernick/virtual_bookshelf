@@ -84,14 +84,14 @@ export interface CreateItemData {
   order_index?: number;
 }
 
-// For updating existing items
+// For updating existing items (null clears a nullable column)
 export interface UpdateItemData {
   title?: string;
   creator?: string;
   image_url?: string;
   external_url?: string;
-  notes?: string;
-  rating?: number;
+  notes?: string | null;
+  rating?: number | null;
   order_index?: number;
 }
 
