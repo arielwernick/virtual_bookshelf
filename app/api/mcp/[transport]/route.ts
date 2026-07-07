@@ -13,6 +13,7 @@ import {
   getShelvesForDashboard,
   updateItem,
 } from '@/lib/db/queries';
+import { buildSharePath } from '@/lib/utils/slug';
 import { searchBooks } from '@/lib/api/googleBooks';
 import { searchMusic, searchPodcasts } from '@/lib/api/spotify';
 import { getOAuthIssuer, hashToken } from '@/lib/utils/oauth';
@@ -90,7 +91,7 @@ const handler = createMcpHandler(
             description: shelf.description,
             is_public: shelf.is_public,
             item_count: shelf.item_count,
-            share_url: `${getOAuthIssuer()}/s/${shelf.share_token}`,
+            share_url: `${getOAuthIssuer()}${buildSharePath(shelf.name, shelf.share_token)}`,
           }))
         );
       }
@@ -112,7 +113,7 @@ const handler = createMcpHandler(
           name: shelf.name,
           description: shelf.description,
           is_public: shelf.is_public,
-          share_url: `${getOAuthIssuer()}/s/${shelf.share_token}`,
+          share_url: `${getOAuthIssuer()}${buildSharePath(shelf.name, shelf.share_token)}`,
           items: items.map(serializeItem),
         });
       }
@@ -132,7 +133,7 @@ const handler = createMcpHandler(
           id: shelf.id,
           name: shelf.name,
           description: shelf.description,
-          share_url: `${getOAuthIssuer()}/s/${shelf.share_token}`,
+          share_url: `${getOAuthIssuer()}${buildSharePath(shelf.name, shelf.share_token)}`,
         });
       }
     );

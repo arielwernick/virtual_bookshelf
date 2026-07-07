@@ -138,7 +138,7 @@ export async function POST(request: Request) {
     };
 
     const item = await createItem(shelf_id, itemData, session.userId);
-    revalidateSharedShelf(shelf.share_token);
+    revalidateSharedShelf(shelf.share_token, shelf.name);
 
     return NextResponse.json({
       success: true,

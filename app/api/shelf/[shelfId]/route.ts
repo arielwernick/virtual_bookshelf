@@ -155,7 +155,8 @@ export async function PATCH(
 
         // Update shelf
         const updatedShelf = await updateShelf(shelfId, updateData);
-        revalidateSharedShelf(shelf.share_token);
+        // Pass both names: a rename moves the canonical slugged path
+        revalidateSharedShelf(shelf.share_token, shelf.name, updatedShelf.name);
 
         return NextResponse.json({
             success: true,
@@ -214,7 +215,7 @@ export async function DELETE(
 
         // Delete shelf (cascades to items)
         await deleteShelf(shelfId);
-        revalidateSharedShelf(shelf.share_token);
+        revalidateSharedShelf(shelf.share_token, shelf.name);
 
         return NextResponse.json({
             success: true,

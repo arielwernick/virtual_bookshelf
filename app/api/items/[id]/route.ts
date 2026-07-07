@@ -137,7 +137,7 @@ export async function PATCH(
 
     // Update item
     const updatedItem = await updateItem(id, updateData);
-    revalidateSharedShelf(shelf.share_token);
+    revalidateSharedShelf(shelf.share_token, shelf.name);
 
     return NextResponse.json({
       success: true,
@@ -192,7 +192,7 @@ export async function DELETE(
 
     // Delete item
     await deleteItem(id);
-    revalidateSharedShelf(shelf.share_token);
+    revalidateSharedShelf(shelf.share_token, shelf.name);
 
     return NextResponse.json({
       success: true,
