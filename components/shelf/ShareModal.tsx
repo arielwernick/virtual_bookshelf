@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
+import { buildSharePath } from '@/lib/utils/slug';
 
 interface ShareModalProps {
     isOpen: boolean;
     onClose: () => void;
     shareToken: string;
+    /** Used to build the SEO-friendly slugged share URL */
+    shelfName?: string;
     isPublic?: boolean;
     onPublishToggle?: (isPublic: boolean) => Promise<void>;
     onCopy?: () => void;
@@ -111,7 +114,7 @@ function buildEmbedCode(style: EmbedStyle, embedUrl: string, shareToken: string)
 </script>`;
 }
 
-export function ShareModal({ isOpen, onClose, shareToken, isPublic = false, onPublishToggle, onCopy }: ShareModalProps) {
+export function ShareModal({ isOpen, onClose, shareToken, shelfName, isPublic = false, onPublishToggle, onCopy }: ShareModalProps) {
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType>('link');
     const [embedStyle, setEmbedStyle] = useState<EmbedStyle>('auto');
@@ -131,7 +134,8 @@ export function ShareModal({ isOpen, onClose, shareToken, isPublic = false, onPu
         prevIsPublicRef.current = isPublic;
     }, [isPublic]);
 
-    const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/s/${shareToken}`;
+    const sharePath = shelfName ? buildSharePath(shelfName, shareToken) : `/s/${shareToken}`;
+    const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${sharePath}`;
     const embedUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/embed/${shareToken}`;
     const embedCode = buildEmbedCode(embedStyle, embedUrl, shareToken);
 

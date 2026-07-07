@@ -166,6 +166,7 @@ export default function ShelfPage() {
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
         shareToken={shelfData.share_token}
+        shelfName={shelfData.name}
         isPublic={shelfData.is_public}
         onPublishToggle={isOwner ? async (isPublic) => {
           const res = await fetch(`/api/shelf/${shelfId}`, {

@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { getPublicShelves } from '@/lib/db/queries'
+import { buildSharePath } from '@/lib/utils/slug'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const shelves = await getPublicShelves()
 
   const shelfUrls = shelves.map(shelf => ({
-    url: `${baseUrl}/s/${shelf.share_token}`,
+    url: `${baseUrl}${buildSharePath(shelf.name, shelf.share_token)}`,
     lastModified: shelf.updated_at,
     changeFrequency: 'weekly' as const,
     priority: 0.8,
