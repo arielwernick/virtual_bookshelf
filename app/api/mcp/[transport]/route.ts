@@ -76,11 +76,14 @@ function serializeItem(item: Item) {
 
 const handler = createMcpHandler(
   (server) => {
-    server.tool(
+    server.registerTool(
       'list_shelves',
-      "List all of the user's shelves with item counts and share links.",
-      {},
-      async (_args, extra) => {
+      {
+        title: 'List shelves',
+        description: "List all of the user's shelves with item counts and share links.",
+        annotations: { readOnlyHint: true, openWorldHint: false },
+      },
+      async (extra) => {
         const userId = getUserId(extra);
         const shelves = await getShelvesForDashboard(userId);
         return jsonResult(
@@ -96,10 +99,14 @@ const handler = createMcpHandler(
       }
     );
 
-    server.tool(
+    server.registerTool(
       'get_shelf',
-      'Get a shelf and all items on it.',
-      { shelf_id: z.string().describe('Shelf ID from list_shelves') },
+      {
+        title: 'Get shelf contents',
+        description: 'Get a shelf and all items on it.',
+        inputSchema: { shelf_id: z.string().describe('Shelf ID from list_shelves') },
+        annotations: { readOnlyHint: true, openWorldHint: false },
+      },
       async ({ shelf_id }, extra) => {
         const userId = getUserId(extra);
         const shelf = await getOwnedShelf(shelf_id, userId);
@@ -118,12 +125,16 @@ const handler = createMcpHandler(
       }
     );
 
-    server.tool(
+    server.registerTool(
       'create_shelf',
-      'Create a new shelf.',
       {
-        name: z.string().min(1).max(100).describe('Shelf name'),
-        description: z.string().max(1000).optional().describe('Optional description'),
+        title: 'Create shelf',
+        description: 'Create a new shelf.',
+        inputSchema: {
+          name: z.string().min(1).max(100).describe('Shelf name'),
+          description: z.string().max(1000).optional().describe('Optional description'),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
       },
       async ({ name, description }, extra) => {
         const userId = getUserId(extra);
@@ -137,22 +148,27 @@ const handler = createMcpHandler(
       }
     );
 
-    server.tool(
+    server.registerTool(
       'add_item',
-      'Add an item (book, podcast, music, video, link…) to a shelf. ' +
-        'Use search_catalog first to find accurate metadata (title, creator, image, URL).',
       {
-        shelf_id: z.string().describe('Shelf ID from list_shelves'),
-        type: z.enum(ITEM_TYPES).describe('Item type'),
-        title: z.string().min(1).max(500).describe('Item title'),
-        creator: z
-          .string()
-          .max(500)
-          .optional()
-          .describe('Author, artist, host, or channel name'),
-        image_url: z.string().url().optional().describe('Cover or thumbnail image URL'),
-        external_url: z.string().url().optional().describe('Link to the item'),
-        notes: z.string().max(2000).optional().describe('Personal note to show with the item'),
+        title: 'Add item to shelf',
+        description:
+          'Add an item (book, podcast, music, video, link…) to a shelf. ' +
+          'Use search_catalog first to find accurate metadata (title, creator, image, URL).',
+        annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+        inputSchema: {
+          shelf_id: z.string().describe('Shelf ID from list_shelves'),
+          type: z.enum(ITEM_TYPES).describe('Item type'),
+          title: z.string().min(1).max(500).describe('Item title'),
+          creator: z
+            .string()
+            .max(500)
+            .optional()
+            .describe('Author, artist, host, or channel name'),
+          image_url: z.string().url().optional().describe('Cover or thumbnail image URL'),
+          external_url: z.string().url().optional().describe('Link to the item'),
+          notes: z.string().max(2000).optional().describe('Personal note to show with the item'),
+        },
       },
       async ({ shelf_id, type, title, creator, image_url, external_url, notes }, extra) => {
         const userId = getUserId(extra);
@@ -178,12 +194,22 @@ const handler = createMcpHandler(
       }
     );
 
-    server.tool(
+    server.registerTool(
       'update_item_note',
-      "Set or replace the personal note on an item (pass an empty string to clear it).",
       {
-        item_id: z.string().describe('Item ID from get_shelf'),
-        notes: z.string().max(2000).describe('New note text'),
+        title: 'Update item note',
+        description:
+          'Set or replace the personal note on an item (pass an empty string to clear it).',
+        inputSchema: {
+          item_id: z.string().describe('Item ID from get_shelf'),
+          notes: z.string().max(2000).describe('New note text'),
+        },
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
       },
       async ({ item_id, notes }, extra) => {
         const userId = getUserId(extra);
@@ -197,10 +223,14 @@ const handler = createMcpHandler(
       }
     );
 
-    server.tool(
+    server.registerTool(
       'remove_item',
-      'Remove an item from a shelf.',
-      { item_id: z.string().describe('Item ID from get_shelf') },
+      {
+        title: 'Remove item from shelf',
+        description: 'Remove an item from a shelf.',
+        inputSchema: { item_id: z.string().describe('Item ID from get_shelf') },
+        annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
+      },
       async ({ item_id }, extra) => {
         const userId = getUserId(extra);
         const item = await getItemById(item_id);
@@ -213,13 +243,18 @@ const handler = createMcpHandler(
       }
     );
 
-    server.tool(
+    server.registerTool(
       'search_catalog',
-      'Search for books (Google Books), music albums, or podcasts (Spotify) to get ' +
-        'accurate metadata before adding an item with add_item.',
       {
-        query: z.string().min(1).describe('Search query, e.g. a title or author'),
-        type: z.enum(['book', 'music', 'podcast']).describe('What to search for'),
+        title: 'Search catalog',
+        description:
+          'Search for books (Google Books), music albums, or podcasts (Spotify) to get ' +
+          'accurate metadata before adding an item with add_item.',
+        inputSchema: {
+          query: z.string().min(1).describe('Search query, e.g. a title or author'),
+          type: z.enum(['book', 'music', 'podcast']).describe('What to search for'),
+        },
+        annotations: { readOnlyHint: true, openWorldHint: true },
       },
       async ({ query, type }) => {
         const results =
