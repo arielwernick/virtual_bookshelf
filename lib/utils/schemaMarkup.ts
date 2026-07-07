@@ -6,6 +6,7 @@
  */
 
 import { Item, ItemType, Shelf } from '@/lib/types/shelf';
+import { extractVideoId } from '@/lib/api/youtube';
 
 type SchemaItemType = 'Book' | 'PodcastSeries' | 'MusicRecording' | 'VideoObject' | 'Linkage';
 type SchemaObject = Record<string, unknown>;
@@ -67,12 +68,22 @@ function addCreatorToSchema(schema: SchemaObject, item: Item, schemaType: Schema
 }
 
 function addVideoMetadata(schema: SchemaObject, item: Item): SchemaObject {
-  if (!item.created_at) return schema;
+  const videoSchema: SchemaObject = { ...schema };
 
-  return {
-    ...schema,
-    uploadDate: item.created_at.toISOString(),
-  };
+  // Google requires `thumbnailUrl` for VideoObject rich results. The base schema
+  // sets `image`, but that field does not satisfy the VideoObject requirement.
+  if (item.image_url) videoSchema.thumbnailUrl = item.image_url;
+
+  // Provide `embedUrl` (recommended) for YouTube videos so the player can be
+  // surfaced in rich results.
+  if (item.external_url) {
+    const videoId = extractVideoId(item.external_url);
+    if (videoId) videoSchema.embedUrl = `https://www.youtube.com/embed/${videoId}`;
+  }
+
+  if (item.created_at) videoSchema.uploadDate = item.created_at.toISOString();
+
+  return videoSchema;
 }
 
 function generateItemSchema(item: Item, index: number): SchemaObject {
