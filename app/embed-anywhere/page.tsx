@@ -6,7 +6,7 @@ import { faqPageJsonLd, breadcrumbJsonLd, type FaqItem } from '@/lib/utils/landi
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
 
 export const metadata: Metadata = {
-  title: 'Embed a Shelf in Your Newsletter, Email, or Website — Virtual Bookshelf',
+  title: 'Embed a Shelf in a Newsletter, Email, or Website — Virtual Bookshelf',
   description:
     'Embed a live, clickable resource shelf directly in a newsletter, email, or website. One snippet, always up to date — no screenshots, no broken link lists.',
   alternates: { canonical: '/embed-anywhere' },
