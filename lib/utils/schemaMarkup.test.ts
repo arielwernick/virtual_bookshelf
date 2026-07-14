@@ -1,38 +1,41 @@
 import { describe, it, expect } from 'vitest';
-import { generateShelfSchema } from './schemaMarkup';
+import {
+  generateShelfSchema,
+  generateVideoObjectSchema,
+} from './schemaMarkup';
 import { Item, ItemType, Shelf } from '@/lib/types/shelf';
-
-function createMockShelf(overrides: Partial<Shelf> = {}): Shelf {
-  return {
-    id: 'shelf-1',
-    user_id: 'user-1',
-    name: 'Crypto Explainers',
-    description: 'The 2022 crypto crash, explained',
-    share_token: 'woEN59Gs',
-    is_public: true,
-    created_at: new Date('2026-07-07T12:00:00Z'),
-    updated_at: new Date('2026-07-07T12:00:00Z'),
-    ...overrides,
-  };
-}
 
 function createMockItem(overrides: Partial<Item> = {}): Item {
   return {
     id: 'item-1',
     shelf_id: 'shelf-1',
     user_id: 'user-1',
-    type: 'video' as ItemType,
-    title: 'The FTX Collapse, Explained | What Went Wrong',
-    creator: 'Wall Street Journal',
-    image_url: 'https://img.youtube.com/vi/AbgRB3arCpY/hqdefault.jpg',
-    external_url: 'https://www.youtube.com/watch?v=AbgRB3arCpY',
-    notes: 'The tightest version of the FTX story.',
+    type: 'video',
+    title: 'The 2022 Crypto Crash, Explained',
+    creator: 'Some Channel',
+    image_url: 'https://example.com/thumb.jpg',
+    external_url: 'https://www.youtube.com/watch?v=woEN59Gs123',
+    notes: 'A great explainer',
     rating: null,
     order_index: 0,
-    created_at: new Date('2026-07-07T12:45:44Z'),
-    updated_at: new Date('2026-07-07T12:45:44Z'),
+    created_at: new Date('2026-01-15T00:00:00Z'),
+    updated_at: new Date('2026-01-15T00:00:00Z'),
     ...overrides,
   };
+}
+
+function createMockShelf(overrides: Partial<Shelf> = {}): Shelf {
+  return {
+    id: 'shelf-1',
+    user_id: 'user-1',
+    name: 'My Shelf',
+    description: 'A shelf',
+    share_token: 'my-shelf-abc',
+    is_public: true,
+    created_at: new Date('2026-01-01T00:00:00Z'),
+    updated_at: new Date('2026-01-10T00:00:00Z'),
+    ...overrides,
+  } as Shelf;
 }
 
 function getFirstItemSchema(shelf: Shelf, items: Item[]): Record<string, unknown> {
@@ -41,55 +44,68 @@ function getFirstItemSchema(shelf: Shelf, items: Item[]): Record<string, unknown
   return list[0].item as Record<string, unknown>;
 }
 
-describe('schemaMarkup - VideoObject', () => {
-  it('includes thumbnailUrl (required by Google) from image_url', () => {
+describe('generateShelfSchema (collection page)', () => {
+  it('serializes video items as CreativeWork, never VideoObject', () => {
+    const shelf = createMockShelf();
+    const items = [createMockItem()];
+    const schema = generateShelfSchema(shelf, items, 'user');
+
+    const listItem = (schema.itemListElement as Record<string, unknown>[])[0];
+    const inner = listItem.item as Record<string, unknown>;
+
+    expect(inner['@type']).toBe('CreativeWork');
+    // The whole collection must not claim VideoObject anywhere — that's what
+    // triggered "Video isn't on a watch page" in Search Console. VideoObject
+    // now lives only on the dedicated /v/[videoId] watch pages.
+    expect(JSON.stringify(schema)).not.toContain('VideoObject');
+  });
+
+  it('uses dateCreated (not the VideoObject-only uploadDate) for video items', () => {
     const item = createMockItem();
-    const itemSchema = getFirstItemSchema(createMockShelf(), [item]);
+    const inner = getFirstItemSchema(createMockShelf(), [item]);
 
-    expect(itemSchema['@type']).toBe('VideoObject');
-    expect(itemSchema.thumbnailUrl).toBe(
-      'https://img.youtube.com/vi/AbgRB3arCpY/hqdefault.jpg'
-    );
-  });
-
-  it('derives embedUrl from a YouTube watch URL', () => {
-    const item = createMockItem();
-    const itemSchema = getFirstItemSchema(createMockShelf(), [item]);
-
-    expect(itemSchema.embedUrl).toBe(
-      'https://www.youtube.com/embed/AbgRB3arCpY'
-    );
-  });
-
-  it('still includes uploadDate', () => {
-    const item = createMockItem();
-    const itemSchema = getFirstItemSchema(createMockShelf(), [item]);
-
-    expect(itemSchema.uploadDate).toBe('2026-07-07T12:45:44.000Z');
-  });
-
-  it('omits thumbnailUrl when the video has no image', () => {
-    const item = createMockItem({ image_url: null });
-    const itemSchema = getFirstItemSchema(createMockShelf(), [item]);
-
-    expect(itemSchema.thumbnailUrl).toBeUndefined();
-  });
-
-  it('omits embedUrl for non-YouTube video URLs', () => {
-    const item = createMockItem({
-      external_url: 'https://vimeo.com/123456789',
-    });
-    const itemSchema = getFirstItemSchema(createMockShelf(), [item]);
-
-    expect(itemSchema.embedUrl).toBeUndefined();
+    expect(inner.dateCreated).toBe(item.created_at.toISOString());
+    expect(inner.uploadDate).toBeUndefined();
   });
 
   it('does not add video metadata to non-video items', () => {
     const item = createMockItem({ type: 'book' as ItemType });
-    const itemSchema = getFirstItemSchema(createMockShelf(), [item]);
+    const inner = getFirstItemSchema(createMockShelf(), [item]);
 
-    expect(itemSchema['@type']).toBe('Book');
-    expect(itemSchema.thumbnailUrl).toBeUndefined();
-    expect(itemSchema.embedUrl).toBeUndefined();
+    expect(inner['@type']).toBe('Book');
+    expect(inner.dateCreated).toBeUndefined();
+  });
+});
+
+describe('generateVideoObjectSchema (watch page)', () => {
+  const opts = {
+    embedUrl: 'https://www.youtube.com/embed/woEN59Gs123',
+    contentUrl: 'https://www.youtube.com/watch?v=woEN59Gs123',
+    thumbnailUrl: 'https://img.youtube.com/vi/woEN59Gs123/hqdefault.jpg',
+  };
+
+  it('emits a VideoObject with all Google-required fields', () => {
+    const item = createMockItem();
+    const schema = generateVideoObjectSchema(item, opts);
+
+    expect(schema['@type']).toBe('VideoObject');
+    expect(schema.name).toBe(item.title);
+    expect(schema.thumbnailUrl).toBe(opts.thumbnailUrl);
+    expect(schema.uploadDate).toBe(item.created_at.toISOString());
+    expect(schema.embedUrl).toBe(opts.embedUrl);
+    expect(schema.contentUrl).toBe(opts.contentUrl);
+  });
+
+  it('includes description and creator when present, omits when absent', () => {
+    const withMeta = generateVideoObjectSchema(createMockItem(), opts);
+    expect(withMeta.description).toBe('A great explainer');
+    expect(withMeta.creator).toMatchObject({ '@type': 'Person', name: 'Some Channel' });
+
+    const withoutMeta = generateVideoObjectSchema(
+      createMockItem({ notes: null, creator: '' }),
+      opts
+    );
+    expect(withoutMeta.description).toBeUndefined();
+    expect(withoutMeta.creator).toBeUndefined();
   });
 });

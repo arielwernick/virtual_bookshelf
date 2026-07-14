@@ -6,17 +6,23 @@
  */
 
 import { Item, ItemType, Shelf } from '@/lib/types/shelf';
-import { extractVideoId } from '@/lib/api/youtube';
 
-type SchemaItemType = 'Book' | 'PodcastSeries' | 'MusicRecording' | 'VideoObject' | 'Linkage';
+type SchemaItemType = 'Book' | 'PodcastSeries' | 'MusicRecording' | 'CreativeWork' | 'Linkage';
 type SchemaObject = Record<string, unknown>;
 
+// Note: video items use 'CreativeWork', not 'VideoObject'. A shelf is a
+// collection (ItemList) of many items, not a video "watch page" where a single
+// video is the main, playable content. Declaring VideoObject here caused Google
+// Search Console to report "Video isn't on a watch page" for every shelf that
+// contained a video — the videos could never be indexed as video results, and
+// the warning persisted. CreativeWork describes the item honestly without
+// claiming video-indexing eligibility.
 const SCHEMA_TYPE_MAP: Record<ItemType, SchemaItemType> = {
   book: 'Book',
   podcast: 'PodcastSeries',
   podcast_episode: 'PodcastSeries',
   music: 'MusicRecording',
-  video: 'VideoObject',
+  video: 'CreativeWork',
   link: 'Linkage',
   stock: 'Linkage',
 };
@@ -25,7 +31,7 @@ const CREATOR_PROPERTY_MAP: Record<SchemaItemType, string> = {
   Book: 'author',
   MusicRecording: 'byArtist',
   PodcastSeries: 'creator',
-  VideoObject: 'creator',
+  CreativeWork: 'creator',
   Linkage: 'creator',
 };
 
@@ -68,22 +74,12 @@ function addCreatorToSchema(schema: SchemaObject, item: Item, schemaType: Schema
 }
 
 function addVideoMetadata(schema: SchemaObject, item: Item): SchemaObject {
-  const videoSchema: SchemaObject = { ...schema };
+  if (!item.created_at) return schema;
 
-  // Google requires `thumbnailUrl` for VideoObject rich results. The base schema
-  // sets `image`, but that field does not satisfy the VideoObject requirement.
-  if (item.image_url) videoSchema.thumbnailUrl = item.image_url;
-
-  // Provide `embedUrl` (recommended) for YouTube videos so the player can be
-  // surfaced in rich results.
-  if (item.external_url) {
-    const videoId = extractVideoId(item.external_url);
-    if (videoId) videoSchema.embedUrl = `https://www.youtube.com/embed/${videoId}`;
-  }
-
-  if (item.created_at) videoSchema.uploadDate = item.created_at.toISOString();
-
-  return videoSchema;
+  return {
+    ...schema,
+    dateCreated: item.created_at.toISOString(),
+  };
 }
 
 function generateItemSchema(item: Item, index: number): SchemaObject {
@@ -92,7 +88,7 @@ function generateItemSchema(item: Item, index: number): SchemaObject {
   
   schema = addCreatorToSchema(schema, item, schemaType);
   
-  if (schemaType === 'VideoObject') {
+  if (item.type === 'video') {
     schema = addVideoMetadata(schema, item);
   }
 
@@ -142,4 +138,42 @@ export function generateShelfSchemaJson(
 ): string {
   const schema = generateShelfSchema(shelf, items, username);
   return JSON.stringify(schema, null, 2);
+}
+
+/**
+ * Full VideoObject markup for a dedicated /v/[videoId] watch page.
+ *
+ * Unlike the collection page (which uses CreativeWork — see SCHEMA_TYPE_MAP),
+ * the watch page IS a real watch page: a single video that is the main,
+ * embedded, playable content. That makes VideoObject appropriate and eligible
+ * for Google video results. Required fields (name, thumbnailUrl, uploadDate)
+ * are always emitted; embedUrl/contentUrl/description are added when available.
+ */
+export function generateVideoObjectSchema(
+  item: Item,
+  opts: { embedUrl: string; contentUrl: string; thumbnailUrl: string }
+): SchemaObject {
+  const schema: SchemaObject = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: item.title,
+    thumbnailUrl: opts.thumbnailUrl,
+    embedUrl: opts.embedUrl,
+    contentUrl: opts.contentUrl,
+    // Best available date: when the video was added to the shelf. Not the
+    // original YouTube upload date (not stored), but a valid required value.
+    uploadDate: item.created_at.toISOString(),
+  };
+
+  if (item.notes) schema.description = item.notes;
+  if (item.creator) schema.creator = createPersonObject(item.creator);
+
+  return schema;
+}
+
+export function generateVideoObjectSchemaJson(
+  item: Item,
+  opts: { embedUrl: string; contentUrl: string; thumbnailUrl: string }
+): string {
+  return JSON.stringify(generateVideoObjectSchema(item, opts), null, 2);
 }
