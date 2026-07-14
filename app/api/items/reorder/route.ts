@@ -69,7 +69,7 @@ export async function POST(request: Request) {
 
     // Update item order
     await updateItemOrder(shelf_id, item_ids);
-    revalidateSharedShelf(shelf.share_token);
+    revalidateSharedShelf(shelf.share_token, shelf.name);
 
     return NextResponse.json({
       success: true,

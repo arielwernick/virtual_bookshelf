@@ -56,6 +56,31 @@ export function extractVideoId(url: string): string | null {
 }
 
 /**
+ * Canonical YouTube URLs derived from a video ID. Used for VideoObject
+ * structured data (embedUrl / contentUrl / thumbnailUrl) and the embedded
+ * player on the /v/[videoId] watch page.
+ */
+export function getEmbedUrl(videoId: string): string {
+  return `https://www.youtube.com/embed/${videoId}`;
+}
+
+export function getWatchUrl(videoId: string): string {
+  return `https://www.youtube.com/watch?v=${videoId}`;
+}
+
+export function getThumbnailUrl(videoId: string): string {
+  return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+}
+
+/**
+ * Whether a string looks like a valid YouTube video ID (11 chars, URL-safe
+ * base64 alphabet). Guards the /v/[videoId] route against junk lookups.
+ */
+export function isValidVideoId(videoId: string): boolean {
+  return /^[A-Za-z0-9_-]{11}$/.test(videoId);
+}
+
+/**
  * Fetch video metadata from YouTube Data API v3
  * This uses the Videos.list endpoint which costs 1 quota unit
  */

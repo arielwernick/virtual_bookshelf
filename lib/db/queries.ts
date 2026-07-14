@@ -1,6 +1,7 @@
 import { sql, sqlQuery } from './client';
 import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
+import { extractVideoId } from '../api/youtube';
 
 // ============================================================================
 // DYNAMIC UPDATE HELPER
@@ -433,14 +434,14 @@ export async function updateShelf(
 /**
  * Get all public shelves (for sitemap generation)
  */
-export async function getPublicShelves(): Promise<{ share_token: string; updated_at: Date }[]> {
+export async function getPublicShelves(): Promise<{ share_token: string; name: string; updated_at: Date }[]> {
   const result = await sql`
-    SELECT share_token, updated_at FROM shelves
+    SELECT share_token, name, updated_at FROM shelves
     WHERE is_public = true
     ORDER BY updated_at DESC
   `;
 
-  return result as { share_token: string; updated_at: Date }[];
+  return result as { share_token: string; name: string; updated_at: Date }[];
 }
 
 /**
@@ -521,6 +522,70 @@ export async function getItemById(itemId: string): Promise<Item | null> {
   `;
 
   return result.length > 0 ? (result[0] as Item) : null;
+}
+
+/**
+ * A public video item together with the public shelf it belongs to.
+ * Backs the /v/[videoId] watch page.
+ */
+export interface PublicVideo {
+  item: Item;
+  shelfName: string;
+  shelfShareToken: string;
+}
+
+/**
+ * Find a public video item by its YouTube video ID.
+ *
+ * `external_url` stores the full watch URL in varying formats (watch?v=,
+ * youtu.be/, /embed/, /shorts/), so we narrow with a substring match in SQL
+ * and confirm the exact ID in JS via extractVideoId to avoid false positives
+ * (e.g. the ID appearing inside an unrelated query param). If the same video
+ * lives on multiple public shelves, the earliest-added one wins so the
+ * canonical watch page is stable.
+ */
+export async function getPublicVideoByVideoId(videoId: string): Promise<PublicVideo | null> {
+  const rows = await sql`
+    SELECT
+      i.*,
+      s.name AS shelf_name,
+      s.share_token AS shelf_share_token
+    FROM items i
+    JOIN shelves s ON s.id = i.shelf_id
+    WHERE i.type = 'video'
+      AND s.is_public = true
+      AND i.external_url LIKE ${'%' + videoId + '%'}
+    ORDER BY i.created_at ASC
+  `;
+
+  for (const row of rows as (Item & { shelf_name: string; shelf_share_token: string })[]) {
+    if (row.external_url && extractVideoId(row.external_url) === videoId) {
+      const { shelf_name, shelf_share_token, ...item } = row;
+      return {
+        item: item as Item,
+        shelfName: shelf_name,
+        shelfShareToken: shelf_share_token,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * All public video items, for building /v/[videoId] sitemap entries.
+ * Returns the raw external_url + updated_at; callers derive/dedupe video IDs.
+ */
+export async function getPublicVideoItems(): Promise<{ external_url: string | null; updated_at: Date }[]> {
+  const result = await sql`
+    SELECT i.external_url, i.updated_at
+    FROM items i
+    JOIN shelves s ON s.id = i.shelf_id
+    WHERE i.type = 'video' AND s.is_public = true
+    ORDER BY i.updated_at DESC
+  `;
+
+  return result as { external_url: string | null; updated_at: Date }[];
 }
 
 const ITEM_UPDATABLE_FIELDS = [

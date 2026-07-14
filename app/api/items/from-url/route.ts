@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
     // Verify shelf exists and belongs to user
     const shelfResult = await sql`
-      SELECT id, share_token FROM shelves
+      SELECT id, share_token, name FROM shelves
       WHERE id = ${shelf_id}
       AND user_id = ${session.userId}
       LIMIT 1
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
         )
         RETURNING *
       `;
-      revalidateSharedShelf(shelfResult[0].share_token as string);
+      revalidateSharedShelf(shelfResult[0].share_token as string, shelfResult[0].name as string);
 
       return NextResponse.json({
         success: true,
@@ -176,7 +176,7 @@ export async function POST(request: Request) {
       )
       RETURNING *
     `;
-    revalidateSharedShelf(shelfResult[0].share_token as string);
+    revalidateSharedShelf(shelfResult[0].share_token as string, shelfResult[0].name as string);
 
     return NextResponse.json({
       success: true,
