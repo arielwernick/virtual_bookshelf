@@ -27,12 +27,21 @@ export function SharedShelfInteractive({ items, children }: SharedShelfInteracti
     (e: React.MouseEvent<HTMLDivElement>) => {
       // Find the closest item card element
       const itemCard = (e.target as HTMLElement).closest('[data-item-id]');
-      if (itemCard) {
-        const itemId = itemCard.getAttribute('data-item-id');
-        const item = items.find((i) => i.id === itemId);
-        if (item) {
-          setSelectedItem(item);
-        }
+      if (!itemCard) return;
+
+      // Video cards contain a real <a> to their /v/[videoId] watch page.
+      // Let modified clicks (cmd/ctrl/shift/alt) follow the link so users can
+      // open the watch page in a new tab; a plain click keeps the modal UX.
+      const isModifiedClick = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
+      if (isModifiedClick && (e.target as HTMLElement).closest('a')) {
+        return;
+      }
+      e.preventDefault();
+
+      const itemId = itemCard.getAttribute('data-item-id');
+      const item = items.find((i) => i.id === itemId);
+      if (item) {
+        setSelectedItem(item);
       }
     },
     [items]
