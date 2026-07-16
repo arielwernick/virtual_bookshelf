@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      // Clean, memorable connector URL. Routes to the mcp-handler mount, which
+      // requires the `[transport]` segment (`mcp` = Streamable HTTP). The
+      // internal /api/mcp/mcp path keeps working as a fallback.
+      { source: '/mcp', destination: '/api/mcp/mcp' },
+    ];
+  },
   async headers() {
     return [
       {
