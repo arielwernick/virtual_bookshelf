@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { Navigation } from './Navigation';
 
 // Mock next/navigation
@@ -13,7 +13,8 @@ describe('Navigation', () => {
     global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: false,
-      } as Response)
+        json: () => Promise.resolve({ authenticated: false }),
+      } as unknown as Response)
     );
   });
 
@@ -69,35 +70,27 @@ describe('Navigation', () => {
       global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
-        } as Response)
+          json: () => Promise.resolve({ authenticated: false }),
+        } as unknown as Response)
       );
 
       render(<Navigation />);
-      
-      // Wait for auth check to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const signInLink = screen.getByText('Sign In');
-      expect(signInLink).toBeInTheDocument();
+
+      expect(await screen.findByText('Sign In')).toBeInTheDocument();
     });
 
     it('shows dashboard and sign out when logged in', async () => {
       global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
-        } as Response)
+          json: () => Promise.resolve({ authenticated: true }),
+        } as unknown as Response)
       );
 
       render(<Navigation />);
-      
-      // Wait for auth check to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const dashboardLink = screen.getByText('Dashboard');
-      const signOutButton = screen.getByText('Sign Out');
-      
-      expect(dashboardLink).toBeInTheDocument();
-      expect(signOutButton).toBeInTheDocument();
+
+      expect(await screen.findByText('Dashboard')).toBeInTheDocument();
+      expect(await screen.findByText('Sign Out')).toBeInTheDocument();
     });
   });
 });
