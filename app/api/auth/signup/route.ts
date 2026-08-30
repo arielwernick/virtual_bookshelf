@@ -10,6 +10,7 @@ import {
   isRateLimitingEnabled 
 } from '@/lib/utils/rateLimit';
 import { createLogger } from '@/lib/utils/logger';
+import { trackServerEvent } from '@/lib/utils/analytics';
 
 const logger = createLogger('AuthSignup');
 
@@ -84,6 +85,9 @@ export async function POST(request: Request) {
     });
 
     logger.debug('New user created', { userId: user.id, username: user.username });
+
+    // Track account creation as a custom event in Vercel Analytics
+    await trackServerEvent('Account Created', { method: 'email' }, request);
 
     // Set session cookie
     await setSessionCookie({
