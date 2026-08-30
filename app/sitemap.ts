@@ -47,6 +47,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/signup`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${baseUrl}/curate-conference-resources`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/embed-anywhere`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${baseUrl}/claude`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${baseUrl}/claude/reading-list`, changeFrequency: 'monthly', priority: 0.8 },
     ...shelfUrls,
     ...videoUrls,
   ]
