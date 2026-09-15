@@ -10,6 +10,7 @@ import {
   isRateLimitingEnabled 
 } from '@/lib/utils/rateLimit';
 import { createLogger } from '@/lib/utils/logger';
+import { trackServerEvent } from '@/lib/utils/analytics';
 
 const logger = createLogger('AuthLogin');
 
@@ -78,6 +79,9 @@ export async function POST(request: Request) {
       username: user.username,
       email: user.email,
     });
+
+    // Track login as a custom event in Vercel Analytics
+    await trackServerEvent('User Login', { method: 'email' }, request);
 
     return NextResponse.json({
       success: true,
