@@ -42,6 +42,10 @@ const mockEpisodesResponse = {
   },
 };
 
+// Minimal fetch Response stand-in for mocking (only `ok`/`json` are used).
+const okResponse = (body: unknown): Response =>
+  ({ ok: true, json: async () => body } as Response);
+
 describe('AddItemForm - Episode Browsing', () => {
   const mockProps = {
     shelfId: 'shelf-1',
@@ -57,13 +61,9 @@ describe('AddItemForm - Episode Browsing', () => {
 
   it('shows Browse Episodes button for podcast results', async () => {
     // Mock podcast search response
-    vi.mocked(global.fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: [mockPodcastResult],
-      }),
-    });
+    vi.mocked(global.fetch).mockResolvedValueOnce(
+      okResponse({ success: true, data: [mockPodcastResult] })
+    );
 
     render(<AddItemForm {...mockProps} />);
 
@@ -88,18 +88,11 @@ describe('AddItemForm - Episode Browsing', () => {
   it('displays episodes when Browse Episodes is clicked', async () => {
     // Mock podcast search response
     vi.mocked(global.fetch)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: [mockPodcastResult],
-        }),
-      })
+      .mockResolvedValueOnce(
+        okResponse({ success: true, data: [mockPodcastResult] })
+      )
       // Mock episodes response
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockEpisodesResponse,
-      });
+      .mockResolvedValueOnce(okResponse(mockEpisodesResponse));
 
     render(<AddItemForm {...mockProps} />);
 
@@ -136,21 +129,11 @@ describe('AddItemForm - Episode Browsing', () => {
   it('can add a podcast episode', async () => {
     // Mock responses
     vi.mocked(global.fetch)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: [mockPodcastResult],
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockEpisodesResponse,
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true }),
-      });
+      .mockResolvedValueOnce(
+        okResponse({ success: true, data: [mockPodcastResult] })
+      )
+      .mockResolvedValueOnce(okResponse(mockEpisodesResponse))
+      .mockResolvedValueOnce(okResponse({ success: true }));
 
     render(<AddItemForm {...mockProps} />);
 
@@ -196,17 +179,10 @@ describe('AddItemForm - Episode Browsing', () => {
   it('shows back button when browsing episodes', async () => {
     // Mock responses
     vi.mocked(global.fetch)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: [mockPodcastResult],
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockEpisodesResponse,
-      });
+      .mockResolvedValueOnce(
+        okResponse({ success: true, data: [mockPodcastResult] })
+      )
+      .mockResolvedValueOnce(okResponse(mockEpisodesResponse));
 
     render(<AddItemForm {...mockProps} />);
 

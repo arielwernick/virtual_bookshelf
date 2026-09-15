@@ -119,10 +119,9 @@ export function getClientIP(request: Request): string {
 /**
  * Result of a rate limit check
  */
-export interface RateLimitResult {
-  success: boolean;
-  response?: NextResponse;
-}
+export type RateLimitResult =
+  | { success: true; response?: undefined }
+  | { success: false; response: NextResponse };
 
 /**
  * Check rate limit and return appropriate response if exceeded.

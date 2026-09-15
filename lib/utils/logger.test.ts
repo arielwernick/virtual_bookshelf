@@ -4,9 +4,6 @@ import { createLogger, LogLevel, _testing } from './logger';
 const { redactSensitiveData, formatMessage } = _testing;
 
 describe('logger utility', () => {
-  // Store original NODE_ENV
-  const originalEnv = process.env.NODE_ENV;
-
   beforeEach(() => {
     // Mock console methods
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -18,7 +15,7 @@ describe('logger utility', () => {
     // Restore mocks
     vi.restoreAllMocks();
     // Restore NODE_ENV
-    process.env.NODE_ENV = originalEnv;
+    vi.unstubAllEnvs();
   });
 
   describe('redactSensitiveData', () => {
@@ -173,7 +170,7 @@ describe('logger utility', () => {
 
     describe('in development environment', () => {
       beforeEach(() => {
-        process.env.NODE_ENV = 'development';
+        vi.stubEnv('NODE_ENV', 'development');
       });
 
       it('logs DEBUG messages', () => {
@@ -212,7 +209,7 @@ describe('logger utility', () => {
 
     describe('in production environment', () => {
       beforeEach(() => {
-        process.env.NODE_ENV = 'production';
+        vi.stubEnv('NODE_ENV', 'production');
       });
 
       it('does NOT log DEBUG messages', () => {
