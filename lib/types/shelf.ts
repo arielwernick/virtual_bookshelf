@@ -84,14 +84,14 @@ export interface CreateItemData {
   order_index?: number;
 }
 
-// For updating existing items
+// For updating existing items (null clears a nullable column)
 export interface UpdateItemData {
   title?: string;
   creator?: string;
   image_url?: string;
   external_url?: string;
-  notes?: string;
-  rating?: number;
+  notes?: string | null;
+  rating?: number | null;
   order_index?: number;
 }
 
@@ -113,4 +113,36 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   message?: string;
+}
+
+// OAuth authorization server types (MCP connector)
+export interface OAuthClient {
+  id: string;
+  client_id: string;
+  client_name: string;
+  redirect_uris: string[];
+  created_at: Date;
+}
+
+export interface OAuthAuthorizationCode {
+  id: string;
+  code_hash: string;
+  client_id: string;
+  user_id: string;
+  redirect_uri: string;
+  code_challenge: string;
+  scope: string;
+  expires_at: Date;
+  created_at: Date;
+}
+
+export interface OAuthAccessToken {
+  id: string;
+  token_hash: string;
+  client_id: string;
+  user_id: string;
+  scope: string;
+  expires_at: Date;
+  created_at: Date;
+  last_used_at: Date | null;
 }

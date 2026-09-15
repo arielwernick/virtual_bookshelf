@@ -1,6 +1,7 @@
 import { sql, sqlQuery } from './client';
-import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem } from '../types/shelf';
+import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
+import { extractVideoId } from '../api/youtube';
 
 // ============================================================================
 // DYNAMIC UPDATE HELPER
@@ -433,14 +434,14 @@ export async function updateShelf(
 /**
  * Get all public shelves (for sitemap generation)
  */
-export async function getPublicShelves(): Promise<{ share_token: string; updated_at: Date }[]> {
+export async function getPublicShelves(): Promise<{ share_token: string; name: string; updated_at: Date }[]> {
   const result = await sql`
-    SELECT share_token, updated_at FROM shelves
+    SELECT share_token, name, updated_at FROM shelves
     WHERE is_public = true
     ORDER BY updated_at DESC
   `;
 
-  return result as { share_token: string; updated_at: Date }[];
+  return result as { share_token: string; name: string; updated_at: Date }[];
 }
 
 /**
@@ -523,6 +524,70 @@ export async function getItemById(itemId: string): Promise<Item | null> {
   return result.length > 0 ? (result[0] as Item) : null;
 }
 
+/**
+ * A public video item together with the public shelf it belongs to.
+ * Backs the /v/[videoId] watch page.
+ */
+export interface PublicVideo {
+  item: Item;
+  shelfName: string;
+  shelfShareToken: string;
+}
+
+/**
+ * Find a public video item by its YouTube video ID.
+ *
+ * `external_url` stores the full watch URL in varying formats (watch?v=,
+ * youtu.be/, /embed/, /shorts/), so we narrow with a substring match in SQL
+ * and confirm the exact ID in JS via extractVideoId to avoid false positives
+ * (e.g. the ID appearing inside an unrelated query param). If the same video
+ * lives on multiple public shelves, the earliest-added one wins so the
+ * canonical watch page is stable.
+ */
+export async function getPublicVideoByVideoId(videoId: string): Promise<PublicVideo | null> {
+  const rows = await sql`
+    SELECT
+      i.*,
+      s.name AS shelf_name,
+      s.share_token AS shelf_share_token
+    FROM items i
+    JOIN shelves s ON s.id = i.shelf_id
+    WHERE i.type = 'video'
+      AND s.is_public = true
+      AND i.external_url LIKE ${'%' + videoId + '%'}
+    ORDER BY i.created_at ASC
+  `;
+
+  for (const row of rows as (Item & { shelf_name: string; shelf_share_token: string })[]) {
+    if (row.external_url && extractVideoId(row.external_url) === videoId) {
+      const { shelf_name, shelf_share_token, ...item } = row;
+      return {
+        item: item as Item,
+        shelfName: shelf_name,
+        shelfShareToken: shelf_share_token,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * All public video items, for building /v/[videoId] sitemap entries.
+ * Returns the raw external_url + updated_at; callers derive/dedupe video IDs.
+ */
+export async function getPublicVideoItems(): Promise<{ external_url: string | null; updated_at: Date }[]> {
+  const result = await sql`
+    SELECT i.external_url, i.updated_at
+    FROM items i
+    JOIN shelves s ON s.id = i.shelf_id
+    WHERE i.type = 'video' AND s.is_public = true
+    ORDER BY i.updated_at DESC
+  `;
+
+  return result as { external_url: string | null; updated_at: Date }[];
+}
+
 const ITEM_UPDATABLE_FIELDS = [
   'title', 'creator', 'image_url', 'external_url', 'notes', 'rating', 'order_index',
 ] as const;
@@ -598,4 +663,127 @@ export async function getItemCountForShelf(shelfId: string): Promise<number> {
   `;
 
   return parseInt(result[0].count as string, 10);
+}
+
+// ============================================================================
+// OAUTH QUERIES (MCP connector authorization server)
+// ============================================================================
+
+/**
+ * Register a new OAuth client (dynamic client registration, RFC 7591)
+ */
+export async function createOAuthClient(
+  clientId: string,
+  clientName: string,
+  redirectUris: string[]
+): Promise<OAuthClient> {
+  const result = await sql`
+    INSERT INTO oauth_clients (client_id, client_name, redirect_uris)
+    VALUES (${clientId}, ${clientName}, ${redirectUris})
+    RETURNING *
+  `;
+
+  return result[0] as OAuthClient;
+}
+
+/**
+ * Get an OAuth client by its public client_id
+ */
+export async function getOAuthClientByClientId(clientId: string): Promise<OAuthClient | null> {
+  const result = await sql`
+    SELECT * FROM oauth_clients WHERE client_id = ${clientId}
+  `;
+
+  return (result[0] as OAuthClient) || null;
+}
+
+/**
+ * Store a hashed authorization code issued by the consent page
+ */
+export async function createOAuthAuthorizationCode(data: {
+  codeHash: string;
+  clientId: string;
+  userId: string;
+  redirectUri: string;
+  codeChallenge: string;
+  scope: string;
+  expiresAt: Date;
+}): Promise<OAuthAuthorizationCode> {
+  const result = await sql`
+    INSERT INTO oauth_authorization_codes
+      (code_hash, client_id, user_id, redirect_uri, code_challenge, scope, expires_at)
+    VALUES
+      (${data.codeHash}, ${data.clientId}, ${data.userId}, ${data.redirectUri},
+       ${data.codeChallenge}, ${data.scope}, ${data.expiresAt.toISOString()})
+    RETURNING *
+  `;
+
+  return result[0] as OAuthAuthorizationCode;
+}
+
+/**
+ * Atomically consume (delete and return) an authorization code by hash.
+ * Single-use by construction: a second exchange finds no row.
+ * Returns null if the code does not exist; caller must still check expiry.
+ */
+export async function consumeOAuthAuthorizationCode(
+  codeHash: string
+): Promise<OAuthAuthorizationCode | null> {
+  const result = await sql`
+    DELETE FROM oauth_authorization_codes
+    WHERE code_hash = ${codeHash}
+    RETURNING *
+  `;
+
+  return (result[0] as OAuthAuthorizationCode) || null;
+}
+
+/**
+ * Store a hashed opaque access token
+ */
+export async function createOAuthAccessToken(data: {
+  tokenHash: string;
+  clientId: string;
+  userId: string;
+  scope: string;
+  expiresAt: Date;
+}): Promise<OAuthAccessToken> {
+  const result = await sql`
+    INSERT INTO oauth_access_tokens (token_hash, client_id, user_id, scope, expires_at)
+    VALUES (${data.tokenHash}, ${data.clientId}, ${data.userId}, ${data.scope},
+            ${data.expiresAt.toISOString()})
+    RETURNING *
+  `;
+
+  return result[0] as OAuthAccessToken;
+}
+
+/**
+ * Look up a live access token by hash, touching last_used_at.
+ * Returns null for unknown or expired tokens.
+ */
+export async function getLiveOAuthAccessToken(
+  tokenHash: string
+): Promise<OAuthAccessToken | null> {
+  const result = await sql`
+    UPDATE oauth_access_tokens
+    SET last_used_at = NOW()
+    WHERE token_hash = ${tokenHash} AND expires_at > NOW()
+    RETURNING *
+  `;
+
+  return (result[0] as OAuthAccessToken) || null;
+}
+
+/**
+ * Revoke all connector tokens for a user (e.g. "disconnect Claude")
+ */
+export async function deleteOAuthAccessTokensForUser(userId: string): Promise<number> {
+  const result = await sql`
+    DELETE FROM oauth_access_tokens
+    WHERE user_id = ${userId}
+    RETURNING id
+  `;
+
+  return result.length;
 }

@@ -8,10 +8,12 @@
  * No onClick handlers - interactivity handled by parent client component
  */
 
+import Link from 'next/link';
 import { Item } from '@/lib/types/shelf';
 import { getAspectRatio, getAspectRatioNumeric } from '@/lib/constants/aspectRatios';
 import { StarDisplayStatic } from '@/components/ui/StarDisplayStatic';
 import { calculateJitter } from '@/lib/utils/imageUtils';
+import { extractVideoId } from '@/lib/api/youtube';
 
 interface ItemCardStaticProps {
   item: Item;
@@ -28,6 +30,12 @@ export function ItemCardStatic({ item, ...props }: ItemCardStaticProps) {
     : item.image_url;
   const adjustedRatioNum = baseRatioNum * (1 + jitter);
   const hasNotes = Boolean(item.notes);
+
+  // Video items get a crawlable link to their dedicated /v/[videoId] watch
+  // page. A plain click still opens the modal (SharedShelfInteractive calls
+  // preventDefault); the href exists for crawlers and cmd/middle-click.
+  const videoId = item.type === 'video' && item.external_url ? extractVideoId(item.external_url) : null;
+  const watchHref = videoId ? `/v/${videoId}` : null;
 
   const badgeColor = {
     book: 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200',
@@ -85,6 +93,17 @@ export function ItemCardStatic({ item, ...props }: ItemCardStaticProps) {
             {item.type}
           </span>
         </div>
+
+        {/* Crawlable link to the dedicated watch page for video items.
+            Overlay so it doesn't disturb card layout; a plain click is
+            intercepted by SharedShelfInteractive to open the modal instead. */}
+        {watchHref && (
+          <Link
+            href={watchHref}
+            className="absolute inset-0 z-10"
+            aria-label={`Watch ${item.title}`}
+          />
+        )}
       </div>
 
       {/* Item Metadata - visible to crawlers */}

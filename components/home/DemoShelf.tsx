@@ -3,6 +3,7 @@
 import { Item } from '@/lib/types/shelf';
 import Image from 'next/image';
 import Link from 'next/link';
+import { buildSharePath } from '@/lib/utils/slug';
 
 interface DemoShelfProps {
   items: Item[];
@@ -26,7 +27,7 @@ function itemImageUrl(item: Item): string | null {
 export function DemoShelf({ items, shelfName, shareToken }: DemoShelfProps) {
   // Preview a single row; the full shelf lives behind "Click to explore".
   const displayItems = items.slice(0, 8);
-  const shelfUrl = `/s/${shareToken}`;
+  const shelfUrl = buildSharePath(shelfName, shareToken);
 
   return (
     <div>

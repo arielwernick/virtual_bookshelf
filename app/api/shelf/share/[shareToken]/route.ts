@@ -16,8 +16,10 @@ export async function GET(
     const { shareToken } = await params;
 
     // Get shelf by share token
+    // Unpublished shelves 404 (matching /s/[shareToken] and the OG route)
+    // rather than 403, so their existence isn't leaked
     const shelf = await getShelfByShareToken(shareToken);
-    if (!shelf) {
+    if (!shelf || !shelf.is_public) {
       return NextResponse.json(
         { success: false, error: 'Shelf not found' },
         { status: 404 }
@@ -27,16 +29,25 @@ export async function GET(
     // Get shelf's items
     const items = await getItemsByShelfId(shelf.id);
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: shelf.id,
-        name: shelf.name,
-        description: shelf.description,
-        items,
-        created_at: shelf.created_at,
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          id: shelf.id,
+          name: shelf.name,
+          description: shelf.description,
+          items,
+          created_at: shelf.created_at,
+        },
       },
-    });
+      {
+        headers: {
+          // Public data: let the CDN serve embeds without hitting the
+          // function/DB. Fresh for 60s, then served stale while revalidating.
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
+      }
+    );
   } catch (error) {
     logger.errorWithException('Failed to fetch shared shelf', error);
     return NextResponse.json(
