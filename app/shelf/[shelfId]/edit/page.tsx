@@ -47,11 +47,8 @@ export default function EditShelfPage() {
         try {
             // Check auth first
             const authRes = await fetch('/api/auth/me');
-            if (!authRes.ok) {
-                router.push('/login');
-                return;
-            }
             const authJson = await authRes.json();
+            if (!authJson.authenticated) { router.push('/login'); return; }
             const userId = authJson.data.userId;
 
             // Fetch shelf data
