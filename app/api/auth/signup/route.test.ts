@@ -20,6 +20,10 @@ vi.mock('@/lib/utils/session', () => ({
   setSessionCookie: vi.fn(),
 }));
 
+vi.mock('@/lib/utils/analytics', () => ({
+  trackServerEvent: vi.fn(),
+}));
+
 import { getUserByUsername, getUserByEmail, createUser } from '@/lib/db/queries';
 import { hashPassword } from '@/lib/utils/password';
 import { setSessionCookie } from '@/lib/utils/session';
