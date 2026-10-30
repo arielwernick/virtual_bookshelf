@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
-import { getShelvesForDashboard } from '@/lib/db/queries';
+import { getShelvesForDashboard, touchUserLastSeen } from '@/lib/db/queries';
 import { createLogger } from '@/lib/utils/logger';
 
 const logger = createLogger('ShelfDashboard');
@@ -21,8 +21,14 @@ export async function GET(_request: Request) {
       );
     }
 
-    // Single query: all shelves with total counts + preview items
-    const shelves = await getShelvesForDashboard(session.userId);
+    // Single query: all shelves with total counts + preview items.
+    // Activity tracking runs alongside and must never fail the dashboard.
+    const [shelves] = await Promise.all([
+      getShelvesForDashboard(session.userId),
+      touchUserLastSeen(session.userId).catch((error) =>
+        logger.errorWithException('Failed to update last_seen_at', error)
+      ),
+    ]);
 
     return NextResponse.json({
       success: true,

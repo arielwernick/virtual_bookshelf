@@ -22,6 +22,12 @@ import {
   updateUserGoogleId,
   updateUserDescription,
   updateUserTitle,
+  touchUserLastSeen,
+  // Admin queries
+  getAdminOverview,
+  getAdminWeeklySignups,
+  getAdminAttribution,
+  getAdminRecentUsers,
   // Shelf queries
   createShelf,
   getShelfById,
@@ -87,6 +93,58 @@ describe('User Queries', () => {
       });
 
       expect(result).toEqual(mockUser);
+    });
+  });
+
+  describe('createUser attribution', () => {
+    it('passes signup source and attribution as query parameters', async () => {
+      vi.mocked(sql).mockResolvedValueOnce([{ id: 'user-789' }]);
+
+      await createUser({
+        email: 'new@example.com',
+        googleId: 'google-id-789',
+        signupSource: 'google',
+        attribution: {
+          firstReferrer: 'https://www.google.com',
+          utmSource: 'newsletter',
+          utmMedium: null,
+          utmCampaign: 'launch',
+        },
+      });
+
+      const values = vi.mocked(sql).mock.calls[0].slice(1);
+      expect(values).toEqual([
+        null,
+        'new@example.com',
+        null,
+        'google-id-789',
+        'google',
+        'https://www.google.com',
+        'newsletter',
+        null,
+        'launch',
+      ]);
+    });
+
+    it('stores nulls when no attribution is available', async () => {
+      vi.mocked(sql).mockResolvedValueOnce([{ id: 'user-790' }]);
+
+      await createUser({ email: 'a@example.com', passwordHash: 'hash', attribution: null });
+
+      const values = vi.mocked(sql).mock.calls[0].slice(1);
+      expect(values.slice(4)).toEqual([null, null, null, null, null]);
+    });
+  });
+
+  describe('touchUserLastSeen', () => {
+    it('updates last_seen_at for the user with a throttle condition', async () => {
+      vi.mocked(sql).mockResolvedValueOnce([]);
+
+      await touchUserLastSeen('user-1');
+
+      const [strings, ...values] = vi.mocked(sql).mock.calls[0];
+      expect(strings.join('?')).toContain('last_seen_at < NOW()');
+      expect(values).toEqual(['user-1']);
     });
   });
 
@@ -826,5 +884,52 @@ describe('Item Queries', () => {
 
       expect(result).toBe(0);
     });
+  });
+});
+
+// ============================================================================
+// ADMIN QUERY TESTS
+// ============================================================================
+
+describe('Admin Queries', () => {
+  beforeEach(() => {
+    vi.mocked(sql).mockReset();
+  });
+
+  it('getAdminOverview returns the single stats row', async () => {
+    const stats = {
+      total_users: 10,
+      new_users_7d: 2,
+      new_users_30d: 5,
+      active_users_7d: 3,
+      active_users_30d: 6,
+      activated_users: 4,
+    };
+    vi.mocked(sql).mockResolvedValueOnce([stats]);
+
+    expect(await getAdminOverview()).toEqual(stats);
+  });
+
+  it('getAdminWeeklySignups passes the week window', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([]);
+
+    await getAdminWeeklySignups(12);
+
+    expect(vi.mocked(sql).mock.calls[0].slice(1)).toEqual([11]);
+  });
+
+  it('getAdminAttribution passes the day window and returns rows', async () => {
+    const rows = [{ tracked: true, first_referrer: 'https://www.google.com', utm_source: null, count: 3 }];
+    vi.mocked(sql).mockResolvedValueOnce(rows);
+
+    expect(await getAdminAttribution(90)).toEqual(rows);
+    expect(vi.mocked(sql).mock.calls[0].slice(1)).toEqual([90]);
+  });
+
+  it('getAdminRecentUsers passes the limit', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([]);
+
+    expect(await getAdminRecentUsers(25)).toEqual([]);
+    expect(vi.mocked(sql).mock.calls[0]).toContain(25);
   });
 });

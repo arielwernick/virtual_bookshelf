@@ -75,4 +75,6 @@ The `test/setup.ts` polyfills `TextEncoder/TextDecoder` for jose and mocks `next
 
 Required: `DATABASE_URL`, `SESSION_SECRET`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `YOUTUBE_API_KEY`, `NEXT_PUBLIC_BASE_URL`.
 
+Optional: `ADMIN_EMAILS` — comma-separated emails allowed to view `/admin` (signup/attribution dashboard). Unset means nobody can.
+
 The build requires mock env vars to be set (see `.github/workflows/test.yml`).
