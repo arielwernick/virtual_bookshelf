@@ -2,7 +2,7 @@
 
 import { Item } from '@/lib/types/shelf';
 import { ItemCard } from './ItemCard';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -92,14 +92,17 @@ interface ShelfContainerDndProps {
 export function ShelfContainerDnd({ items }: ShelfContainerDndProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [orderedItems, setOrderedItems] = useState(items);
+  const [prevItems, setPrevItems] = useState(items);
+
+  // Re-sync local order when the parent passes a new items array
+  if (items !== prevItems) {
+    setPrevItems(items);
+    setOrderedItems(items);
+  }
 
   // Size rows to the live container width (shared with view mode) so a shelf
   // never wraps its items onto a second visual line under one ledge.
   const shelves = useShelfRows(orderedItems, containerRef);
-
-  useEffect(() => {
-    setOrderedItems(items);
-  }, [items]);
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;

@@ -82,6 +82,8 @@ export default function EditShelfPage() {
 
     useEffect(() => {
         if (!shelfId) return;
+        // All state updates in checkAuthAndFetch happen after an await, not synchronously
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         checkAuthAndFetch();
     }, [shelfId, checkAuthAndFetch]);
 
