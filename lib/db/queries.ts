@@ -1,5 +1,5 @@
 import { sql, sqlQuery } from './client';
-import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
+import { User, SignupSource, SignupAttribution, AdminOverview, AdminWeeklySignups, AdminAttributionRow, AdminRecentUser, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
 import { extractVideoId } from '../api/youtube';
 
@@ -60,7 +60,7 @@ function execParameterized(query: string, values: unknown[]): Promise<unknown[]>
 // ============================================================================
 
 /**
- * Create a new user (password-based auth)
+ * Create a new user (password or Google auth), recording how they signed up
  */
 export async function createUser(
   data: {
@@ -69,11 +69,24 @@ export async function createUser(
     passwordHash?: string;
     googleId?: string;
     name?: string;
+    signupSource?: SignupSource;
+    attribution?: SignupAttribution | null;
   }
 ): Promise<User> {
+  const attribution = data.attribution;
   const result = await sql`
-    INSERT INTO users (username, email, password_hash, google_id)
-    VALUES (${data.username || null}, ${data.email}, ${data.passwordHash || null}, ${data.googleId || null})
+    INSERT INTO users (
+      username, email, password_hash, google_id,
+      signup_source, first_referrer, utm_source, utm_medium, utm_campaign
+    )
+    VALUES (
+      ${data.username || null}, ${data.email}, ${data.passwordHash || null}, ${data.googleId || null},
+      ${data.signupSource || null},
+      ${attribution?.firstReferrer ?? null},
+      ${attribution?.utmSource ?? null},
+      ${attribution?.utmMedium ?? null},
+      ${attribution?.utmCampaign ?? null}
+    )
     RETURNING *
   `;
 
@@ -185,6 +198,19 @@ export async function updateUserTitle(userId: string, title: string | null): Pro
   `;
 
   return result[0] as User;
+}
+
+/**
+ * Record that a user was active. Writes at most once per hour per user so it
+ * is cheap to call on every authenticated dashboard load.
+ */
+export async function touchUserLastSeen(userId: string): Promise<void> {
+  await sql`
+    UPDATE users
+    SET last_seen_at = NOW()
+    WHERE id = ${userId}
+      AND (last_seen_at IS NULL OR last_seen_at < NOW() - INTERVAL '1 hour')
+  `;
 }
 
 // ============================================================================
@@ -786,4 +812,116 @@ export async function deleteOAuthAccessTokensForUser(userId: string): Promise<nu
   `;
 
   return result.length;
+}
+
+// ============================================================================
+// ADMIN QUERIES
+// ============================================================================
+
+/** Minimum items on a single shelf for a user to count as "activated". */
+export const ACTIVATION_ITEM_THRESHOLD = 3;
+
+/**
+ * Headline user counts for the admin dashboard
+ */
+export async function getAdminOverview(): Promise<AdminOverview> {
+  const result = await sql`
+    SELECT
+      COUNT(*)::int AS total_users,
+      COUNT(*) FILTER (WHERE u.created_at > NOW() - INTERVAL '7 days')::int AS new_users_7d,
+      COUNT(*) FILTER (WHERE u.created_at > NOW() - INTERVAL '30 days')::int AS new_users_30d,
+      COUNT(*) FILTER (WHERE u.last_seen_at > NOW() - INTERVAL '7 days')::int AS active_users_7d,
+      COUNT(*) FILTER (WHERE u.last_seen_at > NOW() - INTERVAL '30 days')::int AS active_users_30d,
+      COUNT(*) FILTER (WHERE EXISTS (
+        SELECT 1 FROM items i
+        WHERE i.user_id = u.id
+        GROUP BY i.shelf_id
+        HAVING COUNT(*) >= ${ACTIVATION_ITEM_THRESHOLD}
+      ))::int AS activated_users
+    FROM users u
+  `;
+
+  return result[0] as AdminOverview;
+}
+
+/**
+ * Signups per week, split by auth method. Users created before signup_source
+ * was tracked are classified by which credential they have.
+ */
+export async function getAdminWeeklySignups(weeks: number = 12): Promise<AdminWeeklySignups[]> {
+  const result = await sql`
+    WITH signups AS (
+      SELECT
+        date_trunc('week', created_at) AS week,
+        COALESCE(signup_source, CASE WHEN password_hash IS NULL THEN 'google' ELSE 'email' END) AS method
+      FROM users
+      WHERE created_at > date_trunc('week', NOW()) - make_interval(weeks => ${weeks - 1})
+    )
+    SELECT
+      week,
+      COUNT(*) FILTER (WHERE method = 'email')::int AS email,
+      COUNT(*) FILTER (WHERE method = 'google')::int AS google
+    FROM signups
+    GROUP BY week
+    ORDER BY week ASC
+  `;
+
+  return result as AdminWeeklySignups[];
+}
+
+/**
+ * Signup counts grouped by raw referrer / utm_source over the last `days`.
+ * Classification into channels happens in application code.
+ */
+export async function getAdminAttribution(days: number = 90): Promise<AdminAttributionRow[]> {
+  const result = await sql`
+    SELECT
+      signup_source IS NOT NULL AS tracked,
+      first_referrer,
+      utm_source,
+      COUNT(*)::int AS count
+    FROM users
+    WHERE created_at > NOW() - make_interval(days => ${days})
+    GROUP BY 1, 2, 3
+    ORDER BY count DESC
+  `;
+
+  return result as AdminAttributionRow[];
+}
+
+/**
+ * Most recent signups with usage stats
+ */
+export async function getAdminRecentUsers(limit: number = 50): Promise<AdminRecentUser[]> {
+  const result = await sql`
+    SELECT
+      u.id,
+      u.username,
+      u.email,
+      COALESCE(u.signup_source, CASE WHEN u.password_hash IS NULL THEN 'google' ELSE 'email' END) AS signup_method,
+      u.signup_source IS NOT NULL AS tracked,
+      u.first_referrer,
+      u.utm_source,
+      u.created_at,
+      u.last_seen_at,
+      (SELECT COUNT(*)::int FROM shelves s WHERE s.user_id = u.id) AS shelf_count,
+      (SELECT COUNT(*)::int FROM items i WHERE i.user_id = u.id) AS item_count,
+      EXISTS (
+        SELECT 1 FROM items i
+        WHERE i.user_id = u.id
+        GROUP BY i.shelf_id
+        HAVING COUNT(*) >= ${ACTIVATION_ITEM_THRESHOLD}
+      ) AS activated,
+      (
+        SELECT s.share_token FROM shelves s
+        WHERE s.user_id = u.id AND s.is_public = true
+        ORDER BY s.updated_at DESC
+        LIMIT 1
+      ) AS public_share_token
+    FROM users u
+    ORDER BY u.created_at DESC
+    LIMIT ${limit}
+  `;
+
+  return result as AdminRecentUser[];
 }

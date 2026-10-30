@@ -3,7 +3,8 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
-import { createRequest } from '@/test/utils/mocks';
+import { createRequest, createMockUser } from '@/test/utils/mocks';
+import { cookies } from 'next/headers';
 
 // Mock dependencies
 vi.mock('@/lib/db/queries', () => ({
@@ -126,7 +127,7 @@ describe('POST /api/auth/signup', () => {
 
   describe('Duplicate Check', () => {
     it('returns 409 when username already exists', async () => {
-      vi.mocked(getUserByUsername).mockResolvedValue({
+      vi.mocked(getUserByUsername).mockResolvedValue(createMockUser({
         id: 'existing-user',
         username: 'testuser',
         email: 'existing@example.com',
@@ -137,7 +138,7 @@ describe('POST /api/auth/signup', () => {
         title: null,
         created_at: new Date(),
         updated_at: new Date(),
-      });
+      }));
 
       const req = createRequest({
         username: 'testuser',
@@ -154,7 +155,7 @@ describe('POST /api/auth/signup', () => {
 
     it('returns 409 when email already exists', async () => {
       vi.mocked(getUserByUsername).mockResolvedValue(null);
-      vi.mocked(getUserByEmail).mockResolvedValue({
+      vi.mocked(getUserByEmail).mockResolvedValue(createMockUser({
         id: 'existing-user',
         username: 'existinguser',
         email: 'test@example.com',
@@ -165,7 +166,7 @@ describe('POST /api/auth/signup', () => {
         title: null,
         created_at: new Date(),
         updated_at: new Date(),
-      });
+      }));
 
       const req = createRequest({
         username: 'newuser',
@@ -189,7 +190,7 @@ describe('POST /api/auth/signup', () => {
     });
 
     it('creates new user successfully', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         id: 'new-user-1',
         username: 'newuser',
         email: 'new@example.com',
@@ -200,7 +201,7 @@ describe('POST /api/auth/signup', () => {
         title: null,
         created_at: new Date(),
         updated_at: new Date(),
-      };
+      });
       vi.mocked(createUser).mockResolvedValue(mockUser);
 
       const req = createRequest({
@@ -218,8 +219,51 @@ describe('POST /api/auth/signup', () => {
       expect(data.data.email).toBe('new@example.com');
     });
 
+    it('records email signup source and attribution cookie', async () => {
+      const attribution = encodeURIComponent(
+        JSON.stringify({ r: 'https://www.google.com/', us: 'newsletter' })
+      );
+      vi.mocked(cookies).mockResolvedValueOnce({
+        get: vi.fn((name: string) => (name === 'vb_attribution' ? { value: attribution } : undefined)),
+      } as unknown as Awaited<ReturnType<typeof cookies>>);
+      vi.mocked(createUser).mockResolvedValue(createMockUser({ username: 'newuser' }));
+
+      const res = await POST(createRequest({
+        username: 'newuser',
+        email: 'new@example.com',
+        password: 'password123',
+      }));
+
+      expect(res.status).toBe(200);
+      expect(createUser).toHaveBeenCalledWith(expect.objectContaining({
+        signupSource: 'email',
+        attribution: {
+          firstReferrer: 'https://www.google.com',
+          utmSource: 'newsletter',
+          utmMedium: null,
+          utmCampaign: null,
+        },
+      }));
+    });
+
+    it('creates user without attribution when no cookie is present', async () => {
+      vi.mocked(createUser).mockResolvedValue(createMockUser({ username: 'newuser' }));
+
+      const res = await POST(createRequest({
+        username: 'newuser',
+        email: 'new@example.com',
+        password: 'password123',
+      }));
+
+      expect(res.status).toBe(200);
+      expect(createUser).toHaveBeenCalledWith(expect.objectContaining({
+        signupSource: 'email',
+        attribution: null,
+      }));
+    });
+
     it('normalizes username and email', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         id: 'new-user-1',
         username: 'newuser',
         email: 'new@example.com',
@@ -230,7 +274,7 @@ describe('POST /api/auth/signup', () => {
         title: null,
         created_at: new Date(),
         updated_at: new Date(),
-      };
+      });
       vi.mocked(createUser).mockResolvedValue(mockUser);
 
       const req = createRequest({
@@ -245,11 +289,13 @@ describe('POST /api/auth/signup', () => {
         username: 'newuser',
         email: 'new@example.com',
         passwordHash: 'hashed_password',
+        signupSource: 'email',
+        attribution: null,
       });
     });
 
     it('hashes password before storing', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         id: 'new-user-1',
         username: 'newuser',
         email: 'new@example.com',
@@ -260,7 +306,7 @@ describe('POST /api/auth/signup', () => {
         title: null,
         created_at: new Date(),
         updated_at: new Date(),
-      };
+      });
       vi.mocked(createUser).mockResolvedValue(mockUser);
 
       const req = createRequest({
@@ -278,7 +324,7 @@ describe('POST /api/auth/signup', () => {
     });
 
     it('sets session cookie after signup', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         id: 'new-user-1',
         username: 'newuser',
         email: 'new@example.com',
@@ -289,7 +335,7 @@ describe('POST /api/auth/signup', () => {
         title: null,
         created_at: new Date(),
         updated_at: new Date(),
-      };
+      });
       vi.mocked(createUser).mockResolvedValue(mockUser);
 
       const req = createRequest({
@@ -308,7 +354,7 @@ describe('POST /api/auth/signup', () => {
     });
 
     it('returns user data without password', async () => {
-      const mockUser = {
+      const mockUser = createMockUser({
         id: 'new-user-1',
         username: 'newuser',
         email: 'new@example.com',
@@ -319,7 +365,7 @@ describe('POST /api/auth/signup', () => {
         title: null,
         created_at: new Date(),
         updated_at: new Date(),
-      };
+      });
       vi.mocked(createUser).mockResolvedValue(mockUser);
 
       const req = createRequest({

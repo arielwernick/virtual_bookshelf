@@ -9,8 +9,26 @@ export interface User {
   share_token: string;
   description: string | null;
   title: string | null;
+  signup_source: SignupSource | null;
+  first_referrer: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  last_seen_at: Date | null;
+  welcome_sent_at: Date | null;
+  marketing_opt_out: boolean;
   created_at: Date;
   updated_at: Date;
+}
+
+export type SignupSource = 'email' | 'google';
+
+/** First-touch attribution captured before signup and stored on the user. */
+export interface SignupAttribution {
+  firstReferrer: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
 }
 
 export interface Shelf {
@@ -145,4 +163,44 @@ export interface OAuthAccessToken {
   expires_at: Date;
   created_at: Date;
   last_used_at: Date | null;
+}
+
+// Admin dashboard types
+export interface AdminOverview {
+  total_users: number;
+  new_users_7d: number;
+  new_users_30d: number;
+  active_users_7d: number;
+  active_users_30d: number;
+  activated_users: number;
+}
+
+export interface AdminWeeklySignups {
+  week: Date;
+  email: number;
+  google: number;
+}
+
+export interface AdminAttributionRow {
+  tracked: boolean;
+  first_referrer: string | null;
+  utm_source: string | null;
+  count: number;
+}
+
+export interface AdminRecentUser {
+  id: string;
+  username: string | null;
+  email: string;
+  signup_method: SignupSource;
+  /** False for users created before attribution tracking existed. */
+  tracked: boolean;
+  first_referrer: string | null;
+  utm_source: string | null;
+  created_at: Date;
+  last_seen_at: Date | null;
+  shelf_count: number;
+  item_count: number;
+  activated: boolean;
+  public_share_token: string | null;
 }

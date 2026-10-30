@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getUserByUsername, getUserByEmail, createUser } from '@/lib/db/queries';
 import { hashPassword } from '@/lib/utils/password';
 import { setSessionCookie } from '@/lib/utils/session';
@@ -10,6 +11,7 @@ import {
   isRateLimitingEnabled 
 } from '@/lib/utils/rateLimit';
 import { createLogger } from '@/lib/utils/logger';
+import { ATTRIBUTION_COOKIE, parseAttributionCookie } from '@/lib/utils/attribution';
 
 const logger = createLogger('AuthSignup');
 
@@ -77,10 +79,13 @@ export async function POST(request: Request) {
     const passwordHash = await hashPassword(password);
 
     // Create user
+    const cookieStore = await cookies();
     const user = await createUser({
       username: normalizedUsername,
       email: normalizedEmail,
       passwordHash: passwordHash,
+      signupSource: 'email',
+      attribution: parseAttributionCookie(cookieStore.get(ATTRIBUTION_COOKIE)?.value),
     });
 
     logger.debug('New user created', { userId: user.id, username: user.username });
