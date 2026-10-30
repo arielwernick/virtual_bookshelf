@@ -47,8 +47,8 @@ export default function ShelfPage() {
 
         try {
           const authRes = await fetch('/api/auth/me');
-          if (authRes.ok) {
-            const authJson = await authRes.json();
+          const authJson = await authRes.json();
+          if (authJson.authenticated) {
             setIsOwner(String(authJson.data.userId) === String(shelfJson.data.user_id));
           }
         } catch {
