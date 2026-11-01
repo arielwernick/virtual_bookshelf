@@ -28,6 +28,10 @@ import {
   getAdminWeeklySignups,
   getAdminAttribution,
   getAdminRecentUsers,
+  recordShelfView,
+  getAdminViewStats,
+  getAdminTopShelves,
+  getAdminEmbedHosts,
   // Shelf queries
   createShelf,
   getShelfById,
@@ -931,5 +935,52 @@ describe('Admin Queries', () => {
 
     expect(await getAdminRecentUsers(25)).toEqual([]);
     expect(vi.mocked(sql).mock.calls[0]).toContain(25);
+  });
+
+  it('recordShelfView upserts a daily counter for public shelves only', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([]);
+
+    await recordShelfView('tok12345', 'embed', 'blog.example.com');
+
+    const [strings, ...values] = vi.mocked(sql).mock.calls[0];
+    const query = (strings as unknown as string[]).join('?');
+    expect(query).toContain('INSERT INTO shelf_view_daily');
+    expect(query).toContain('is_public = true');
+    expect(query).toContain('ON CONFLICT (shelf_id, day, surface, embed_host)');
+    expect(query).toContain('views = shelf_view_daily.views + 1');
+    expect(values).toEqual(['embed', 'blog.example.com', 'tok12345']);
+  });
+
+  it('recordShelfView stores an empty embed host for shelf page views', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([]);
+
+    await recordShelfView('tok12345', 'shelf');
+
+    expect(vi.mocked(sql).mock.calls[0].slice(1)).toEqual(['shelf', '', 'tok12345']);
+  });
+
+  it('getAdminViewStats passes the week window and returns rows', async () => {
+    const rows = [{ week: new Date('2026-10-26'), shelf: 4, embed: 2 }];
+    vi.mocked(sql).mockResolvedValueOnce(rows);
+
+    expect(await getAdminViewStats(12)).toEqual(rows);
+    expect(vi.mocked(sql).mock.calls[0].slice(1)).toEqual([11]);
+  });
+
+  it('getAdminTopShelves passes the day window and limit', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([]);
+
+    expect(await getAdminTopShelves(30, 10)).toEqual([]);
+    expect(vi.mocked(sql).mock.calls[0].slice(1)).toEqual([30, 10]);
+  });
+
+  it('getAdminEmbedHosts passes the day window and limit and skips blank hosts', async () => {
+    const rows = [{ embed_host: 'blog.example.com', shelf_count: 1, views: 5 }];
+    vi.mocked(sql).mockResolvedValueOnce(rows);
+
+    expect(await getAdminEmbedHosts(30, 10)).toEqual(rows);
+    const [strings, ...values] = vi.mocked(sql).mock.calls[0];
+    expect((strings as unknown as string[]).join('?')).toContain("embed_host <> ''");
+    expect(values).toEqual([30, 10]);
   });
 });

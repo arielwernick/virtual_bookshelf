@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ShelfGrid } from '@/components/shelf/ShelfGrid';
 import { ItemModal } from '@/components/shelf/ItemModal';
+import { ViewBeacon } from '@/components/ViewBeacon';
 import { Item } from '@/lib/types/shelf';
 
 interface ShelfPayload {
@@ -159,6 +160,7 @@ export function EmbedShelf() {
 
   return (
     <div ref={containerRef} className="w-full" style={wrapperStyle}>
+      <ViewBeacon shareToken={shareToken} surface="embed" />
       <div className="p-3 sm:p-4">
         <ShelfGrid items={shelfData.items} onItemClick={setSelectedItem} />
       </div>

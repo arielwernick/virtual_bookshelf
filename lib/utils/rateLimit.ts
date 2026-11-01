@@ -29,6 +29,7 @@ let _loginRateLimiter: Ratelimit | null = null;
 let _signupRateLimiter: Ratelimit | null = null;
 let _oauthRateLimiter: Ratelimit | null = null;
 let _externalApiRateLimiter: Ratelimit | null = null;
+let _viewRateLimiter: Ratelimit | null = null;
 
 /**
  * Rate limiter for login endpoint: 5 requests per minute
@@ -93,6 +94,22 @@ export function getExternalApiRateLimiter(): Ratelimit {
     });
   }
   return _externalApiRateLimiter;
+}
+
+/**
+ * Rate limiter for public shelf view counting: 60 requests per minute per IP.
+ * Analytics are off so viewer IPs aren't kept in Redis beyond the window.
+ */
+export function getViewRateLimiter(): Ratelimit {
+  if (!_viewRateLimiter) {
+    _viewRateLimiter = new Ratelimit({
+      redis: getRedis(),
+      limiter: Ratelimit.slidingWindow(60, '1 m'),
+      analytics: false,
+      prefix: 'ratelimit:views',
+    });
+  }
+  return _viewRateLimiter;
 }
 
 /**
@@ -175,4 +192,5 @@ export function _resetRateLimitCache(): void {
   _signupRateLimiter = null;
   _oauthRateLimiter = null;
   _externalApiRateLimiter = null;
+  _viewRateLimiter = null;
 }
