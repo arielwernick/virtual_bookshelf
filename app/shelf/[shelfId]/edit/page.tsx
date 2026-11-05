@@ -47,11 +47,8 @@ export default function EditShelfPage() {
         try {
             // Check auth first
             const authRes = await fetch('/api/auth/me');
-            if (!authRes.ok) {
-                router.push('/login');
-                return;
-            }
             const authJson = await authRes.json();
+            if (!authJson.authenticated) { router.push('/login'); return; }
             const userId = authJson.data.userId;
 
             // Fetch shelf data
@@ -82,6 +79,8 @@ export default function EditShelfPage() {
 
     useEffect(() => {
         if (!shelfId) return;
+        // All state updates in checkAuthAndFetch happen after an await, not synchronously
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         checkAuthAndFetch();
     }, [shelfId, checkAuthAndFetch]);
 

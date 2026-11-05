@@ -15,10 +15,9 @@ import { StockTickerForm } from './forms/StockTickerForm';
 interface AddItemFormProps {
   shelfId: string;
   onItemAdded: () => void;
-  onClose: () => void;
 }
 
-export function AddItemForm({ shelfId, onItemAdded }: Omit<AddItemFormProps, 'onClose'>) {
+export function AddItemForm({ shelfId, onItemAdded }: AddItemFormProps) {
   const [itemType, setItemType] = useState<ItemType>('book');
   const [adding, setAdding] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');

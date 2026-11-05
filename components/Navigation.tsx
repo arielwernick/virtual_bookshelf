@@ -8,17 +8,14 @@ export function Navigation() {
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
-  const isEmbed = pathname?.startsWith('/embed') ?? false;
+  const isEmbed = pathname === '/embed' || (pathname?.startsWith('/embed/') ?? false);
 
   useEffect(() => {
     if (isEmbed) return;
     fetch('/api/auth/me')
-      .then((res) => {
-        setIsLoggedIn(res.ok);
-      })
-      .catch(() => {
-        setIsLoggedIn(false);
-      });
+      .then((res) => res.json())
+      .then((data) => { setIsLoggedIn(data.authenticated === true); })
+      .catch(() => { setIsLoggedIn(false); });
   }, [pathname, isEmbed]);
 
   if (isEmbed) return null;

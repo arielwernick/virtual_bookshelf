@@ -31,13 +31,19 @@ export function NoteEditorModal({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Reset notes and rating when modal opens with new initial values
-  useEffect(() => {
+  const [prevProps, setPrevProps] = useState({ isOpen, initialNotes, initialRating });
+  if (
+    prevProps.isOpen !== isOpen ||
+    prevProps.initialNotes !== initialNotes ||
+    prevProps.initialRating !== initialRating
+  ) {
+    setPrevProps({ isOpen, initialNotes, initialRating });
     if (isOpen) {
       setNotes(initialNotes || '');
       setRating(initialRating);
       setError(null);
     }
-  }, [isOpen, initialNotes, initialRating]);
+  }
 
   // Auto-resize textarea based on content
   useEffect(() => {

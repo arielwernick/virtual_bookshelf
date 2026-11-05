@@ -47,8 +47,8 @@ export default function ShelfPage() {
 
         try {
           const authRes = await fetch('/api/auth/me');
-          if (authRes.ok) {
-            const authJson = await authRes.json();
+          const authJson = await authRes.json();
+          if (authJson.authenticated) {
             setIsOwner(String(authJson.data.userId) === String(shelfJson.data.user_id));
           }
         } catch {
@@ -166,6 +166,7 @@ export default function ShelfPage() {
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
         shareToken={shelfData.share_token}
+        shelfName={shelfData.name}
         isPublic={shelfData.is_public}
         onPublishToggle={isOwner ? async (isPublic) => {
           const res = await fetch(`/api/shelf/${shelfId}`, {

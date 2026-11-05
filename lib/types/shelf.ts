@@ -9,8 +9,26 @@ export interface User {
   share_token: string;
   description: string | null;
   title: string | null;
+  signup_source: SignupSource | null;
+  first_referrer: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  last_seen_at: Date | null;
+  welcome_sent_at: Date | null;
+  marketing_opt_out: boolean;
   created_at: Date;
   updated_at: Date;
+}
+
+export type SignupSource = 'email' | 'google';
+
+/** First-touch attribution captured before signup and stored on the user. */
+export interface SignupAttribution {
+  firstReferrer: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
 }
 
 export interface Shelf {
@@ -84,14 +102,14 @@ export interface CreateItemData {
   order_index?: number;
 }
 
-// For updating existing items
+// For updating existing items (null clears a nullable column)
 export interface UpdateItemData {
   title?: string;
   creator?: string;
   image_url?: string;
   external_url?: string;
-  notes?: string;
-  rating?: number;
+  notes?: string | null;
+  rating?: number | null;
   order_index?: number;
 }
 
@@ -113,4 +131,102 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   message?: string;
+}
+
+// OAuth authorization server types (MCP connector)
+export interface OAuthClient {
+  id: string;
+  client_id: string;
+  client_name: string;
+  redirect_uris: string[];
+  created_at: Date;
+}
+
+export interface OAuthAuthorizationCode {
+  id: string;
+  code_hash: string;
+  client_id: string;
+  user_id: string;
+  redirect_uri: string;
+  code_challenge: string;
+  scope: string;
+  expires_at: Date;
+  created_at: Date;
+}
+
+export interface OAuthAccessToken {
+  id: string;
+  token_hash: string;
+  client_id: string;
+  user_id: string;
+  scope: string;
+  expires_at: Date;
+  created_at: Date;
+  last_used_at: Date | null;
+}
+
+// Admin dashboard types
+export interface AdminOverview {
+  total_users: number;
+  new_users_7d: number;
+  new_users_30d: number;
+  active_users_7d: number;
+  active_users_30d: number;
+  activated_users: number;
+}
+
+export interface AdminWeeklySignups {
+  week: Date;
+  email: number;
+  google: number;
+}
+
+export interface AdminAttributionRow {
+  tracked: boolean;
+  first_referrer: string | null;
+  utm_source: string | null;
+  count: number;
+}
+
+export interface AdminRecentUser {
+  id: string;
+  username: string | null;
+  email: string;
+  signup_method: SignupSource;
+  /** False for users created before attribution tracking existed. */
+  tracked: boolean;
+  first_referrer: string | null;
+  utm_source: string | null;
+  created_at: Date;
+  last_seen_at: Date | null;
+  shelf_count: number;
+  item_count: number;
+  activated: boolean;
+  public_share_token: string | null;
+}
+
+// Shelf view tracking (issue #248)
+export type ViewSurface = 'shelf' | 'embed';
+
+export interface AdminWeeklyViews {
+  week: Date;
+  shelf: number;
+  embed: number;
+}
+
+export interface AdminTopShelf {
+  shelf_id: string;
+  name: string;
+  share_token: string;
+  is_public: boolean;
+  owner_username: string | null;
+  shelf_views: number;
+  embed_views: number;
+  views: number;
+}
+
+export interface AdminEmbedHost {
+  embed_host: string;
+  shelf_count: number;
+  views: number;
 }
