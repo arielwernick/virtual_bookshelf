@@ -39,11 +39,10 @@ const organizationSchema = {
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: 'Virtual Bookshelf — your books, podcasts & music in one link',
+    default: 'Virtual Bookshelf — A shelf for everything you love',
     template: '%s | Virtual Bookshelf',
   },
   description: 'Curate shelves of books, podcasts, music, videos, links — even live stock tickers. Share a single link anywhere.',
-  keywords: ['bookshelf', 'books', 'podcasts', 'music', 'videos', 'links', 'stocks', 'curate', 'share', 'reading list', 'watchlist'],
   authors: [{ name: "Virtual Bookshelf" }],
   openGraph: {
     title: 'Virtual Bookshelf — A shelf for everything you love',

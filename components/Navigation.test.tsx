@@ -63,6 +63,13 @@ describe('Navigation', () => {
       const logo = screen.getByTitle('Virtual Bookshelf');
       expect(logo).toHaveAttribute('href', '/');
     });
+
+    it('gives the logo link an accessible name', () => {
+      render(<Navigation />);
+
+      const logo = screen.getByRole('link', { name: 'Virtual Bookshelf home' });
+      expect(logo).toHaveAttribute('href', '/');
+    });
   });
 
   describe('Authentication State', () => {

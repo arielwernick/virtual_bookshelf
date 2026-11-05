@@ -7,7 +7,7 @@ import { faqPageJsonLd, breadcrumbJsonLd, type FaqItem } from '@/lib/utils/landi
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
 
 export const metadata: Metadata = {
-  title: 'Share Conference Resources & Event Recaps — Virtual Bookshelf',
+  title: 'Share Conference Resources & Event Recaps',
   description:
     'Turn your conference talk list into a shareable, visual resource shelf. Add speaker recordings, articles, and links — cover art and titles fill in automatically. One link to share with your community.',
   alternates: { canonical: '/curate-conference-resources' },

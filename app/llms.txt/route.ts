@@ -20,6 +20,8 @@ Virtual Bookshelf is a link-in-bio tool built for rich media instead of plain li
 - [Bento.me alternative](${baseUrl}/bento-alternative): Why Virtual Bookshelf is a strong replacement after Bento.me shut down on February 13, 2026.
 - [Linktree alternative](${baseUrl}/linktree-alternative): A link in bio that shows rich visual cards instead of a list of links.
 - [Goodreads alternative](${baseUrl}/goodreads-alternative): A beautiful, shareable bookshelf you control — for curating and sharing, not reviews or tracking.
+- [Embed anywhere](${baseUrl}/embed-anywhere): Embed a live, clickable shelf in a newsletter, email, or website with one snippet.
+- [Curate conference resources](${baseUrl}/curate-conference-resources): Turn a conference talk list into a shareable, visual resource shelf.
 
 ## What you can put on a shelf
 
