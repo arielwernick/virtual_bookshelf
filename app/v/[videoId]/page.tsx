@@ -30,12 +30,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { videoId } = await params;
 
   if (!isValidVideoId(videoId)) {
-    return { title: 'Video Not Found | Virtual Bookshelf' };
+    return { title: 'Video Not Found' };
   }
 
   const result = await getPublicVideoByVideoId(videoId);
   if (!result) {
-    return { title: 'Video Not Found | Virtual Bookshelf' };
+    return { title: 'Video Not Found' };
   }
 
   const { item, shelfName } = result;
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const thumbnailUrl = item.image_url || getThumbnailUrl(videoId);
 
   return {
-    title: `${item.title} | Virtual Bookshelf`,
+    title: item.title,
     description,
     alternates: { canonical },
     openGraph: {
