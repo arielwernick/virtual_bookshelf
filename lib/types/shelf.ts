@@ -204,3 +204,29 @@ export interface AdminRecentUser {
   activated: boolean;
   public_share_token: string | null;
 }
+
+// Shelf view tracking (issue #248)
+export type ViewSurface = 'shelf' | 'embed';
+
+export interface AdminWeeklyViews {
+  week: Date;
+  shelf: number;
+  embed: number;
+}
+
+export interface AdminTopShelf {
+  shelf_id: string;
+  name: string;
+  share_token: string;
+  is_public: boolean;
+  owner_username: string | null;
+  shelf_views: number;
+  embed_views: number;
+  views: number;
+}
+
+export interface AdminEmbedHost {
+  embed_host: string;
+  shelf_count: number;
+  views: number;
+}

@@ -1,5 +1,5 @@
 import { sql, sqlQuery } from './client';
-import { User, SignupSource, SignupAttribution, AdminOverview, AdminWeeklySignups, AdminAttributionRow, AdminRecentUser, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
+import { User, SignupSource, SignupAttribution, AdminOverview, AdminWeeklySignups, AdminAttributionRow, AdminRecentUser, AdminWeeklyViews, AdminTopShelf, AdminEmbedHost, ViewSurface, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
 import { extractVideoId } from '../api/youtube';
 
@@ -924,4 +924,87 @@ export async function getAdminRecentUsers(limit: number = 50): Promise<AdminRece
   `;
 
   return result as AdminRecentUser[];
+}
+
+/**
+ * Add one view to today's counter for a public shelf. Private or unknown
+ * tokens match no shelf, so nothing is written. embed_host must be '' for
+ * surface = 'shelf'.
+ */
+export async function recordShelfView(
+  shareToken: string,
+  surface: ViewSurface,
+  embedHost: string = ''
+): Promise<void> {
+  await sql`
+    INSERT INTO shelf_view_daily (shelf_id, day, surface, embed_host, views)
+    SELECT id, CURRENT_DATE, ${surface}, ${embedHost}, 1
+    FROM shelves
+    WHERE share_token = ${shareToken} AND is_public = true
+    ON CONFLICT (shelf_id, day, surface, embed_host)
+    DO UPDATE SET views = shelf_view_daily.views + 1
+  `;
+}
+
+/**
+ * Views per week over the last `weeks` weeks, split into shelf page and embed views
+ */
+export async function getAdminViewStats(weeks: number = 12): Promise<AdminWeeklyViews[]> {
+  const result = await sql`
+    SELECT
+      date_trunc('week', day) AS week,
+      COALESCE(SUM(views) FILTER (WHERE surface = 'shelf'), 0)::int AS shelf,
+      COALESCE(SUM(views) FILTER (WHERE surface = 'embed'), 0)::int AS embed
+    FROM shelf_view_daily
+    WHERE day >= date_trunc('week', CURRENT_DATE) - make_interval(weeks => ${weeks - 1})
+    GROUP BY 1
+    ORDER BY 1 ASC
+  `;
+
+  return result as AdminWeeklyViews[];
+}
+
+/**
+ * Most-viewed shelves over the last `days` days, with owner and share link
+ */
+export async function getAdminTopShelves(days: number = 30, limit: number = 10): Promise<AdminTopShelf[]> {
+  const result = await sql`
+    SELECT
+      s.id AS shelf_id,
+      s.name,
+      s.share_token,
+      s.is_public,
+      u.username AS owner_username,
+      COALESCE(SUM(v.views) FILTER (WHERE v.surface = 'shelf'), 0)::int AS shelf_views,
+      COALESCE(SUM(v.views) FILTER (WHERE v.surface = 'embed'), 0)::int AS embed_views,
+      SUM(v.views)::int AS views
+    FROM shelf_view_daily v
+    JOIN shelves s ON s.id = v.shelf_id
+    JOIN users u ON u.id = s.user_id
+    WHERE v.day > CURRENT_DATE - ${days}::int
+    GROUP BY s.id, u.username
+    ORDER BY views DESC
+    LIMIT ${limit}
+  `;
+
+  return result as AdminTopShelf[];
+}
+
+/**
+ * Sites embedding shelves over the last `days` days, by embed views
+ */
+export async function getAdminEmbedHosts(days: number = 30, limit: number = 10): Promise<AdminEmbedHost[]> {
+  const result = await sql`
+    SELECT
+      embed_host,
+      COUNT(DISTINCT shelf_id)::int AS shelf_count,
+      SUM(views)::int AS views
+    FROM shelf_view_daily
+    WHERE surface = 'embed' AND embed_host <> '' AND day > CURRENT_DATE - ${days}::int
+    GROUP BY embed_host
+    ORDER BY views DESC
+    LIMIT ${limit}
+  `;
+
+  return result as AdminEmbedHost[];
 }

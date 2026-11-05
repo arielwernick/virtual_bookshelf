@@ -6,6 +6,9 @@ import {
   getAdminWeeklySignups,
   getAdminAttribution,
   getAdminRecentUsers,
+  getAdminViewStats,
+  getAdminTopShelves,
+  getAdminEmbedHosts,
   ACTIVATION_ITEM_THRESHOLD,
 } from '@/lib/db/queries';
 import { classifyAttribution } from '@/lib/utils/attribution';
@@ -19,6 +22,7 @@ export const metadata: Metadata = {
 };
 
 const ATTRIBUTION_DAYS = 90;
+const VIEW_DAYS = 30;
 
 function summarizeChannels(rows: AdminAttributionRow[]): { channel: string; count: number }[] {
   const totals = new Map<string, number>();
@@ -55,22 +59,26 @@ export default async function AdminPage() {
   const admin = await getAdminUser();
   if (!admin) notFound();
 
-  const [overview, weekly, attribution, recentUsers] = await Promise.all([
+  const [overview, weekly, attribution, recentUsers, weeklyViews, topShelves, embedHosts] = await Promise.all([
     getAdminOverview(),
     getAdminWeeklySignups(12),
     getAdminAttribution(ATTRIBUTION_DAYS),
     getAdminRecentUsers(50),
+    getAdminViewStats(12),
+    getAdminTopShelves(VIEW_DAYS, 10),
+    getAdminEmbedHosts(VIEW_DAYS, 10),
   ]);
 
   const channels = summarizeChannels(attribution);
   const channelTotal = channels.reduce((sum, c) => sum + c.count, 0);
   const maxWeekly = Math.max(1, ...weekly.map((w) => w.email + w.google));
+  const maxWeeklyViews = Math.max(1, ...weeklyViews.map((w) => w.shelf + w.embed));
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 space-y-10">
       <header>
         <h1 className="text-2xl font-semibold">Admin</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Signups, acquisition, and activation.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Signups, acquisition, activation, and shelf views.</p>
       </header>
 
       <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -149,6 +157,122 @@ export default async function AdminPage() {
           )}
         </section>
       </div>
+
+      <div className="grid gap-8 lg:grid-cols-2">
+        <section>
+          <h2 className="text-lg font-semibold mb-3">Shelf views per week</h2>
+          {weeklyViews.length === 0 ? (
+            <p className="text-sm text-gray-500">No shelf views in the last 12 weeks.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {weeklyViews.map((w) => {
+                const total = w.shelf + w.embed;
+                return (
+                  <div key={String(w.week)} className="flex items-center gap-3 text-sm">
+                    <div className="w-20 shrink-0 text-gray-500 dark:text-gray-400">
+                      {new Date(w.week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </div>
+                    <div className="flex-1 flex h-4 rounded overflow-hidden bg-gray-100 dark:bg-gray-900">
+                      <div
+                        className="bg-violet-500"
+                        style={{ width: `${(w.shelf / maxWeeklyViews) * 100}%` }}
+                        title={`Shelf page: ${w.shelf}`}
+                      />
+                      <div
+                        className="bg-amber-500"
+                        style={{ width: `${(w.embed / maxWeeklyViews) * 100}%` }}
+                        title={`Embed: ${w.embed}`}
+                      />
+                    </div>
+                    <div className="w-12 text-right tabular-nums">{total}</div>
+                  </div>
+                );
+              })}
+              <div className="flex gap-4 pt-2 text-xs text-gray-500 dark:text-gray-400">
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-violet-500" /> Shelf page
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-500" /> Embed
+                </span>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold mb-3">Top embedding sites ({VIEW_DAYS}d)</h2>
+          {embedHosts.length === 0 ? (
+            <p className="text-sm text-gray-500">No embed views yet.</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="text-left text-gray-500 dark:text-gray-400">
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <th className="py-2 pr-4 font-medium">Site</th>
+                  <th className="py-2 pr-4 font-medium text-right">Shelves</th>
+                  <th className="py-2 font-medium text-right">Views</th>
+                </tr>
+              </thead>
+              <tbody>
+                {embedHosts.map((h) => (
+                  <tr key={h.embed_host} className="border-b border-gray-100 dark:border-gray-900">
+                    <td className="py-1.5 pr-4 break-all">{h.embed_host}</td>
+                    <td className="py-1.5 pr-4 text-right tabular-nums">{h.shelf_count}</td>
+                    <td className="py-1.5 text-right tabular-nums">{h.views}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+      </div>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Top shelves ({VIEW_DAYS}d)</h2>
+        {topShelves.length === 0 ? (
+          <p className="text-sm text-gray-500">No shelf views yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-gray-500 dark:text-gray-400">
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <th className="py-2 pr-4 font-medium">Shelf</th>
+                  <th className="py-2 pr-4 font-medium">Owner</th>
+                  <th className="py-2 pr-4 font-medium text-right">Page</th>
+                  <th className="py-2 pr-4 font-medium text-right">Embed</th>
+                  <th className="py-2 font-medium text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topShelves.map((s) => (
+                  <tr key={s.shelf_id} className="border-b border-gray-100 dark:border-gray-900">
+                    <td className="py-2 pr-4">
+                      {s.is_public ? (
+                        <a
+                          href={`/s/${s.share_token}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          {s.name}
+                        </a>
+                      ) : (
+                        <span>
+                          {s.name} <span className="text-xs text-gray-500 dark:text-gray-400">(now private)</span>
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-4">{s.owner_username || '—'}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums">{s.shelf_views}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums">{s.embed_views}</td>
+                    <td className="py-2 text-right tabular-nums font-medium">{s.views}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <section>
         <h2 className="text-lg font-semibold mb-3">Recent users</h2>

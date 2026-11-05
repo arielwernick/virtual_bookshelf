@@ -7,6 +7,7 @@ import { buildShareSlug, buildSharePath, extractShareToken } from '@/lib/utils/s
 import { ShelfGridStatic } from '@/components/shelf/ShelfGridStatic';
 import { SharedShelfInteractive } from './SharedShelfInteractive';
 import { generateShelfSchemaJson } from '@/lib/utils/schemaMarkup';
+import { ViewBeacon } from '@/components/ViewBeacon';
 
 // Serve cached HTML and re-render in the background at most every 5 minutes.
 // Mutations trigger immediate refreshes via revalidateSharedShelf().
@@ -194,6 +195,8 @@ export default async function SharedShelfPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: schemaJson }}
         suppressHydrationWarning
       />
+      {/* Counts the view from the browser so the cached page stays static */}
+      <ViewBeacon shareToken={shelfData.shelf.share_token} surface="shelf" />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         {/* Header - Server Rendered */}
         <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">

@@ -17,6 +17,9 @@ vi.mock('@/lib/db/queries', () => ({
   getAdminWeeklySignups: vi.fn(),
   getAdminAttribution: vi.fn(),
   getAdminRecentUsers: vi.fn(),
+  getAdminViewStats: vi.fn(),
+  getAdminTopShelves: vi.fn(),
+  getAdminEmbedHosts: vi.fn(),
 }));
 
 import AdminPage from './page';
@@ -26,6 +29,9 @@ import {
   getAdminWeeklySignups,
   getAdminAttribution,
   getAdminRecentUsers,
+  getAdminViewStats,
+  getAdminTopShelves,
+  getAdminEmbedHosts,
 } from '@/lib/db/queries';
 import { createMockUser } from '@/test/utils/mocks';
 import type { AdminRecentUser } from '@/lib/types/shelf';
@@ -87,6 +93,35 @@ describe('AdminPage', () => {
         public_share_token: null,
       }),
     ]);
+    vi.mocked(getAdminViewStats).mockResolvedValue([
+      { week: new Date('2026-10-19'), shelf: 12, embed: 3 },
+      { week: new Date('2026-10-26'), shelf: 20, embed: 8 },
+    ]);
+    vi.mocked(getAdminTopShelves).mockResolvedValue([
+      {
+        shelf_id: 'shelf-1',
+        name: 'Sci-fi Favorites',
+        share_token: 'tok12345',
+        is_public: true,
+        owner_username: 'reader',
+        shelf_views: 30,
+        embed_views: 11,
+        views: 41,
+      },
+      {
+        shelf_id: 'shelf-2',
+        name: 'Hidden Gems',
+        share_token: 'tok67890',
+        is_public: false,
+        owner_username: null,
+        shelf_views: 2,
+        embed_views: 0,
+        views: 2,
+      },
+    ]);
+    vi.mocked(getAdminEmbedHosts).mockResolvedValue([
+      { embed_host: 'blog.example.com', shelf_count: 2, views: 9 },
+    ]);
   });
 
   describe('Access', () => {
@@ -125,6 +160,40 @@ describe('AdminPage', () => {
     });
   });
 
+  describe('Shelf views', () => {
+    it('queries 12 weeks of views and the last 30 days of top shelves and sites', async () => {
+      await renderPage();
+
+      expect(getAdminViewStats).toHaveBeenCalledWith(12);
+      expect(getAdminTopShelves).toHaveBeenCalledWith(30, 10);
+      expect(getAdminEmbedHosts).toHaveBeenCalledWith(30, 10);
+    });
+
+    it('shows weekly view totals split into shelf page and embed', async () => {
+      await renderPage();
+
+      expect(screen.getByText('Shelf views per week')).toBeInTheDocument();
+      expect(screen.getByTitle('Shelf page: 20')).toBeInTheDocument();
+      expect(screen.getByTitle('Embed: 8')).toBeInTheDocument();
+      expect(screen.getByText('28')).toBeInTheDocument();
+    });
+
+    it('lists top shelves with links to public shelves only', async () => {
+      await renderPage();
+
+      expect(screen.getByRole('row', { name: 'Sci-fi Favorites reader 30 11 41' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Sci-fi Favorites' })).toHaveAttribute('href', '/s/tok12345');
+      expect(screen.queryByRole('link', { name: /Hidden Gems/ })).not.toBeInTheDocument();
+      expect(screen.getByText('(now private)')).toBeInTheDocument();
+    });
+
+    it('lists embedding sites with shelf and view counts', async () => {
+      await renderPage();
+
+      expect(screen.getByRole('row', { name: 'blog.example.com 2 9' })).toBeInTheDocument();
+    });
+  });
+
   describe('Edge Cases', () => {
     it('renders empty states with no signups', async () => {
       vi.mocked(getAdminWeeklySignups).mockResolvedValue([]);
@@ -135,6 +204,18 @@ describe('AdminPage', () => {
 
       expect(screen.getByText('No signups in the last 12 weeks.')).toBeInTheDocument();
       expect(screen.getByText('No signups yet.')).toBeInTheDocument();
+    });
+
+    it('renders empty states with no shelf views', async () => {
+      vi.mocked(getAdminViewStats).mockResolvedValue([]);
+      vi.mocked(getAdminTopShelves).mockResolvedValue([]);
+      vi.mocked(getAdminEmbedHosts).mockResolvedValue([]);
+
+      await renderPage();
+
+      expect(screen.getByText('No shelf views in the last 12 weeks.')).toBeInTheDocument();
+      expect(screen.getByText('No shelf views yet.')).toBeInTheDocument();
+      expect(screen.getByText('No embed views yet.')).toBeInTheDocument();
     });
   });
 });
