@@ -12,8 +12,22 @@ import Link from 'next/link';
 import { Item } from '@/lib/types/shelf';
 import { getAspectRatio, getAspectRatioNumeric } from '@/lib/constants/aspectRatios';
 import { StarDisplayStatic } from '@/components/ui/StarDisplayStatic';
+import { ItemCardImage } from './ItemCardImage';
 import { calculateJitter } from '@/lib/utils/imageUtils';
 import { extractVideoId } from '@/lib/api/youtube';
+
+const fallbackIcon = (
+  <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500">
+    <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+      />
+    </svg>
+  </div>
+);
 
 interface ItemCardStaticProps {
   item: Item;
@@ -59,30 +73,17 @@ export function ItemCardStatic({ item, ...props }: ItemCardStaticProps) {
         className={`relative ${item.type === 'stock' ? 'bg-white dark:bg-gray-100' : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700'}`}
         style={{ aspectRatio: adjustedRatioNum || baseRatioStr }}
       >
-        {/* Item Image - using standard img for SSR compatibility */}
-        {effectiveImageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+        {/* Item Image, or the fallback icon when it's missing or fails to load */}
+        {effectiveImageUrl ? (
+          <ItemCardImage
             src={effectiveImageUrl}
             alt={item.title}
             className={`w-full h-full object-center ${item.type === 'stock' ? 'object-contain' : 'object-cover'}`}
             style={item.type === 'stock' ? { padding: '8%' } : undefined}
-            loading="lazy"
+            fallback={fallbackIcon}
           />
-        )}
-
-        {/* Fallback Icon */}
-        {!item.image_url && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500">
-            <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
-          </div>
+        ) : (
+          fallbackIcon
         )}
 
         {/* Type Badge */}

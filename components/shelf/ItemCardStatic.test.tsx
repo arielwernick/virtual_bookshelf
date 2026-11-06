@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import { ItemCardStatic } from './ItemCardStatic';
 import { Item } from '@/lib/types/shelf';
 
@@ -101,6 +102,56 @@ describe('ItemCardStatic', () => {
       // Check for SVG fallback icon in the image container
       const article = screen.getByRole('article');
       expect(article.querySelector('svg')).toBeInTheDocument();
+    });
+
+    it('swaps in the fallback icon when the image fails to load', () => {
+      render(<ItemCardStatic item={createMockItem({ rating: null, notes: null })} />);
+
+      fireEvent.error(screen.getByRole('img', { name: /gatsby/i }));
+
+      expect(screen.queryByRole('img', { name: /gatsby/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('article').querySelector('svg')).toBeInTheDocument();
+    });
+
+    it('catches an image that failed before hydration', () => {
+      const complete = vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+      const naturalWidth = vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(0);
+
+      render(<ItemCardStatic item={createMockItem({ rating: null, notes: null })} />);
+
+      expect(screen.queryByRole('img', { name: /gatsby/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('article').querySelector('svg')).toBeInTheDocument();
+
+      complete.mockRestore();
+      naturalWidth.mockRestore();
+    });
+
+    it('keeps the image when it has already loaded', () => {
+      const complete = vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+      const naturalWidth = vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(300);
+
+      render(<ItemCardStatic item={createMockItem()} />);
+
+      expect(screen.getByRole('img', { name: /gatsby/i })).toBeInTheDocument();
+
+      complete.mockRestore();
+      naturalWidth.mockRestore();
+    });
+
+    it('does not cover a stock logo with the fallback icon', () => {
+      render(<ItemCardStatic item={createMockItem({ type: 'stock', creator: 'AAPL', image_url: null, rating: null, notes: null })} />);
+
+      expect(screen.getByRole('img', { name: /gatsby/i })).toHaveAttribute(
+        'src',
+        'https://financialmodelingprep.com/image-stock/AAPL.png'
+      );
+      expect(screen.getByRole('article').querySelector('svg')).not.toBeInTheDocument();
+    });
+
+    it('includes the image in server-rendered HTML', () => {
+      const html = renderToString(<ItemCardStatic item={createMockItem()} />);
+
+      expect(html).toContain('src="https://example.com/image.jpg"');
     });
   });
 
