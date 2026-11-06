@@ -2,6 +2,7 @@ import { MetadataRoute } from 'next'
 import { getPublicShelves, getPublicVideoItems } from '@/lib/db/queries'
 import { buildSharePath } from '@/lib/utils/slug'
 import { extractVideoId } from '@/lib/api/youtube'
+import { getAllGuides } from '@/lib/utils/guides'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,6 +39,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }))
 
+  const guideUrls = getAllGuides().map(guide => ({
+    url: `${baseUrl}/guides/${guide.slug}`,
+    lastModified: guide.updated,
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }))
+
   return [
     // No lastModified here: stamping "now" on every request tells crawlers
     // nothing and teaches them to ignore the field on the other entries.
@@ -52,6 +60,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/best-virtual-bookshelf-apps`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${baseUrl}/terms`, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/guides`, changeFrequency: 'monthly', priority: 0.7 },
+    ...guideUrls,
     ...shelfUrls,
     ...videoUrls,
   ]
