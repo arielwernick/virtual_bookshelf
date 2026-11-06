@@ -48,7 +48,7 @@ describe('generateShelfSchema (collection page)', () => {
   it('serializes video items as CreativeWork, never VideoObject', () => {
     const shelf = createMockShelf();
     const items = [createMockItem()];
-    const schema = generateShelfSchema(shelf, items, 'user');
+    const schema = generateShelfSchema(shelf, items);
 
     const listItem = (schema.itemListElement as Record<string, unknown>[])[0];
     const inner = listItem.item as Record<string, unknown>;
@@ -58,6 +58,15 @@ describe('generateShelfSchema (collection page)', () => {
     // triggered "Video isn't on a watch page" in Search Console. VideoObject
     // now lives only on the dedicated /v/[videoId] watch pages.
     expect(JSON.stringify(schema)).not.toContain('VideoObject');
+  });
+
+  it('does not name the shelf owner, but keeps per-item creators', () => {
+    const schema = generateShelfSchema(createMockShelf(), [createMockItem({ creator: 'Some Channel' })]);
+    const listItem = (schema.itemListElement as Record<string, unknown>[])[0];
+    const inner = listItem.item as Record<string, unknown>;
+
+    expect(schema.creator).toBeUndefined();
+    expect(inner.creator).toMatchObject({ name: 'Some Channel' });
   });
 
   it('uses dateCreated (not the VideoObject-only uploadDate) for video items', () => {

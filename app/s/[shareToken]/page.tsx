@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { permanentRedirect } from 'next/navigation';
-import { getShelfByShareToken, getItemsByShelfId, getUserById } from '@/lib/db/queries';
+import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
 import { buildShareSlug, buildSharePath, extractShareToken } from '@/lib/utils/slug';
 import { ShelfGridStatic } from '@/components/shelf/ShelfGridStatic';
 import { SharedShelfInteractive } from './SharedShelfInteractive';
@@ -135,13 +135,8 @@ async function getShelfData(shareToken: string) {
       return null;
     }
 
-    // Items are deduped with generateMetadata; the creator's username
-    // (for schema markup) is independent, so fetch it in parallel
-    const [items, user] = await Promise.all([
-      getCachedItems(shelf.id),
-      getUserById(shelf.user_id),
-    ]);
-    const username = user?.username || null;
+    // Items are deduped with generateMetadata
+    const items = await getCachedItems(shelf.id);
 
     return {
       shelf,
@@ -149,7 +144,6 @@ async function getShelfData(shareToken: string) {
       name: shelf.name,
       description: shelf.description,
       items,
-      username,
       created_at: shelf.created_at.toISOString(),
     };
   } catch (error) {
@@ -186,7 +180,7 @@ export default async function SharedShelfPage({ params }: PageProps) {
   }
 
   // Generate JSON-LD schema markup for AI readability
-  const schemaJson = generateShelfSchemaJson(shelfData.shelf, shelfData.items, shelfData.username);
+  const schemaJson = generateShelfSchemaJson(shelfData.shelf, shelfData.items);
 
   return (
     <>
