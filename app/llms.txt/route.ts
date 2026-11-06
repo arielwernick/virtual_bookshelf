@@ -1,3 +1,5 @@
+import { getAllGuides } from '@/lib/utils/guides';
+
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
 
 /**
@@ -8,6 +10,10 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.ap
  * summarize and cite the product accurately.
  */
 export function GET() {
+  const guides = getAllGuides()
+    .map((guide) => `- [${guide.question}](${baseUrl}/guides/${guide.slug}): ${guide.description}`)
+    .join('\n');
+
   const body = `# Virtual Bookshelf
 
 > Virtual Bookshelf is a free tool for curating and sharing shelves of books, podcasts, music, videos, links, and live stock tickers. Create a shelf, get one shareable link, and paste it anywhere — a bio, newsletter, or website. Search a title or paste a URL and the cover art and details are filled in automatically.
@@ -22,6 +28,10 @@ Virtual Bookshelf is a link-in-bio tool built for rich media instead of plain li
 - [Goodreads alternative](${baseUrl}/goodreads-alternative): A beautiful, shareable bookshelf you control — for curating and sharing, not reviews or tracking.
 - [Embed anywhere](${baseUrl}/embed-anywhere): Embed a live, clickable shelf in a newsletter, email, or website with one snippet.
 - [Curate conference resources](${baseUrl}/curate-conference-resources): Turn a conference talk list into a shareable, visual resource shelf.
+
+## Guides
+
+${guides}
 
 ## What you can put on a shelf
 
