@@ -104,7 +104,7 @@ function sortItemsByOrder(items: Item[]): Item[] {
   return [...items].sort((a, b) => a.order_index - b.order_index);
 }
 
-function createCollectionSchema(shelf: Shelf, itemSchemas: SchemaObject[], username?: string | null): SchemaObject {
+function createCollectionSchema(shelf: Shelf, itemSchemas: SchemaObject[]): SchemaObject {
   const schema: SchemaObject = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -116,27 +116,20 @@ function createCollectionSchema(shelf: Shelf, itemSchemas: SchemaObject[], usern
   if (shelf.description) schema.description = shelf.description;
   if (shelf.created_at) schema.datePublished = shelf.created_at.toISOString();
   if (shelf.updated_at) schema.dateModified = shelf.updated_at.toISOString();
-  if (username) schema.creator = createPersonObject(username);
 
   return schema;
 }
 
-export function generateShelfSchema(
-  shelf: Shelf,
-  items: Item[],
-  username?: string | null
-): SchemaObject {
+// The owner is deliberately left out: usernames for Google sign-ups are derived
+// from the email address, so publishing one can reveal part of that address.
+export function generateShelfSchema(shelf: Shelf, items: Item[]): SchemaObject {
   const sortedItems = sortItemsByOrder(items);
   const itemSchemas = sortedItems.map((item, index) => generateItemSchema(item, index));
-  return createCollectionSchema(shelf, itemSchemas, username);
+  return createCollectionSchema(shelf, itemSchemas);
 }
 
-export function generateShelfSchemaJson(
-  shelf: Shelf,
-  items: Item[],
-  username?: string | null
-): string {
-  const schema = generateShelfSchema(shelf, items, username);
+export function generateShelfSchemaJson(shelf: Shelf, items: Item[]): string {
+  const schema = generateShelfSchema(shelf, items);
   return JSON.stringify(schema, null, 2);
 }
 
