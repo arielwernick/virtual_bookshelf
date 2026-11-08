@@ -20,6 +20,7 @@
     "migrate:status": "tsx scripts/migrate.ts status",
     "db:bootstrap": "tsx scripts/migrate.ts up",
     "vercel-build": "tsx scripts/preview-migrate.ts && next build",
+    "auth:backfill": "tsx scripts/backfill-auth-accounts.ts",
     "seed": "tsx scripts/seed-landing-shelves.ts",
     "e2e": "playwright test",
     "e2e:public": "playwright test --project=public",
