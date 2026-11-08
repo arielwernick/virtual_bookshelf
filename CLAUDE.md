@@ -58,6 +58,7 @@ Run `npm run setup` first in any new checkout or worktree. Worktrees often have 
 - `lib/types/shelf.ts` — **All** shared TypeScript types (single source of truth)
 - `lib/db/queries.ts` — All database queries, organized by entity
 - `lib/db/client.ts` — Neon client with lazy initialization (avoids build-time errors)
+- `lib/auth/config.ts` — Better Auth configuration (not mounted yet; replaces the JWT session in #267)
 - `lib/contexts/ShelfContext.tsx` — React context to reduce prop drilling in shelf components
 - `lib/utils/` — session (JWT), validation, password (bcrypt), logger, rateLimit, env
 - `lib/constants/errors.ts` — Centralized error message strings
@@ -100,6 +101,8 @@ The `test/setup.ts` polyfills `TextEncoder/TextDecoder` for jose and mocks `next
 ### Environment Variables
 
 Required: `DATABASE_URL`, `SESSION_SECRET`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `YOUTUBE_API_KEY`, `NEXT_PUBLIC_BASE_URL`.
+
+Coming with the Better Auth cutover (#267): `BETTER_AUTH_SECRET` (32+ random characters). Better Auth's Google callback is `<NEXT_PUBLIC_BASE_URL>/api/auth/callback/google`.
 
 Optional: `ADMIN_EMAILS` — comma-separated emails allowed to view `/admin` (signup/attribution dashboard). Unset means nobody can.
 
