@@ -220,7 +220,7 @@ function readPlanIssues(list) {
 // ---------------------------------------------------------------------------
 
 const code = (s) => '`' + s + '`';
-const cell = (s) => String(s ?? '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
+const cell = (s) => String(s ?? '').replace(/\|/g, '\\|').replace(/([<>])/g, '\\$1').replace(/\n/g, ' ');
 const major = (v) => (String(v).match(/\d+/) || [''])[0];
 
 function stackRows(deps, dev) {

@@ -242,7 +242,7 @@ function code(s) {
 }
 
 function cell(s) {
-  return String(s ?? '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
+  return String(s ?? '').replace(/\|/g, '\\|').replace(/([<>])/g, '\\$1').replace(/\n/g, ' ');
 }
 
 function toMarkdown(f) {
