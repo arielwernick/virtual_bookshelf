@@ -10,12 +10,16 @@
  * Or directly:
  *   npx tsx scripts/migrate.ts up
  *
- * Reads DATABASE_URL from the environment (loaded from .env.local via dotenv).
+ * Reads DATABASE_URL from the shell, then .env.local, then .env.
  * For CI / ephemeral test databases, set DATABASE_URL inline before invoking.
+ *
+ * `up` and `down` refuse to run against the production database unless
+ * MIGRATE_ALLOW_PROD=1 is set (issue #151). `status` is read-only and always runs.
  */
 
-import 'dotenv/config';
+import './lib/loadEnv';
 import { migrateUp, migrateDown, migrationStatus } from '@/lib/db/migrate';
+import { assertNotProduction } from '@/lib/db/prodGuard';
 
 type Command = 'up' | 'down' | 'status';
 
@@ -70,6 +74,19 @@ function parseCommand(arg: string | undefined): Command {
 }
 
 const command = parseCommand(process.argv[2]);
+
+if (command !== 'status') {
+  try {
+    const allowed = assertNotProduction(
+      { databaseUrl: process.env.DATABASE_URL },
+      { action: `migrate:${command}`, allowVar: 'MIGRATE_ALLOW_PROD' }
+    );
+    if (allowed) console.warn(`MIGRATE_ALLOW_PROD=1: running migrate:${command} against PRODUCTION.`);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
+}
 
 run(command)
   .then(() => process.exit(0))

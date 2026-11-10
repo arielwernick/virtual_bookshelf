@@ -1,4 +1,6 @@
 import { test as setup } from '@playwright/test';
+import { config } from 'dotenv';
+import { assertNotProduction } from '../lib/db/prodGuard';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
@@ -17,7 +19,17 @@ import {
  * reuse the cookie instead of logging in per test.
  */
 
-setup('authenticate and seed', async ({ request }) => {
+setup('authenticate and seed', async ({ request, baseURL }) => {
+  // Refuse to create the test user and shelf in production (issue #151).
+  // Against a local dev server, check the database it uses (.env.local);
+  // against a deployed URL, refuse the production site.
+  const isLocal = !baseURL || /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(baseURL);
+  if (isLocal) config({ path: ['.env.local', '.env'], quiet: true });
+  assertNotProduction(
+    { siteUrl: baseURL, databaseUrl: isLocal ? process.env.DATABASE_URL : undefined },
+    { action: 'e2e seeding', allowVar: 'E2E_ALLOW_PROD' }
+  );
+
   await authenticate(request);
   const seed = await ensureSeededShelf(request);
 

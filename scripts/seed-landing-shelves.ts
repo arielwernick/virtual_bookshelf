@@ -11,15 +11,17 @@
  *   npm run seed
  *   # or: npx tsx scripts/seed-landing-shelves.ts
  *
- * Reads DATABASE_URL from the environment (loaded from .env.local via dotenv).
+ * Reads DATABASE_URL from the shell, then .env.local, then .env. Refuses to run
+ * against the production database unless SEED_ALLOW_PROD=1 is set (issue #151).
  * The script is idempotent: it clears the admin account's existing shelves and
  * recreates them, then prints the admin user id to set as DEMO_USER_ID.
  *
  * See docs/guides/ADMIN_DEMO_SETUP.md.
  */
 
-import 'dotenv/config';
+import './lib/loadEnv';
 import { sql } from '@/lib/db/client';
+import { assertNotProduction } from '@/lib/db/prodGuard';
 import { hashPassword } from '@/lib/utils/password';
 import {
   getUserByEmail,
@@ -249,6 +251,12 @@ const SHELVES: CuratedShelf[] = [
 ];
 
 async function seed() {
+  const allowed = assertNotProduction(
+    { databaseUrl: process.env.DATABASE_URL },
+    { action: 'seed', allowVar: 'SEED_ALLOW_PROD' }
+  );
+  if (allowed) console.warn('SEED_ALLOW_PROD=1: seeding PRODUCTION.');
+
   console.log('🌱 Seeding landing-page demo shelves...\n');
 
   // 1. Upsert the admin user.
