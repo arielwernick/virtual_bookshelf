@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { STORAGE_STATE } from './e2e/lib/auth';
+import { BYPASS_STATE } from './e2e/global-setup';
 
 /**
  * Playwright configuration for Virtual Bookshelf.
@@ -15,9 +16,14 @@ import { STORAGE_STATE } from './e2e/lib/auth';
 
 const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 3000);
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`;
+// Testing a deployed URL (e.g. a Vercel preview in CI): don't start a dev server.
+const IS_REMOTE = Boolean(process.env.PLAYWRIGHT_BASE_URL);
+// Protected Vercel previews: global-setup saves Vercel's bypass cookie here.
+const USE_BYPASS = IS_REMOTE && Boolean(process.env.VERCEL_AUTOMATION_BYPASS_SECRET);
 
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/global-setup.ts',
   outputDir: './e2e/.results',
   // Agent exploration writes screenshots + aria snapshots here.
   snapshotDir: './e2e/snapshots',
@@ -43,7 +49,7 @@ export default defineConfig({
     // Public, unauthenticated surface (smoke + public exploration).
     {
       name: 'public',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], ...(USE_BYPASS ? { storageState: BYPASS_STATE } : {}) },
       testIgnore: [/.*\.setup\.ts/, /.*\.auth\.spec\.ts/],
     },
     // Logged-in surface — reuses the session cookie produced by `setup`.
@@ -56,10 +62,12 @@ export default defineConfig({
   ],
 
   // Reuse an already-running dev server locally; start one in CI / when idle.
-  webServer: {
-    command: 'npm run dev',
-    url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: IS_REMOTE
+    ? undefined
+    : {
+        command: 'npm run dev',
+        url: BASE_URL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
 });
