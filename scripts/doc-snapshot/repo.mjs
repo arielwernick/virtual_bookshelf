@@ -181,7 +181,9 @@ function readGitHub() {
   const prs = gh('pr', 'list', '-R', REPO_SLUG, '--state', 'open', '--limit', '100', '--json', 'number,title,isDraft,author,updatedAt,baseRefName,headRefName,reviewDecision');
   const since = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
   const merged = gh('pr', 'list', '-R', REPO_SLUG, '--state', 'merged', '--search', `merged:>=${since}`, '--limit', '50', '--json', 'number,title,mergedAt,closingIssuesReferences');
+  const closed = gh('issue', 'list', '-R', REPO_SLUG, '--state', 'closed', '--search', `closed:>=${new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10)}`, '--limit', '100', '--json', 'number,title,closedAt');
   return {
+    recentlyClosedIssues: closed.map((i) => ({ number: i.number, title: i.title, closedAt: i.closedAt })).sort((a, b) => a.number - b.number),
     openIssues: issues.map((i) => ({ number: i.number, title: i.title, labels: i.labels.map((l) => l.name), updatedAt: i.updatedAt })),
     openPRs: prs.map((p) => ({
       number: p.number,
