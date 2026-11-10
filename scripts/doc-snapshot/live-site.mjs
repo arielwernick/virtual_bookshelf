@@ -30,6 +30,12 @@ const CONCURRENCY = 4;
 const PROBE_ROUTES = ['/about', '/why', '/privacy', '/terms', '/guides', '/blog', '/claude', '/import'];
 const CRAWLER_FILES = ['/sitemap.xml', '/robots.txt', '/llms.txt'];
 
+/** YYYY-MM-DD in the machine's time zone (the doc's dates are local). */
+function localDate(d) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 function parseArgs(argv) {
   const out = {};
   for (let i = 0; i < argv.length; i++) {
@@ -242,7 +248,7 @@ function code(s) {
 }
 
 function cell(s) {
-  return String(s ?? '').replace(/\|/g, '\\|').replace(/([<>])/g, '\\$1').replace(/\n/g, ' ');
+  return String(s ?? '').replace(/([\\|<>])/g, '\\$1').replace(/\n/g, ' ');
 }
 
 function toMarkdown(f) {
@@ -387,7 +393,7 @@ async function main() {
   await browser.close();
 
   const facts = {
-    date: startedAt.toISOString().slice(0, 10),
+    date: localDate(startedAt),
     generatedAt: startedAt.toISOString(),
     base: BASE,
     commit: COMMIT,

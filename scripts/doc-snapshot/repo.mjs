@@ -29,6 +29,12 @@ const OUT = args.out || path.join(os.homedir(), '.cache', 'vb-doc-snapshot', 'ou
 const REPO_SLUG = 'arielwernick/virtual_bookshelf';
 const GH_URL = `https://github.com/${REPO_SLUG}`;
 
+/** YYYY-MM-DD in the machine's time zone (the doc's dates are local). */
+function localDate(d) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 function parseArgs(argv) {
   const out = {};
   for (let i = 0; i < argv.length; i++) {
@@ -220,7 +226,7 @@ function readPlanIssues(list) {
 // ---------------------------------------------------------------------------
 
 const code = (s) => '`' + s + '`';
-const cell = (s) => String(s ?? '').replace(/\|/g, '\\|').replace(/([<>])/g, '\\$1').replace(/\n/g, ' ');
+const cell = (s) => String(s ?? '').replace(/([\\|<>])/g, '\\$1').replace(/\n/g, ' ');
 const major = (v) => (String(v).match(/\d+/) || [''])[0];
 
 function stackRows(deps, dev) {
@@ -338,7 +344,7 @@ function main() {
   mcpTools = [...new Set(mcpTools)];
 
   const facts = {
-    date: new Date().toISOString().slice(0, 10),
+    date: localDate(new Date()),
     generatedAt: new Date().toISOString(),
     ref: REF,
     commit,
