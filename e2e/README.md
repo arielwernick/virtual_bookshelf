@@ -61,7 +61,11 @@ the `authenticated` Playwright project:
   `storageState`, so they never click through the login form.
 
 The test account is created in whatever database `DATABASE_URL` points at, so
-**point this at a dev/local database, not production.** Override the credentials
+**point this at a dev/local database, not production.** `.env.local` points at
+the Neon `dev` branch, and `auth.setup.ts` refuses to seed when the dev server's
+database or `PLAYWRIGHT_BASE_URL` is production (set `E2E_ALLOW_PROD=1` to
+override; see `lib/db/prodGuard.ts`). `migrate:up`/`down` and `npm run seed`
+have the same guard (`MIGRATE_ALLOW_PROD=1`, `SEED_ALLOW_PROD=1`). Override the credentials
 (e.g. to reuse a staging account) with `E2E_USERNAME`, `E2E_EMAIL`, and
 `E2E_PASSWORD`.
 

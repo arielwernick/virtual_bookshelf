@@ -33,6 +33,13 @@ import { config } from 'dotenv';
 config({ path: '.env.local' });
 
 import { sql } from '../lib/db/client';
+import { assertNotProduction } from '../lib/db/prodGuard';
+
+// Refuse to seed production unless explicitly allowed (issue #151).
+assertNotProduction(
+  { databaseUrl: process.env.DATABASE_URL },
+  { action: 'seed-demo', allowVar: 'SEED_ALLOW_PROD' }
+);
 import { hashPassword } from '../lib/utils/password';
 
 const DEMO_EMAIL = 'demo@virtualbookshelf.app';
