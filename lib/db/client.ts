@@ -3,13 +3,29 @@ import { createLogger } from '@/lib/utils/logger';
 
 const logger = createLogger('Database');
 
+/**
+ * Pick the database URL for this environment.
+ *
+ * On Vercel preview deployments, the Neon integration creates a database
+ * branch per preview and exposes it as BOOKSHELF_DATABASE_URL (the
+ * integration's variable prefix). DATABASE_URL on Preview is the production
+ * database, so previews must prefer the branch URL or they read and write
+ * production data. Production and local development use DATABASE_URL.
+ */
+export function resolveDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  if (env.VERCEL_ENV === 'preview' && env.BOOKSHELF_DATABASE_URL) {
+    return env.BOOKSHELF_DATABASE_URL;
+  }
+  return env.DATABASE_URL;
+}
+
 // Lazy initialization - only create connection when first used (runtime)
 let _sql: NeonQueryFunction<false, false> | null = null;
 
 function getSql(): NeonQueryFunction<false, false> {
   if (!_sql) {
-    const databaseUrl = process.env.DATABASE_URL;
-    
+    const databaseUrl = resolveDatabaseUrl();
+
     if (!databaseUrl) {
       throw new Error('DATABASE_URL environment variable is not set');
     }
