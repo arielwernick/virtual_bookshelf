@@ -9,9 +9,9 @@ import { test, expect } from '@playwright/test';
 test.describe('Public pages render', () => {
   test('landing page shows the hero', async ({ page }) => {
     await page.goto('/');
-    await expect(
-      page.getByRole('heading', { name: /your bookshelf, everywhere you are/i })
-    ).toBeVisible();
+    // Check for a main heading, not its exact copy, so headline changes
+    // don't break the smoke test.
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.locator('#main-content')).toBeVisible();
   });
 

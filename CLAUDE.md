@@ -5,6 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
+npm run setup        # Fresh checkout or worktree: npm ci, Playwright Chromium, link .env.local, check env
+npm run test:all     # Unit tests, lint, then public Playwright tests
 npm run dev          # Start development server
 npm run build        # Production build
 npm run lint         # ESLint
@@ -18,6 +20,16 @@ npm run test -- --run path/to/Component.test.tsx
 # Run tests matching a pattern
 npm run test:run -- --grep "ItemCard"
 ```
+
+## Agent testing
+
+Run `npm run setup` first in any new checkout or worktree. Worktrees often have stale `node_modules`, and gitignored `.env.local` isn't copied into them; setup fixes both (it links the main checkout's `.env.local`). The first run may download Playwright's Chromium.
+
+- **Unit tests** (`npm run test:run`) need no database or env vars; `test/setup.ts` mocks them.
+- **Public e2e** (`npm run e2e:public`) starts `npm run dev` (or reuses one on port 3000) and checks the signed-out pages. Point it at a deployment with `PLAYWRIGHT_BASE_URL`.
+- **Signed-in e2e** (`npm run e2e`) creates a test user and shelf in whatever database the dev server uses.
+- **Database:** `.env.local` points `DATABASE_URL` at a schema-only Neon `dev` branch, never production. Migrations, seeds and e2e seeding refuse the production database unless `MIGRATE_ALLOW_PROD=1`, `SEED_ALLOW_PROD=1` or `E2E_ALLOW_PROD=1` is set (`lib/db/prodGuard.ts`). Don't set these unless the user asks for a production change.
+- **Previews:** Vercel previews use their own Neon branch (`BOOKSHELF_DATABASE_URL`, see `lib/db/client.ts`). Vercel's Development environment points at `dev`, so `vercel env pull` is safe.
 
 ## Architecture Overview
 
