@@ -269,7 +269,7 @@ describe('DELETE /api/shelf/[shelfId]', () => {
     it('allows owner to delete their own shelf', async () => {
       vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
-      vi.mocked(deleteShelf).mockResolvedValue();
+      vi.mocked(deleteShelf).mockResolvedValue(true);
 
       const req = createRequest('DELETE');
       const res = await DELETE(req, createParams());

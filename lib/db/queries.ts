@@ -1,6 +1,7 @@
 import { sql, sqlQuery } from './client';
-import { User, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem } from '../types/shelf';
+import { User, SignupSource, SignupAttribution, AdminOverview, AdminWeeklySignups, AdminAttributionRow, AdminRecentUser, AdminWeeklyViews, AdminTopShelf, AdminEmbedHost, ViewSurface, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
+import { extractVideoId } from '../api/youtube';
 
 // ============================================================================
 // DYNAMIC UPDATE HELPER
@@ -59,7 +60,7 @@ function execParameterized(query: string, values: unknown[]): Promise<unknown[]>
 // ============================================================================
 
 /**
- * Create a new user (password-based auth)
+ * Create a new user (password or Google auth), recording how they signed up
  */
 export async function createUser(
   data: {
@@ -68,11 +69,24 @@ export async function createUser(
     passwordHash?: string;
     googleId?: string;
     name?: string;
+    signupSource?: SignupSource;
+    attribution?: SignupAttribution | null;
   }
 ): Promise<User> {
+  const attribution = data.attribution;
   const result = await sql`
-    INSERT INTO users (username, email, password_hash, google_id)
-    VALUES (${data.username || null}, ${data.email}, ${data.passwordHash || null}, ${data.googleId || null})
+    INSERT INTO users (
+      username, email, password_hash, google_id,
+      signup_source, first_referrer, utm_source, utm_medium, utm_campaign
+    )
+    VALUES (
+      ${data.username || null}, ${data.email}, ${data.passwordHash || null}, ${data.googleId || null},
+      ${data.signupSource || null},
+      ${attribution?.firstReferrer ?? null},
+      ${attribution?.utmSource ?? null},
+      ${attribution?.utmMedium ?? null},
+      ${attribution?.utmCampaign ?? null}
+    )
     RETURNING *
   `;
 
@@ -184,6 +198,19 @@ export async function updateUserTitle(userId: string, title: string | null): Pro
   `;
 
   return result[0] as User;
+}
+
+/**
+ * Record that a user was active. Writes at most once per hour per user so it
+ * is cheap to call on every authenticated dashboard load.
+ */
+export async function touchUserLastSeen(userId: string): Promise<void> {
+  await sql`
+    UPDATE users
+    SET last_seen_at = NOW()
+    WHERE id = ${userId}
+      AND (last_seen_at IS NULL OR last_seen_at < NOW() - INTERVAL '1 hour')
+  `;
 }
 
 // ============================================================================
@@ -433,14 +460,14 @@ export async function updateShelf(
 /**
  * Get all public shelves (for sitemap generation)
  */
-export async function getPublicShelves(): Promise<{ share_token: string; updated_at: Date }[]> {
+export async function getPublicShelves(): Promise<{ share_token: string; name: string; updated_at: Date }[]> {
   const result = await sql`
-    SELECT share_token, updated_at FROM shelves
+    SELECT share_token, name, updated_at FROM shelves
     WHERE is_public = true
     ORDER BY updated_at DESC
   `;
 
-  return result as { share_token: string; updated_at: Date }[];
+  return result as { share_token: string; name: string; updated_at: Date }[];
 }
 
 /**
@@ -523,6 +550,70 @@ export async function getItemById(itemId: string): Promise<Item | null> {
   return result.length > 0 ? (result[0] as Item) : null;
 }
 
+/**
+ * A public video item together with the public shelf it belongs to.
+ * Backs the /v/[videoId] watch page.
+ */
+export interface PublicVideo {
+  item: Item;
+  shelfName: string;
+  shelfShareToken: string;
+}
+
+/**
+ * Find a public video item by its YouTube video ID.
+ *
+ * `external_url` stores the full watch URL in varying formats (watch?v=,
+ * youtu.be/, /embed/, /shorts/), so we narrow with a substring match in SQL
+ * and confirm the exact ID in JS via extractVideoId to avoid false positives
+ * (e.g. the ID appearing inside an unrelated query param). If the same video
+ * lives on multiple public shelves, the earliest-added one wins so the
+ * canonical watch page is stable.
+ */
+export async function getPublicVideoByVideoId(videoId: string): Promise<PublicVideo | null> {
+  const rows = await sql`
+    SELECT
+      i.*,
+      s.name AS shelf_name,
+      s.share_token AS shelf_share_token
+    FROM items i
+    JOIN shelves s ON s.id = i.shelf_id
+    WHERE i.type = 'video'
+      AND s.is_public = true
+      AND i.external_url LIKE ${'%' + videoId + '%'}
+    ORDER BY i.created_at ASC
+  `;
+
+  for (const row of rows as (Item & { shelf_name: string; shelf_share_token: string })[]) {
+    if (row.external_url && extractVideoId(row.external_url) === videoId) {
+      const { shelf_name, shelf_share_token, ...item } = row;
+      return {
+        item: item as Item,
+        shelfName: shelf_name,
+        shelfShareToken: shelf_share_token,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * All public video items, for building /v/[videoId] sitemap entries.
+ * Returns the raw external_url + updated_at; callers derive/dedupe video IDs.
+ */
+export async function getPublicVideoItems(): Promise<{ external_url: string | null; updated_at: Date }[]> {
+  const result = await sql`
+    SELECT i.external_url, i.updated_at
+    FROM items i
+    JOIN shelves s ON s.id = i.shelf_id
+    WHERE i.type = 'video' AND s.is_public = true
+    ORDER BY i.updated_at DESC
+  `;
+
+  return result as { external_url: string | null; updated_at: Date }[];
+}
+
 const ITEM_UPDATABLE_FIELDS = [
   'title', 'creator', 'image_url', 'external_url', 'notes', 'rating', 'order_index',
 ] as const;
@@ -598,4 +689,322 @@ export async function getItemCountForShelf(shelfId: string): Promise<number> {
   `;
 
   return parseInt(result[0].count as string, 10);
+}
+
+// ============================================================================
+// OAUTH QUERIES (MCP connector authorization server)
+// ============================================================================
+
+/**
+ * Register a new OAuth client (dynamic client registration, RFC 7591)
+ */
+export async function createOAuthClient(
+  clientId: string,
+  clientName: string,
+  redirectUris: string[]
+): Promise<OAuthClient> {
+  const result = await sql`
+    INSERT INTO oauth_clients (client_id, client_name, redirect_uris)
+    VALUES (${clientId}, ${clientName}, ${redirectUris})
+    RETURNING *
+  `;
+
+  return result[0] as OAuthClient;
+}
+
+/**
+ * Get an OAuth client by its public client_id
+ */
+export async function getOAuthClientByClientId(clientId: string): Promise<OAuthClient | null> {
+  const result = await sql`
+    SELECT * FROM oauth_clients WHERE client_id = ${clientId}
+  `;
+
+  return (result[0] as OAuthClient) || null;
+}
+
+/**
+ * Store a hashed authorization code issued by the consent page
+ */
+export async function createOAuthAuthorizationCode(data: {
+  codeHash: string;
+  clientId: string;
+  userId: string;
+  redirectUri: string;
+  codeChallenge: string;
+  scope: string;
+  expiresAt: Date;
+}): Promise<OAuthAuthorizationCode> {
+  const result = await sql`
+    INSERT INTO oauth_authorization_codes
+      (code_hash, client_id, user_id, redirect_uri, code_challenge, scope, expires_at)
+    VALUES
+      (${data.codeHash}, ${data.clientId}, ${data.userId}, ${data.redirectUri},
+       ${data.codeChallenge}, ${data.scope}, ${data.expiresAt.toISOString()})
+    RETURNING *
+  `;
+
+  return result[0] as OAuthAuthorizationCode;
+}
+
+/**
+ * Atomically consume (delete and return) an authorization code by hash.
+ * Single-use by construction: a second exchange finds no row.
+ * Returns null if the code does not exist; caller must still check expiry.
+ */
+export async function consumeOAuthAuthorizationCode(
+  codeHash: string
+): Promise<OAuthAuthorizationCode | null> {
+  const result = await sql`
+    DELETE FROM oauth_authorization_codes
+    WHERE code_hash = ${codeHash}
+    RETURNING *
+  `;
+
+  return (result[0] as OAuthAuthorizationCode) || null;
+}
+
+/**
+ * Store a hashed opaque access token
+ */
+export async function createOAuthAccessToken(data: {
+  tokenHash: string;
+  clientId: string;
+  userId: string;
+  scope: string;
+  expiresAt: Date;
+}): Promise<OAuthAccessToken> {
+  const result = await sql`
+    INSERT INTO oauth_access_tokens (token_hash, client_id, user_id, scope, expires_at)
+    VALUES (${data.tokenHash}, ${data.clientId}, ${data.userId}, ${data.scope},
+            ${data.expiresAt.toISOString()})
+    RETURNING *
+  `;
+
+  return result[0] as OAuthAccessToken;
+}
+
+/**
+ * Look up a live access token by hash, touching last_used_at.
+ * Returns null for unknown or expired tokens.
+ */
+export async function getLiveOAuthAccessToken(
+  tokenHash: string
+): Promise<OAuthAccessToken | null> {
+  const result = await sql`
+    UPDATE oauth_access_tokens
+    SET last_used_at = NOW()
+    WHERE token_hash = ${tokenHash} AND expires_at > NOW()
+    RETURNING *
+  `;
+
+  return (result[0] as OAuthAccessToken) || null;
+}
+
+/**
+ * Revoke all connector tokens for a user (e.g. "disconnect Claude")
+ */
+export async function deleteOAuthAccessTokensForUser(userId: string): Promise<number> {
+  const result = await sql`
+    DELETE FROM oauth_access_tokens
+    WHERE user_id = ${userId}
+    RETURNING id
+  `;
+
+  return result.length;
+}
+
+// ============================================================================
+// ADMIN QUERIES
+// ============================================================================
+
+/** Minimum items on a single shelf for a user to count as "activated". */
+export const ACTIVATION_ITEM_THRESHOLD = 3;
+
+/**
+ * Headline user counts for the admin dashboard
+ */
+export async function getAdminOverview(): Promise<AdminOverview> {
+  const result = await sql`
+    SELECT
+      COUNT(*)::int AS total_users,
+      COUNT(*) FILTER (WHERE u.created_at > NOW() - INTERVAL '7 days')::int AS new_users_7d,
+      COUNT(*) FILTER (WHERE u.created_at > NOW() - INTERVAL '30 days')::int AS new_users_30d,
+      COUNT(*) FILTER (WHERE u.last_seen_at > NOW() - INTERVAL '7 days')::int AS active_users_7d,
+      COUNT(*) FILTER (WHERE u.last_seen_at > NOW() - INTERVAL '30 days')::int AS active_users_30d,
+      COUNT(*) FILTER (WHERE EXISTS (
+        SELECT 1 FROM items i
+        WHERE i.user_id = u.id
+        GROUP BY i.shelf_id
+        HAVING COUNT(*) >= ${ACTIVATION_ITEM_THRESHOLD}
+      ))::int AS activated_users
+    FROM users u
+  `;
+
+  return result[0] as AdminOverview;
+}
+
+/**
+ * Signups per week, split by auth method. Users created before signup_source
+ * was tracked are classified by which credential they have.
+ */
+export async function getAdminWeeklySignups(weeks: number = 12): Promise<AdminWeeklySignups[]> {
+  const result = await sql`
+    WITH signups AS (
+      SELECT
+        date_trunc('week', created_at) AS week,
+        COALESCE(signup_source, CASE WHEN password_hash IS NULL THEN 'google' ELSE 'email' END) AS method
+      FROM users
+      WHERE created_at > date_trunc('week', NOW()) - make_interval(weeks => ${weeks - 1})
+    )
+    SELECT
+      week,
+      COUNT(*) FILTER (WHERE method = 'email')::int AS email,
+      COUNT(*) FILTER (WHERE method = 'google')::int AS google
+    FROM signups
+    GROUP BY week
+    ORDER BY week ASC
+  `;
+
+  return result as AdminWeeklySignups[];
+}
+
+/**
+ * Signup counts grouped by raw referrer / utm_source over the last `days`.
+ * Classification into channels happens in application code.
+ */
+export async function getAdminAttribution(days: number = 90): Promise<AdminAttributionRow[]> {
+  const result = await sql`
+    SELECT
+      signup_source IS NOT NULL AS tracked,
+      first_referrer,
+      utm_source,
+      COUNT(*)::int AS count
+    FROM users
+    WHERE created_at > NOW() - make_interval(days => ${days})
+    GROUP BY 1, 2, 3
+    ORDER BY count DESC
+  `;
+
+  return result as AdminAttributionRow[];
+}
+
+/**
+ * Most recent signups with usage stats
+ */
+export async function getAdminRecentUsers(limit: number = 50): Promise<AdminRecentUser[]> {
+  const result = await sql`
+    SELECT
+      u.id,
+      u.username,
+      u.email,
+      COALESCE(u.signup_source, CASE WHEN u.password_hash IS NULL THEN 'google' ELSE 'email' END) AS signup_method,
+      u.signup_source IS NOT NULL AS tracked,
+      u.first_referrer,
+      u.utm_source,
+      u.created_at,
+      u.last_seen_at,
+      (SELECT COUNT(*)::int FROM shelves s WHERE s.user_id = u.id) AS shelf_count,
+      (SELECT COUNT(*)::int FROM items i WHERE i.user_id = u.id) AS item_count,
+      EXISTS (
+        SELECT 1 FROM items i
+        WHERE i.user_id = u.id
+        GROUP BY i.shelf_id
+        HAVING COUNT(*) >= ${ACTIVATION_ITEM_THRESHOLD}
+      ) AS activated,
+      (
+        SELECT s.share_token FROM shelves s
+        WHERE s.user_id = u.id AND s.is_public = true
+        ORDER BY s.updated_at DESC
+        LIMIT 1
+      ) AS public_share_token
+    FROM users u
+    ORDER BY u.created_at DESC
+    LIMIT ${limit}
+  `;
+
+  return result as AdminRecentUser[];
+}
+
+/**
+ * Add one view to today's counter for a public shelf. Private or unknown
+ * tokens match no shelf, so nothing is written. embed_host must be '' for
+ * surface = 'shelf'.
+ */
+export async function recordShelfView(
+  shareToken: string,
+  surface: ViewSurface,
+  embedHost: string = ''
+): Promise<void> {
+  await sql`
+    INSERT INTO shelf_view_daily (shelf_id, day, surface, embed_host, views)
+    SELECT id, CURRENT_DATE, ${surface}, ${embedHost}, 1
+    FROM shelves
+    WHERE share_token = ${shareToken} AND is_public = true
+    ON CONFLICT (shelf_id, day, surface, embed_host)
+    DO UPDATE SET views = shelf_view_daily.views + 1
+  `;
+}
+
+/**
+ * Views per week over the last `weeks` weeks, split into shelf page and embed views
+ */
+export async function getAdminViewStats(weeks: number = 12): Promise<AdminWeeklyViews[]> {
+  const result = await sql`
+    SELECT
+      date_trunc('week', day) AS week,
+      COALESCE(SUM(views) FILTER (WHERE surface = 'shelf'), 0)::int AS shelf,
+      COALESCE(SUM(views) FILTER (WHERE surface = 'embed'), 0)::int AS embed
+    FROM shelf_view_daily
+    WHERE day >= date_trunc('week', CURRENT_DATE) - make_interval(weeks => ${weeks - 1})
+    GROUP BY 1
+    ORDER BY 1 ASC
+  `;
+
+  return result as AdminWeeklyViews[];
+}
+
+/**
+ * Most-viewed shelves over the last `days` days, with owner and share link
+ */
+export async function getAdminTopShelves(days: number = 30, limit: number = 10): Promise<AdminTopShelf[]> {
+  const result = await sql`
+    SELECT
+      s.id AS shelf_id,
+      s.name,
+      s.share_token,
+      s.is_public,
+      u.username AS owner_username,
+      COALESCE(SUM(v.views) FILTER (WHERE v.surface = 'shelf'), 0)::int AS shelf_views,
+      COALESCE(SUM(v.views) FILTER (WHERE v.surface = 'embed'), 0)::int AS embed_views,
+      SUM(v.views)::int AS views
+    FROM shelf_view_daily v
+    JOIN shelves s ON s.id = v.shelf_id
+    JOIN users u ON u.id = s.user_id
+    WHERE v.day > CURRENT_DATE - ${days}::int
+    GROUP BY s.id, u.username
+    ORDER BY views DESC
+    LIMIT ${limit}
+  `;
+
+  return result as AdminTopShelf[];
+}
+
+/**
+ * Sites embedding shelves over the last `days` days, by embed views
+ */
+export async function getAdminEmbedHosts(days: number = 30, limit: number = 10): Promise<AdminEmbedHost[]> {
+  const result = await sql`
+    SELECT
+      embed_host,
+      COUNT(DISTINCT shelf_id)::int AS shelf_count,
+      SUM(views)::int AS views
+    FROM shelf_view_daily
+    WHERE surface = 'embed' AND embed_host <> '' AND day > CURRENT_DATE - ${days}::int
+    GROUP BY embed_host
+    ORDER BY views DESC
+    LIMIT ${limit}
+  `;
+
+  return result as AdminEmbedHost[];
 }

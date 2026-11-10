@@ -11,6 +11,26 @@ const MAX_ITEMS_PER_SHELF = 12;
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
 
+// Self-referential canonical for the home page. Without this, the page would
+// emit no canonical (the global one was removed to stop subpages inheriting it),
+// so be explicit to consolidate any UTM/social variants back to the root.
+export const metadata = {
+  alternates: { canonical: '/' },
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: 'What is Virtual Bookshelf?', acceptedAnswer: { '@type': 'Answer', text: 'Virtual Bookshelf is a tool to curate and share shelves of books, podcasts, music, videos, links, and live stock tickers. Create a shelf, get a shareable link, and paste it anywhere — your bio, newsletter, LinkedIn, or portfolio.' } },
+    { '@type': 'Question', name: 'What can I put on a shelf?', acceptedAnswer: { '@type': 'Answer', text: 'Books, podcasts, podcast episodes, music albums, YouTube videos, any link, and live stock tickers.' } },
+    { '@type': 'Question', name: 'How do I share my shelf?', acceptedAnswer: { '@type': 'Answer', text: 'Every shelf gets a public link. Paste it in your bio, newsletter, LinkedIn, or anywhere you want people to find it.' } },
+    { '@type': 'Question', name: 'Is Virtual Bookshelf free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes, Virtual Bookshelf is free to use.' } },
+    { '@type': 'Question', name: 'What happened to Bento.me?', acceptedAnswer: { '@type': 'Answer', text: 'Bento.me shut down in February 2026 after being acquired by Linktree. Virtual Bookshelf is a great alternative for creators who want to showcase what they are reading, watching, and listening to with rich cover art and metadata.' } },
+    { '@type': 'Question', name: 'How is Virtual Bookshelf different from Linktree?', acceptedAnswer: { '@type': 'Answer', text: 'Linktree shows a list of links. Virtual Bookshelf shows rich content — cover art, metadata, and live prices — for everything on your shelf.' } },
+  ],
+};
+
 const organizationSchema = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -28,6 +48,8 @@ const organizationSchema = {
     },
   ],
 };
+
+const EMBED_DESTINATIONS = ['Notion', 'Squarespace', 'Webflow', 'WordPress'];
 
 /**
  * Fetch demo shelves for the home page
@@ -69,6 +91,38 @@ async function getDemoShelvesData(): Promise<ShelfPreview[] | null> {
   }
 }
 
+/**
+ * Static, non-interactive preview of an embedded shelf — a teaser, not a live
+ * iframe. The whole card links to /embed-anywhere where the real interactive
+ * demo (newsletter/email/website, live and clickable) lives.
+ */
+function EmbedPreviewCard() {
+  return (
+    <Link
+      href="/embed-anywhere"
+      className="group block rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 shadow-sm overflow-hidden transition hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md"
+    >
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+        <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+        <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+        <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+        <span className="ml-2 text-xs text-gray-400 dark:text-gray-500 truncate">yoursite.com</span>
+      </div>
+      <div className="relative px-5 py-6 sm:px-6 grid grid-cols-3 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="rounded-lg bg-gray-100 dark:bg-gray-800 aspect-square" />
+        ))}
+        <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-gray-900/70 backdrop-blur-[1px]">
+          <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium shadow-md transition group-hover:scale-105">
+            See it embedded, live
+            <span aria-hidden="true">→</span>
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export default async function Home() {
   const demoShelves = await getDemoShelvesData();
   const hasDemo = Boolean(demoShelves && demoShelves.length > 0);
@@ -78,6 +132,10 @@ export default async function Home() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <main id="main-content" className="flex-1">
         {/* Hero */}
@@ -151,6 +209,76 @@ export default async function Home() {
                 </li>
               ))}
             </ol>
+          </section>
+
+          {/* Embed anywhere */}
+          <section aria-labelledby="embed-heading" className="mb-20 sm:mb-28">
+            <div className="text-center mb-10">
+              <h2 id="embed-heading" className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                Embed it anywhere
+              </h2>
+              <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Every shelf gets a public link. Drop it into Notion or a site builder
+                and it embeds live — cover art, metadata, and prices included. Change
+                the shelf, and every embed updates with it.
+              </p>
+            </div>
+
+            <div className="max-w-xl mx-auto">
+              {/* A teaser preview — clicks through to the live, interactive demo */}
+              <EmbedPreviewCard />
+
+              {/* Where it works */}
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                {EMBED_DESTINATIONS.map((dest) => (
+                  <span
+                    key={dest}
+                    className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
+                  >
+                    {dest}
+                  </span>
+                ))}
+              </div>
+
+              {/* The custom-site path, demoted */}
+              <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                Building a custom site? Grab a ready-made{' '}
+                <code className="font-mono text-[0.8125rem] text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5">
+                  &lt;iframe&gt;
+                </code>{' '}
+                from any shelf&apos;s Share menu.
+              </p>
+
+              {/* Somewhere to go */}
+              <div className="mt-8 text-center">
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center gap-1.5 font-medium text-gray-900 dark:text-gray-100 hover:underline"
+                >
+                  Create a shelf and grab your link
+                  <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          {/* FAQ */}
+          <section aria-labelledby="faq-heading" className="max-w-2xl mx-auto mb-20 sm:mb-28">
+            <h2 id="faq-heading" className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight text-center mb-10">
+              Frequently asked questions
+            </h2>
+            <dl className="space-y-8">
+              {faqSchema.mainEntity.map((item) => (
+                <div key={item.name}>
+                  <dt className="font-semibold text-gray-900 dark:text-gray-100 text-base sm:text-lg">
+                    {item.name}
+                  </dt>
+                  <dd className="mt-2 text-gray-600 dark:text-gray-400 leading-relaxed">
+                    {item.acceptedAnswer.text}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </section>
 
           {/* Final CTA */}

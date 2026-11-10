@@ -1,9 +1,36 @@
+import { cache } from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { getShelfByShareToken, getItemsByShelfId, getUserById } from '@/lib/db/queries';
+import { permanentRedirect } from 'next/navigation';
+import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
+import { buildShareSlug, buildSharePath, extractShareToken } from '@/lib/utils/slug';
 import { ShelfGridStatic } from '@/components/shelf/ShelfGridStatic';
 import { SharedShelfInteractive } from './SharedShelfInteractive';
 import { generateShelfSchemaJson } from '@/lib/utils/schemaMarkup';
+import { ViewBeacon } from '@/components/ViewBeacon';
+
+// Serve cached HTML and re-render in the background at most every 5 minutes.
+// Mutations trigger immediate refreshes via revalidateSharedShelf().
+export const revalidate = 300;
+
+// Without generateStaticParams a dynamic route is always rendered on demand
+// and `revalidate` is ignored. Returning [] pre-builds nothing but opts every
+// visited token into on-demand static generation + caching (ISR).
+export async function generateStaticParams(): Promise<{ shareToken: string }[]> {
+  return [];
+}
+
+// Dedupe queries shared by generateMetadata and the page render.
+// The route param may be a bare token (legacy links) or "<name-slug>-<token>";
+// the token is always the segment after the last hyphen.
+const resolveShelf = cache(async (param: string) => {
+  const token = extractShareToken(param);
+  const shelf = await getShelfByShareToken(token);
+  if (shelf || token === param) return shelf;
+  // Defensive fallback for any legacy token that itself contains a hyphen
+  return getShelfByShareToken(param);
+});
+const getCachedItems = cache(getItemsByShelfId);
 
 interface PageProps {
   params: Promise<{ shareToken: string }>;
@@ -35,16 +62,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { shareToken } = await params;
   
   try {
-    const shelf = await getShelfByShareToken(shareToken);
-    
+    const shelf = await resolveShelf(shareToken);
+
     if (!shelf || !shelf.is_public) {
       return {
-        title: 'Shelf Not Found | Virtual Bookshelf',
+        title: 'Shelf Not Found',
         description: 'This shelf could not be found.',
+        robots: { index: false },
       };
     }
 
-    const items = await getItemsByShelfId(shelf.id);
+    const items = await getCachedItems(shelf.id);
     const itemCount = items.length;
     const itemText = itemCount === 1 ? '1 item' : `${itemCount} items`;
     
@@ -55,16 +83,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     // Get the base URL for OG image
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
-    const ogImageUrl = `${baseUrl}/api/og/${shareToken}`;
+    const ogImageUrl = `${baseUrl}/api/og/${shelf.share_token}`;
+
+    // Canonical URL includes the shelf-name slug for SEO
+    const canonicalPath = buildSharePath(shelf.name, shelf.share_token);
 
     return {
-      title: `${shelf.name} | Virtual Bookshelf`,
+      title: shelf.name,
       description,
+      alternates: { canonical: canonicalPath },
       openGraph: {
         title: shelf.name,
         description,
         type: 'website',
-        url: `${baseUrl}/s/${shareToken}`,
+        url: `${baseUrl}${canonicalPath}`,
         images: [
           {
             url: ogImageUrl,
@@ -85,7 +117,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch (error) {
     console.error('Error generating metadata:', error);
     return {
-      title: 'Virtual Bookshelf',
+      title: { absolute: 'Virtual Bookshelf' },
       description: 'Curate and share your favorite books, podcasts, and music.',
     };
   }
@@ -97,17 +129,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  */
 async function getShelfData(shareToken: string) {
   try {
-    const shelf = await getShelfByShareToken(shareToken);
+    const shelf = await resolveShelf(shareToken);
 
     if (!shelf || !shelf.is_public) {
       return null;
     }
 
-    const items = await getItemsByShelfId(shelf.id);
-    
-    // Fetch user data to get the creator's username for schema markup
-    const user = await getUserById(shelf.user_id);
-    const username = user?.username || null;
+    // Items are deduped with generateMetadata
+    const items = await getCachedItems(shelf.id);
 
     return {
       shelf,
@@ -115,7 +144,6 @@ async function getShelfData(shareToken: string) {
       name: shelf.name,
       description: shelf.description,
       items,
-      username,
       created_at: shelf.created_at.toISOString(),
     };
   } catch (error) {
@@ -138,8 +166,21 @@ export default async function SharedShelfPage({ params }: PageProps) {
     return <ShelfNotFound />;
   }
 
+  // Permanently redirect bare-token and stale-slug URLs to the canonical
+  // slugged URL so search engines index a single, descriptive address.
+  const canonicalSlug = buildShareSlug(shelfData.shelf.name, shelfData.shelf.share_token);
+  let requestedSlug = shareToken;
+  try {
+    requestedSlug = decodeURIComponent(shareToken);
+  } catch {
+    // Malformed percent-encoding — compare the raw segment
+  }
+  if (requestedSlug !== canonicalSlug && !shelfData.shelf.share_token.includes('-')) {
+    permanentRedirect(`/s/${canonicalSlug}`);
+  }
+
   // Generate JSON-LD schema markup for AI readability
-  const schemaJson = generateShelfSchemaJson(shelfData.shelf, shelfData.items, shelfData.username);
+  const schemaJson = generateShelfSchemaJson(shelfData.shelf, shelfData.items);
 
   return (
     <>
@@ -148,6 +189,8 @@ export default async function SharedShelfPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: schemaJson }}
         suppressHydrationWarning
       />
+      {/* Counts the view from the browser so the cached page stays static */}
+      <ViewBeacon shareToken={shelfData.shelf.share_token} surface="shelf" />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         {/* Header - Server Rendered */}
         <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
@@ -188,7 +231,7 @@ export default async function SharedShelfPage({ params }: PageProps) {
                 Want to curate your own collection?
               </p>
               <Link
-                href="/login"
+                href="/signup"
                 className="inline-block px-6 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium"
               >
                 Create My Own Shelf

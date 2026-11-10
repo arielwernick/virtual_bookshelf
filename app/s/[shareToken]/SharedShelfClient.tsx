@@ -67,7 +67,7 @@ export function SharedShelfClient({ shelfData }: SharedShelfClientProps) {
               Want to curate your own collection?
             </p>
             <Link
-              href="/login"
+              href="/signup"
               className="inline-block px-6 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium"
             >
               Create My Own Shelf

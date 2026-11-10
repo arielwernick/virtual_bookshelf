@@ -8,6 +8,7 @@ import {
 } from '@/lib/db/queries';
 import { setSessionCookie } from '@/lib/utils/session';
 import { createLogger } from '@/lib/utils/logger';
+import { ATTRIBUTION_COOKIE, parseAttributionCookie } from '@/lib/utils/attribution';
 
 const logger = createLogger('OAuthCallback');
 
@@ -127,6 +128,8 @@ export async function GET(request: Request) {
         username,
         googleId,
         name,
+        signupSource: 'google',
+        attribution: parseAttributionCookie(cookieStore.get(ATTRIBUTION_COOKIE)?.value),
       });
     } else if (!user.google_id) {
       // Link Google to existing account

@@ -6,7 +6,6 @@ import { setupFetchMock, mockFetchSuccess, mockFetchError } from '@/test/utils/a
 
 describe('AddItemForm', () => {
   const mockOnItemAdded = vi.fn();
-  const mockOnClose = vi.fn();
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -18,9 +17,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       expect(screen.getByRole('button', { name: 'Book' })).toBeInTheDocument();
@@ -32,9 +29,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       expect(screen.getByPlaceholderText(/search for books/i)).toBeInTheDocument();
@@ -44,9 +39,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       expect(screen.getByText(/or add manually/i)).toBeInTheDocument();
@@ -58,9 +51,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       const bookButton = screen.getByRole('button', { name: 'Book' });
@@ -72,9 +63,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Podcast' }));
@@ -88,9 +77,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Music' }));
@@ -104,9 +91,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       expect(screen.getByPlaceholderText(/search for books/i)).toBeInTheDocument();
@@ -125,9 +110,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByText(/or add manually/i));
@@ -140,9 +123,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByText(/or add manually/i));
@@ -155,9 +136,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Podcast' }));
@@ -171,9 +150,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Music' }));
@@ -187,9 +164,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByText(/or add manually/i));
@@ -202,9 +177,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByText(/or add manually/i));
@@ -223,9 +196,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByText(/or add manually/i));
@@ -256,9 +227,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByText(/or add manually/i));
@@ -280,9 +249,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByText(/or add manually/i));
@@ -305,9 +272,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.type(screen.getByPlaceholderText(/search for books/i), 'gatsby');
@@ -327,9 +292,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       const searchInput = screen.getByPlaceholderText(/search for books/i);
@@ -346,9 +309,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Search' }));
@@ -363,9 +324,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Music' }));
@@ -386,9 +345,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Video' }));
@@ -402,9 +359,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Video' }));
@@ -417,9 +372,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Video' }));
@@ -432,9 +385,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Video' }));
@@ -453,9 +404,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Video' }));
@@ -487,9 +436,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Video' }));
@@ -509,9 +456,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Video' }));
@@ -529,9 +474,7 @@ describe('AddItemForm', () => {
       render(
         <AddItemForm
           shelfId="shelf-1"
-          onItemAdded={mockOnItemAdded}
-          onClose={mockOnClose}
-        />
+          onItemAdded={mockOnItemAdded}        />
       );
 
       await user.click(screen.getByRole('button', { name: 'Video' }));

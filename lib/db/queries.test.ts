@@ -22,6 +22,16 @@ import {
   updateUserGoogleId,
   updateUserDescription,
   updateUserTitle,
+  touchUserLastSeen,
+  // Admin queries
+  getAdminOverview,
+  getAdminWeeklySignups,
+  getAdminAttribution,
+  getAdminRecentUsers,
+  recordShelfView,
+  getAdminViewStats,
+  getAdminTopShelves,
+  getAdminEmbedHosts,
   // Shelf queries
   createShelf,
   getShelfById,
@@ -87,6 +97,58 @@ describe('User Queries', () => {
       });
 
       expect(result).toEqual(mockUser);
+    });
+  });
+
+  describe('createUser attribution', () => {
+    it('passes signup source and attribution as query parameters', async () => {
+      vi.mocked(sql).mockResolvedValueOnce([{ id: 'user-789' }]);
+
+      await createUser({
+        email: 'new@example.com',
+        googleId: 'google-id-789',
+        signupSource: 'google',
+        attribution: {
+          firstReferrer: 'https://www.google.com',
+          utmSource: 'newsletter',
+          utmMedium: null,
+          utmCampaign: 'launch',
+        },
+      });
+
+      const values = vi.mocked(sql).mock.calls[0].slice(1);
+      expect(values).toEqual([
+        null,
+        'new@example.com',
+        null,
+        'google-id-789',
+        'google',
+        'https://www.google.com',
+        'newsletter',
+        null,
+        'launch',
+      ]);
+    });
+
+    it('stores nulls when no attribution is available', async () => {
+      vi.mocked(sql).mockResolvedValueOnce([{ id: 'user-790' }]);
+
+      await createUser({ email: 'a@example.com', passwordHash: 'hash', attribution: null });
+
+      const values = vi.mocked(sql).mock.calls[0].slice(1);
+      expect(values.slice(4)).toEqual([null, null, null, null, null]);
+    });
+  });
+
+  describe('touchUserLastSeen', () => {
+    it('updates last_seen_at for the user with a throttle condition', async () => {
+      vi.mocked(sql).mockResolvedValueOnce([]);
+
+      await touchUserLastSeen('user-1');
+
+      const [strings, ...values] = vi.mocked(sql).mock.calls[0];
+      expect(strings.join('?')).toContain('last_seen_at < NOW()');
+      expect(values).toEqual(['user-1']);
     });
   });
 
@@ -826,5 +888,99 @@ describe('Item Queries', () => {
 
       expect(result).toBe(0);
     });
+  });
+});
+
+// ============================================================================
+// ADMIN QUERY TESTS
+// ============================================================================
+
+describe('Admin Queries', () => {
+  beforeEach(() => {
+    vi.mocked(sql).mockReset();
+  });
+
+  it('getAdminOverview returns the single stats row', async () => {
+    const stats = {
+      total_users: 10,
+      new_users_7d: 2,
+      new_users_30d: 5,
+      active_users_7d: 3,
+      active_users_30d: 6,
+      activated_users: 4,
+    };
+    vi.mocked(sql).mockResolvedValueOnce([stats]);
+
+    expect(await getAdminOverview()).toEqual(stats);
+  });
+
+  it('getAdminWeeklySignups passes the week window', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([]);
+
+    await getAdminWeeklySignups(12);
+
+    expect(vi.mocked(sql).mock.calls[0].slice(1)).toEqual([11]);
+  });
+
+  it('getAdminAttribution passes the day window and returns rows', async () => {
+    const rows = [{ tracked: true, first_referrer: 'https://www.google.com', utm_source: null, count: 3 }];
+    vi.mocked(sql).mockResolvedValueOnce(rows);
+
+    expect(await getAdminAttribution(90)).toEqual(rows);
+    expect(vi.mocked(sql).mock.calls[0].slice(1)).toEqual([90]);
+  });
+
+  it('getAdminRecentUsers passes the limit', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([]);
+
+    expect(await getAdminRecentUsers(25)).toEqual([]);
+    expect(vi.mocked(sql).mock.calls[0]).toContain(25);
+  });
+
+  it('recordShelfView upserts a daily counter for public shelves only', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([]);
+
+    await recordShelfView('tok12345', 'embed', 'blog.example.com');
+
+    const [strings, ...values] = vi.mocked(sql).mock.calls[0];
+    const query = (strings as unknown as string[]).join('?');
+    expect(query).toContain('INSERT INTO shelf_view_daily');
+    expect(query).toContain('is_public = true');
+    expect(query).toContain('ON CONFLICT (shelf_id, day, surface, embed_host)');
+    expect(query).toContain('views = shelf_view_daily.views + 1');
+    expect(values).toEqual(['embed', 'blog.example.com', 'tok12345']);
+  });
+
+  it('recordShelfView stores an empty embed host for shelf page views', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([]);
+
+    await recordShelfView('tok12345', 'shelf');
+
+    expect(vi.mocked(sql).mock.calls[0].slice(1)).toEqual(['shelf', '', 'tok12345']);
+  });
+
+  it('getAdminViewStats passes the week window and returns rows', async () => {
+    const rows = [{ week: new Date('2026-10-26'), shelf: 4, embed: 2 }];
+    vi.mocked(sql).mockResolvedValueOnce(rows);
+
+    expect(await getAdminViewStats(12)).toEqual(rows);
+    expect(vi.mocked(sql).mock.calls[0].slice(1)).toEqual([11]);
+  });
+
+  it('getAdminTopShelves passes the day window and limit', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([]);
+
+    expect(await getAdminTopShelves(30, 10)).toEqual([]);
+    expect(vi.mocked(sql).mock.calls[0].slice(1)).toEqual([30, 10]);
+  });
+
+  it('getAdminEmbedHosts passes the day window and limit and skips blank hosts', async () => {
+    const rows = [{ embed_host: 'blog.example.com', shelf_count: 1, views: 5 }];
+    vi.mocked(sql).mockResolvedValueOnce(rows);
+
+    expect(await getAdminEmbedHosts(30, 10)).toEqual(rows);
+    const [strings, ...values] = vi.mocked(sql).mock.calls[0];
+    expect((strings as unknown as string[]).join('?')).toContain("embed_host <> ''");
+    expect(values).toEqual([30, 10]);
   });
 });

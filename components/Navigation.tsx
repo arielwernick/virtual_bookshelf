@@ -8,17 +8,14 @@ export function Navigation() {
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
-  const isEmbed = pathname?.startsWith('/embed') ?? false;
+  const isEmbed = pathname === '/embed' || (pathname?.startsWith('/embed/') ?? false);
 
   useEffect(() => {
     if (isEmbed) return;
     fetch('/api/auth/me')
-      .then((res) => {
-        setIsLoggedIn(res.ok);
-      })
-      .catch(() => {
-        setIsLoggedIn(false);
-      });
+      .then((res) => res.json())
+      .then((data) => { setIsLoggedIn(data.authenticated === true); })
+      .catch(() => { setIsLoggedIn(false); });
   }, [pathname, isEmbed]);
 
   if (isEmbed) return null;
@@ -47,11 +44,13 @@ export function Navigation() {
             href="/"
             className="flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors font-medium"
             title="Virtual Bookshelf"
+            aria-label="Virtual Bookshelf home"
           >
             <svg
               className="w-6 h-6"
               fill="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               {/* Books with different heights */}
               <rect x="2" y="8" width="2" height="10" />

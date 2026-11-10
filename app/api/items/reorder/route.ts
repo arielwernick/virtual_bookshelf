@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
 import { updateItemOrder, getShelfById, getItemById } from '@/lib/db/queries';
 import { createLogger } from '@/lib/utils/logger';
+import { revalidateSharedShelf } from '@/lib/utils/revalidateShelf';
 
 const logger = createLogger('ItemsReorder');
 
@@ -68,6 +69,7 @@ export async function POST(request: Request) {
 
     // Update item order
     await updateItemOrder(shelf_id, item_ids);
+    revalidateSharedShelf(shelf.share_token, shelf.name);
 
     return NextResponse.json({
       success: true,

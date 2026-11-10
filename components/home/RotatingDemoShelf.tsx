@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Item, Shelf } from '@/lib/types/shelf';
 import { splitIntoRows } from '@/lib/utils/shelfLayout';
+import { buildSharePath } from '@/lib/utils/slug';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -135,7 +136,7 @@ export function RotatingDemoShelf({
   const MAX_PREVIEW_ROWS = 2;
   const previewItems = currentShelf.items.slice(0, ITEMS_PER_ROW * MAX_PREVIEW_ROWS);
   const rows = splitIntoRows(previewItems, ITEMS_PER_ROW);
-  const shelfUrl = `/s/${currentShelf.shelf.share_token}`;
+  const shelfUrl = buildSharePath(currentShelf.shelf.name, currentShelf.shelf.share_token);
 
   // Animation classes based on direction
   const getSlideClasses = () => {
