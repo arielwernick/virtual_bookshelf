@@ -230,3 +230,19 @@ export interface AdminEmbedHost {
   shelf_count: number;
   views: number;
 }
+
+/** A guide under /guides, loaded from a Markdown file in content/guides. */
+export interface Guide {
+  slug: string;
+  /** The question the guide answers: the page's H1 and title */
+  question: string;
+  description: string;
+  /** Short direct answer shown at the top of the page */
+  answer: string;
+  updated: Date;
+  /** The live shelf embedded in the guide */
+  shelf: { token: string; label: string };
+  faq: { q: string; a: string }[];
+  /** The steps, as Markdown */
+  body: string;
+}

@@ -11,6 +11,11 @@ const baseSecurityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // These routes read the guide Markdown at runtime, so it must ship with them.
+  outputFileTracingIncludes: {
+    '/sitemap.xml': ['./content/guides/**'],
+    '/llms.txt': ['./content/guides/**'],
+  },
   images: {
     remotePatterns: [
       {
