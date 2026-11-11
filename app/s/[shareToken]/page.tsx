@@ -8,6 +8,7 @@ import { ShelfGridStatic } from '@/components/shelf/ShelfGridStatic';
 import { SharedShelfInteractive } from './SharedShelfInteractive';
 import { generateShelfSchemaJson } from '@/lib/utils/schemaMarkup';
 import { ViewBeacon } from '@/components/ViewBeacon';
+import { buildShelfUrls, redactItemForPublic } from '@/lib/shelf/publicShelf';
 
 // Serve cached HTML and re-render in the background at most every 5 minutes.
 // Mutations trigger immediate refreshes via revalidateSharedShelf().
@@ -68,11 +69,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   // Canonical URL includes the shelf-name slug for SEO
   const canonicalPath = buildSharePath(shelf.name, shelf.share_token);
+  const twins = buildShelfUrls(shelf.name, shelf.share_token, baseUrl);
 
   return {
     title: shelf.name,
     description,
-    alternates: { canonical: canonicalPath },
+    alternates: {
+      canonical: canonicalPath,
+      // Machine-readable twins of this page (issue #285)
+      types: {
+        'text/markdown': twins.markdown,
+        'application/json': twins.json,
+        'application/feed+json': twins.json_feed,
+      },
+    },
     openGraph: {
       title: shelf.name,
       description,
@@ -110,12 +120,12 @@ async function getShelfData(shareToken: string) {
     return null;
   }
 
-  // Items are deduped with generateMetadata
-  const items = await getCachedItems(shelf.id);
+  // Items are deduped with generateMetadata. Owner and shelf ids are blanked
+  // before the rows are passed to client components and into the page payload.
+  const items = (await getCachedItems(shelf.id)).map(redactItemForPublic);
 
   return {
     shelf,
-    id: shelf.id,
     name: shelf.name,
     description: shelf.description,
     items,
