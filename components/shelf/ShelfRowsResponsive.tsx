@@ -17,7 +17,11 @@ import { useShelfRows } from '@/lib/hooks/useShelfRows';
  * re-measures and re-chunks. ItemCardStatic stays the renderer, so the existing
  * data-item-id click delegation in SharedShelfInteractive keeps working.
  */
-function ShelfRowStatic({ items }: { items: Item[] }) {
+// Covers in the first row that load at once and ahead of other images: they
+// are what a visitor sees first, so they decide how fast the page feels.
+const PRIORITY_COVERS = 6;
+
+function ShelfRowStatic({ items, priority = false }: { items: Item[]; priority?: boolean }) {
   return (
     <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-lg border border-gray-100 dark:border-gray-800 shadow-xs overflow-hidden">
       <div
@@ -27,9 +31,9 @@ function ShelfRowStatic({ items }: { items: Item[] }) {
           alignItems: 'flex-end',
         }}
       >
-        {items.map((item) => (
+        {items.map((item, index) => (
           <div key={item.id} className="w-[100px] sm:w-[140px] flex-shrink-0">
-            <ItemCardStatic item={item} />
+            <ItemCardStatic item={item} priority={priority && index < PRIORITY_COVERS} />
           </div>
         ))}
       </div>
@@ -52,7 +56,7 @@ export function ShelfRowsResponsive({ items }: { items: Item[] }) {
   return (
     <div ref={containerRef} className="space-y-4" role="list" aria-label="Bookshelf items">
       {rows.map((rowItems, index) => (
-        <ShelfRowStatic key={index} items={rowItems} />
+        <ShelfRowStatic key={index} items={rowItems} priority={index === 0} />
       ))}
     </div>
   );

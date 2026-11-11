@@ -181,24 +181,12 @@ Do one route per commit if that is easier. Use `Part of #81`.
   in production. The end-to-end tests that would use it still need a database
   (#147, blocked).
 
-### Task 5. Stable image sizes on shelf cards (low to medium risk, visible)
+### Task 5. Faster first covers on shelf pages
 
-- [ ] Not started.
-
-**Why:** cover images have no width or height, and every one loads lazily, so
-the page can shift as they load.
-
-**Steps:** in `components/shelf/ItemCardImage.tsx`, the image already sits in
-a box with a fixed aspect ratio (see `ItemCardStatic.tsx`). Add
-`decoding="async"`, and accept a `priority` prop: when true use
-`loading="eager"` and `fetchPriority="high"`, otherwise `loading="lazy"`. In
-`ShelfRowsResponsive.tsx`, pass `priority` for the first four items only.
-Update the component tests.
-
-**Do not** switch to `next/image`; that needs the host allowlist in #95.
-
-**Done when:** verify passes. Say in the commit that it changes image loading
-and should be looked at on the preview.
+- [x] Done on `next`. The first six covers on a shelf page load at once and
+  ahead of other images; the rest stay lazy. See `ItemCardImage.tsx` and
+  `ShelfRowsResponsive.tsx`. Moving to `next/image` still waits on the host
+  allowlist in #95.
 
 ### Task 6. Content Security Policy in report-only mode (issue #82)
 
