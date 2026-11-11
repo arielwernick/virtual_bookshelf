@@ -121,25 +121,25 @@ next one. A half-finished task must not be merged into `next`.
 
 ### Task 3. Tests for untested routes (issue #81, low risk)
 
-- [ ] Not started.
-
-**Why:** these routes have no tests: `app/api/oauth/register`,
-`app/api/oauth/authorize`, `app/api/import/create`, `app/api/import/parse`,
-`app/api/items/from-url`.
+- [ ] Partly done. `app/api/items/from-url` and `app/api/import/create` now
+  have tests on `next`. **Still to do:** `app/api/oauth/register`,
+  `app/api/oauth/authorize`, `app/api/import/parse`.
 
 **Steps:** one test file per route, next to the route, named `route.test.ts`.
-Copy the structure of `app/api/items/reorder/route.test.ts`: mock
-`@/lib/utils/session` and `@/lib/db/queries` (and `@/lib/db/client` where the
-route uses `sql` directly), then test: signed out returns 401; someone else's
-shelf returns 403; bad input returns 400; the happy path returns 200 and calls
-the query with the expected arguments. For `import/create` and `from-url`,
-also test that a `javascript:` URL is rejected or stored as null.
+Copy the structure of `app/api/import/create/route.test.ts` (a route that
+uses `lib/db/queries`) or `app/api/items/from-url/route.test.ts` (a route that
+uses `sql` directly). Mock `@/lib/utils/session` and the database module the
+route imports, then test: signed out returns 401 (where the route needs a
+session); bad input returns 400; the happy path returns the right status and
+calls the query with the expected arguments. For `oauth/register`, also test
+that a redirect URI that is not `https` (or `http://localhost`) is refused,
+if the route enforces that. Read the route first and test what it does.
 
 **Do not** change the routes. If a test shows a real bug, stop and write it
 under this task; do not fix it in the same commit.
 
-**Done when:** each listed route has at least four tests and verify passes.
-Do one route per commit if that is easier. Use `Part of #81`.
+**Done when:** each remaining route has at least four tests and verify
+passes. One route per commit is fine. Use `Part of #81`.
 
 ### Task 4. Mock mode for outside APIs (issue #275)
 
