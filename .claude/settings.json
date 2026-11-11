@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Bash(MIGRATE_ALLOW_PROD=1:*)",
+      "Bash(SEED_ALLOW_PROD=1:*)",
+      "Bash(E2E_ALLOW_PROD=1:*)",
+      "Bash(export MIGRATE_ALLOW_PROD:*)",
+      "Bash(export SEED_ALLOW_PROD:*)",
+      "Bash(export E2E_ALLOW_PROD:*)",
+      "Bash(npm run migrate:down:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(vercel --prod:*)",
+      "Bash(vercel deploy --prod:*)"
+    ]
+  }
+}

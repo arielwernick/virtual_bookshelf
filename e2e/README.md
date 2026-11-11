@@ -12,7 +12,7 @@ in a browser. It serves two purposes:
 ## Setup (one time)
 
 ```bash
-npm install            # installs @playwright/test
+npm run setup            # installs @playwright/test
 npx playwright install chromium
 ```
 

@@ -10,6 +10,8 @@ npm run test:all     # Unit tests, lint, then public Playwright tests
 npm run dev          # Start development server
 npm run build        # Production build
 npm run lint         # ESLint
+npm run typecheck    # tsc --noEmit
+npm run verify       # Typecheck, lint and unit tests. The definition of done
 npm run test         # Vitest in watch mode
 npm run test:run     # Single run (CI)
 npm run test:ci      # With coverage report
@@ -20,6 +22,12 @@ npm run test -- --run path/to/Component.test.tsx
 # Run tests matching a pattern
 npm run test:run -- --grep "ItemCard"
 ```
+
+## Definition of done
+
+A change is done when `npm run verify` is green and its output is pasted in the PR (see `.github/pull_request_template.md`). CI runs the same command. For UI or route changes, also check the Vercel preview and say what you looked at. One branch and one PR per issue; the PR body says `Closes #N`.
+
+Safety rules and what enforces each one are in `docs/AGENT_SAFETY.md`. If a rule blocks you, stop and ask; don't work around it.
 
 ## Agent testing
 
@@ -49,6 +57,8 @@ Run `npm run setup` first in any new checkout or worktree. Worktrees often have 
 - `lib/contexts/ShelfContext.tsx` — React context to reduce prop drilling in shelf components
 - `lib/utils/` — session (JWT), validation, password (bcrypt), logger, rateLimit, env
 - `lib/constants/errors.ts` — Centralized error message strings
+- `lib/shelf/publicShelf.ts` — The public shelf document. **Every** public, machine-readable view of a shelf is built from it through a field allowlist (`docs/spec/SHELF_FORMAT.md`)
+- `lib/utils/itemIdentity.ts` — Canonical identifiers for items (`source`, `source_id`), derived from URLs
 - `docs/architecture/PATTERNS.md` — Detailed code patterns reference
 - `docs/architecture/ANTI_PATTERNS.md` — Patterns to avoid
 
@@ -71,7 +81,7 @@ All queries are in `lib/db/queries.ts`. Always use `sql\`...\`` tagged template 
 
 ### Item Types
 
-`type ItemType = 'book' | 'podcast' | 'music' | 'podcast_episode' | 'video' | 'link'`
+`type ItemType = 'book' | 'podcast' | 'music' | 'podcast_episode' | 'video' | 'link' | 'stock'`
 
 ### Testing Patterns
 
