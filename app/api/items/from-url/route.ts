@@ -4,6 +4,8 @@ import { extractVideoId, getVideoDetails } from '@/lib/api/youtube';
 import { fetchLinkMetadata, isYouTubeUrl, MicrolinkQuotaExceededError } from '@/lib/api/microlink';
 import { sql } from '@/lib/db/client';
 import { createLogger } from '@/lib/utils/logger';
+import { safeHttpUrl } from '@/lib/utils/validation';
+import { deriveItemIdentity } from '@/lib/utils/itemIdentity';
 import { revalidateSharedShelf } from '@/lib/utils/revalidateShelf';
 
 const logger = createLogger('ItemsFromUrl');
@@ -102,7 +104,9 @@ export async function POST(request: Request) {
           creator,
           image_url,
           external_url,
-          order_index
+          order_index,
+          source,
+          source_id
         )
         VALUES (
           ${shelf_id},
@@ -110,9 +114,11 @@ export async function POST(request: Request) {
           'video',
           ${videoDetails.title},
           ${videoDetails.channelName},
-          ${videoDetails.thumbnailUrl},
-          ${videoDetails.videoUrl},
-          ${nextOrder}
+          ${safeHttpUrl(videoDetails.thumbnailUrl)},
+          ${safeHttpUrl(videoDetails.videoUrl)},
+          ${nextOrder},
+          'youtube',
+          ${videoId}
         )
         RETURNING *
       `;
@@ -152,6 +158,12 @@ export async function POST(request: Request) {
       );
     }
 
+    // The metadata service returns the page's own URL, which is not ours to
+    // trust: only web URLs are stored (issue #296), falling back to what the
+    // user pasted.
+    const linkUrl = safeHttpUrl(linkMetadata.url) ?? safeHttpUrl(url);
+    const linkIdentity = deriveItemIdentity('link', linkUrl);
+
     // Create the link item
     const result = await sql`
       INSERT INTO items (
@@ -162,7 +174,9 @@ export async function POST(request: Request) {
         creator,
         image_url,
         external_url,
-        order_index
+        order_index,
+        source,
+        source_id
       )
       VALUES (
         ${shelf_id},
@@ -170,9 +184,11 @@ export async function POST(request: Request) {
         'link',
         ${linkMetadata.title},
         ${linkMetadata.publisher},
-        ${linkMetadata.image},
-        ${linkMetadata.url},
-        ${nextOrder}
+        ${safeHttpUrl(linkMetadata.image)},
+        ${linkUrl},
+        ${nextOrder},
+        ${linkIdentity?.source ?? null},
+        ${linkIdentity?.sourceId ?? null}
       )
       RETURNING *
     `;

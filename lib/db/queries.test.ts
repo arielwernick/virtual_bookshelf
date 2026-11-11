@@ -8,9 +8,10 @@ import { Shelf } from '../types/shelf';
 vi.mock('./client', () => ({
   sql: vi.fn(),
   sqlQuery: vi.fn(),
+  sqlTransaction: vi.fn(),
 }));
 
-import { sql, sqlQuery } from './client';
+import { sql, sqlQuery, sqlTransaction } from './client';
 import {
   // User queries
   createUser,
@@ -588,6 +589,17 @@ describe('Shelf Queries', () => {
       );
     });
 
+    it('stores only web URLs: anything else is written as NULL', async () => {
+      vi.mocked(sqlQuery).mockResolvedValueOnce([{ id: 'item-1', type: 'link', external_url: null }]);
+
+      await updateItem('item-1', { external_url: 'javascript:alert(1)', image_url: 'data:text/html,x' });
+
+      expect(sqlQuery).toHaveBeenCalledWith(
+        'UPDATE items SET image_url = $1, external_url = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+        [null, null, 'item-1']
+      );
+    });
+
     it('throws error when no fields to update', async () => {
       await expect(updateShelf('shelf-1', {})).rejects.toThrow('No fields to update');
     });
@@ -623,6 +635,37 @@ describe('Item Queries', () => {
   });
 
   describe('createItem', () => {
+    it('stores only web URLs, and derives the identity from the stored URL', async () => {
+      vi.mocked(sql).mockResolvedValueOnce([{ id: 'item-1' }]);
+
+      await createItem('shelf-1', {
+        type: 'video',
+        title: 'T',
+        creator: 'C',
+        external_url: 'javascript:alert(1)',
+        image_url: 'https://example.com/cover.jpg',
+      });
+
+      const values = vi.mocked(sql).mock.calls[0].slice(1);
+      expect(values).not.toContain('javascript:alert(1)');
+      expect(values).toContain('https://example.com/cover.jpg');
+    });
+
+    it('records the canonical identifier for a recognised URL', async () => {
+      vi.mocked(sql).mockResolvedValueOnce([{ id: 'item-1' }]);
+
+      await createItem('shelf-1', {
+        type: 'video',
+        title: 'T',
+        creator: 'C',
+        external_url: 'https://youtu.be/dQw4w9WgXcQ',
+      });
+
+      const values = vi.mocked(sql).mock.calls[0].slice(1);
+      expect(values).toContain('youtube');
+      expect(values).toContain('dQw4w9WgXcQ');
+    });
+
     it('creates item with required fields', async () => {
       const mockItem = {
         id: 'item-1',
@@ -805,14 +848,14 @@ describe('Item Queries', () => {
     });
 
     it('updates all item fields in a single query', async () => {
-      const mockItem = { id: 'item-1', title: 'T', creator: 'C', image_url: 'img', external_url: 'ext', notes: 'N', rating: 4, order_index: 2 };
+      const mockItem = { id: 'item-1', type: 'link', title: 'T', creator: 'C', image_url: 'https://example.com/img.jpg', external_url: 'https://example.com/ext', notes: 'N', rating: 4, order_index: 2 };
       vi.mocked(sqlQuery).mockResolvedValueOnce([mockItem]);
 
       await updateItem('item-1', {
         title: 'T',
         creator: 'C',
-        image_url: 'img',
-        external_url: 'ext',
+        image_url: 'https://example.com/img.jpg',
+        external_url: 'https://example.com/ext',
         notes: 'N',
         rating: 4,
         order_index: 2,
@@ -821,7 +864,7 @@ describe('Item Queries', () => {
       expect(sqlQuery).toHaveBeenCalledTimes(1);
       expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE items SET title = $1, creator = $2, image_url = $3, external_url = $4, notes = $5, rating = $6, order_index = $7, updated_at = NOW() WHERE id = $8 RETURNING *',
-        ['T', 'C', 'img', 'ext', 'N', 4, 2, 'item-1']
+        ['T', 'C', 'https://example.com/img.jpg', 'https://example.com/ext', 'N', 4, 2, 'item-1']
       );
     });
 
@@ -829,12 +872,12 @@ describe('Item Queries', () => {
       const mockItem = { id: 'item-1', notes: null, image_url: null };
       vi.mocked(sqlQuery).mockResolvedValueOnce([mockItem]);
 
-      await updateItem('item-1', { notes: undefined, image_url: 'new-url' });
+      await updateItem('item-1', { notes: undefined, image_url: 'https://example.com/new.jpg' });
 
       expect(sqlQuery).toHaveBeenCalledTimes(1);
       expect(sqlQuery).toHaveBeenCalledWith(
         'UPDATE items SET image_url = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
-        ['new-url', 'item-1']
+        ['https://example.com/new.jpg', 'item-1']
       );
     });
 
@@ -862,13 +905,57 @@ describe('Item Queries', () => {
   });
 
   describe('updateItemOrder', () => {
-    it('updates order for multiple items', async () => {
-      vi.mocked(sql).mockResolvedValue([{ id: 'item' }]);
+    // Collect the statements the transaction would send, as [text, values].
+    function runTransaction() {
+      const statements: Array<[string, unknown[]]> = [];
+      const tx = (strings: TemplateStringsArray, ...values: unknown[]) => {
+        statements.push([strings.join('?'), values]);
+        return {} as never;
+      };
+      const build = vi.mocked(sqlTransaction).mock.calls[0][0] as unknown as (
+        t: typeof tx
+      ) => unknown[];
+      build(tx);
+      return statements;
+    }
 
+    beforeEach(() => {
+      vi.mocked(sqlTransaction).mockReset().mockResolvedValue([]);
+    });
+
+    it('sends every update in one transaction, not one query per item', async () => {
       await updateItemOrder('shelf-1', ['item-3', 'item-1', 'item-2']);
 
-      // Should call sql 6 times (twice per item: once for temp index, once for final)
-      expect(sql).toHaveBeenCalledTimes(6);
+      expect(sqlTransaction).toHaveBeenCalledTimes(1);
+      expect(sql).not.toHaveBeenCalled();
+      expect(runTransaction()).toHaveLength(6);
+    });
+
+    it('parks items on negative positions first, then sets the final order', async () => {
+      await updateItemOrder('shelf-1', ['item-3', 'item-1']);
+      const values = runTransaction().map(([, v]) => v);
+
+      expect(values).toEqual([
+        [-1, 'item-3', 'shelf-1'],
+        [-2, 'item-1', 'shelf-1'],
+        [0, 'item-3', 'shelf-1'],
+        [1, 'item-1', 'shelf-1'],
+      ]);
+    });
+
+    it('scopes every statement to the shelf', async () => {
+      await updateItemOrder('shelf-1', ['item-1']);
+      for (const [text] of runTransaction()) expect(text).toContain('shelf_id = ?');
+    });
+
+    it('does nothing for an empty list', async () => {
+      await updateItemOrder('shelf-1', []);
+      expect(sqlTransaction).not.toHaveBeenCalled();
+    });
+
+    it('lets a failed transaction surface to the caller', async () => {
+      vi.mocked(sqlTransaction).mockRejectedValueOnce(new Error('unique violation'));
+      await expect(updateItemOrder('shelf-1', ['item-1'])).rejects.toThrow('unique violation');
     });
   });
 

@@ -16,6 +16,8 @@ const EXTERNAL_API_PREFIXES = [
   '/api/finance/',
   '/api/import/',
   '/api/items/from-url',
+  // Open client registration writes a database row per call (issue #296)
+  '/api/oauth/register',
 ];
 
 function needsExternalApiRateLimit(pathname: string): boolean {
@@ -54,5 +56,6 @@ export const config = {
     '/api/finance/:path*',
     '/api/import/:path*',
     '/api/items/from-url',
+    '/api/oauth/register',
   ],
 };

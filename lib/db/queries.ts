@@ -1,5 +1,6 @@
 import { deriveItemIdentity } from '@/lib/utils/itemIdentity';
-import { sql, sqlQuery } from './client';
+import { sql, sqlQuery, sqlTransaction } from './client';
+import { safeHttpUrl } from '../utils/validation';
 import { User, SignupSource, SignupAttribution, AdminOverview, AdminWeeklySignups, AdminAttributionRow, AdminRecentUser, AdminWeeklyViews, AdminTopShelf, AdminEmbedHost, ViewSurface, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
 import { extractVideoId } from '../api/youtube';
@@ -496,12 +497,15 @@ export async function createItem(shelfId: string, itemData: CreateItemData, user
     type,
     title,
     creator,
-    image_url = null,
-    external_url = null,
     notes = null,
     rating = null,
     order_index = 0,
   } = itemData;
+
+  // Last line of defence: whatever path the item came by, only web URLs are
+  // stored (issue #296).
+  const image_url = safeHttpUrl(itemData.image_url);
+  const external_url = safeHttpUrl(itemData.external_url);
 
   // Canonical identity (issue #288): which catalogue, which id. NULL when the
   // URL carries no identifier we recognise.
@@ -643,7 +647,16 @@ const ITEM_UPDATABLE_FIELDS = [
  * Only the supplied fields are written; all others are left untouched.
  */
 export async function updateItem(itemId: string, itemData: UpdateItemData): Promise<Item> {
-  const { query, values } = buildDynamicUpdate('items', itemId, itemData, ITEM_UPDATABLE_FIELDS);
+  // Only web URLs are stored (issue #296). `undefined` still means "leave as is".
+  const data: UpdateItemData = { ...itemData };
+  if (typeof data.external_url === 'string') {
+    data.external_url = safeHttpUrl(data.external_url) ?? (null as unknown as string);
+  }
+  if (typeof data.image_url === 'string') {
+    data.image_url = safeHttpUrl(data.image_url) ?? (null as unknown as string);
+  }
+
+  const { query, values } = buildDynamicUpdate('items', itemId, data, ITEM_UPDATABLE_FIELDS);
   const result = await execParameterized(query, values);
   const item = result[0] as Item;
 
@@ -684,23 +697,29 @@ export async function deleteItem(itemId: string): Promise<boolean> {
  * Uses two-pass approach to avoid unique constraint violations on (shelf_id, order_index)
  */
 export async function updateItemOrder(shelfId: string, itemIds: string[]): Promise<void> {
-  // First pass: set all items to negative temporary indices to avoid conflicts
-  for (let i = 0; i < itemIds.length; i++) {
-    await sql`
-      UPDATE items
-      SET order_index = ${-(i + 1)}
-      WHERE id = ${itemIds[i]} AND shelf_id = ${shelfId}
-    `;
-  }
-  
-  // Second pass: set items to their final positive indices
-  for (let i = 0; i < itemIds.length; i++) {
-    await sql`
-      UPDATE items
-      SET order_index = ${i}
-      WHERE id = ${itemIds[i]} AND shelf_id = ${shelfId}
-    `;
-  }
+  if (itemIds.length === 0) return;
+
+  // (shelf_id, order_index) is unique, so items can't be moved straight to
+  // their new positions: each first goes to a negative placeholder, then to
+  // its final index. All of it runs as one transaction in one round trip, so
+  // a failure part-way leaves the old order untouched instead of a shelf with
+  // negative positions (issue #296).
+  await sqlTransaction((tx) => [
+    ...itemIds.map(
+      (id, i) => tx`
+        UPDATE items
+        SET order_index = ${-(i + 1)}
+        WHERE id = ${id} AND shelf_id = ${shelfId}
+      `
+    ),
+    ...itemIds.map(
+      (id, i) => tx`
+        UPDATE items
+        SET order_index = ${i}
+        WHERE id = ${id} AND shelf_id = ${shelfId}
+      `
+    ),
+  ]);
 }
 
 /**

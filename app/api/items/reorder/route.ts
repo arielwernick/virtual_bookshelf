@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
-import { updateItemOrder, getShelfById, getItemById } from '@/lib/db/queries';
+import { updateItemOrder, getShelfById, getItemsByShelfId } from '@/lib/db/queries';
 import { createLogger } from '@/lib/utils/logger';
 import { revalidateSharedShelf } from '@/lib/utils/revalidateShelf';
 
 const logger = createLogger('ItemsReorder');
+
+/** Far above any real shelf; stops one request from queuing unbounded writes. */
+const MAX_REORDER_ITEMS = 500;
 
 /**
  * Reorder items within a shelf
@@ -40,6 +43,23 @@ export async function POST(request: Request) {
       );
     }
 
+    if (item_ids.length > MAX_REORDER_ITEMS) {
+      return NextResponse.json(
+        { success: false, error: `Cannot reorder more than ${MAX_REORDER_ITEMS} items at once` },
+        { status: 400 }
+      );
+    }
+
+    if (
+      item_ids.some((id) => typeof id !== 'string' || !id) ||
+      new Set(item_ids).size !== item_ids.length
+    ) {
+      return NextResponse.json(
+        { success: false, error: 'item_ids must be a list of distinct item ids' },
+        { status: 400 }
+      );
+    }
+
     // Verify shelf exists and user owns it
     const shelf = await getShelfById(shelf_id);
     if (!shelf) {
@@ -56,15 +76,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify all items belong to this shelf
-    for (const itemId of item_ids) {
-      const item = await getItemById(itemId);
-      if (!item || item.shelf_id !== shelf_id) {
-        return NextResponse.json(
-          { success: false, error: `Item ${itemId} does not belong to this shelf` },
-          { status: 403 }
-        );
-      }
+    // Verify all items belong to this shelf, with one query for the shelf
+    // rather than one per item
+    const shelfItemIds = new Set((await getItemsByShelfId(shelf_id)).map((item) => item.id));
+    const stranger = (item_ids as string[]).find((id) => !shelfItemIds.has(id));
+    if (stranger) {
+      return NextResponse.json(
+        { success: false, error: `Item ${stranger} does not belong to this shelf` },
+        { status: 403 }
+      );
     }
 
     // Update item order
