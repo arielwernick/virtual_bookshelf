@@ -113,29 +113,11 @@ next one. A half-finished task must not be merged into `next`.
 - [x] Done on `next`. Versions, commands, environment variables, links and
   the API list now match the code. The product description was left alone.
 
-### Task 2. Project skills for recurring jobs (low risk)
+### Task 2. Project skills for recurring jobs
 
-- [ ] Not started.
-
-**Why:** agents repeat three jobs and get details wrong each time.
-
-**Steps:** create three files. Each is a Markdown file with YAML front matter
-containing `name` and `description`, then numbered steps.
-
-- `.claude/skills/add-migration/SKILL.md`: how to add
-  `migrations/NNN_name.sql` and `NNN_name.down.sql` (read
-  `migrations/007_item_identity.sql` and `lib/db/migrate.ts` first); the file
-  must be idempotent (`IF NOT EXISTS`); never run it; say in the commit that
-  `migrate:up` must run before deploy.
-- `.claude/skills/add-item-type/SKILL.md`: list every file that mentions an
-  item type. Find them with
-  `grep -rln "podcast_episode" --include=*.ts --include=*.tsx . | grep -v node_modules`.
-- `.claude/skills/add-api-route/SKILL.md`: the route pattern from `CLAUDE.md`
-  ("API Route Pattern"), with `app/api/account/export/route.ts` and its test
-  as the example to copy.
-
-**Done when:** the three files exist and every file path they mention exists.
-Use `Part of #290`.
+- [x] Done on `next`. Three skills in `.claude/skills/`: `add-migration`,
+  `add-item-type` and `add-api-route`. **Read the matching skill before doing
+  one of those jobs.**
 
 ### Task 3. Tests for untested routes (issue #81, low risk)
 
