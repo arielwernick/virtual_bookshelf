@@ -120,27 +120,13 @@ next one. A half-finished task must not be merged into `next`.
   `add-item-type` and `add-api-route`. **Read the matching skill before doing
   one of those jobs.**
 
-### Task 3. Tests for untested routes (issue #81, low risk)
+### Task 3. Tests for untested routes (issue #81)
 
-- [ ] Partly done. `app/api/items/from-url` and `app/api/import/create` now
-  have tests on `next`. **Still to do:** `app/api/oauth/register`,
-  `app/api/oauth/authorize`, `app/api/import/parse`.
-
-**Steps:** one test file per route, next to the route, named `route.test.ts`.
-Copy the structure of `app/api/import/create/route.test.ts` (a route that
-uses `lib/db/queries`) or `app/api/items/from-url/route.test.ts` (a route that
-uses `sql` directly). Mock `@/lib/utils/session` and the database module the
-route imports, then test: signed out returns 401 (where the route needs a
-session); bad input returns 400; the happy path returns the right status and
-calls the query with the expected arguments. For `oauth/register`, also test
-that a redirect URI that is not `https` (or `http://localhost`) is refused,
-if the route enforces that. Read the route first and test what it does.
-
-**Do not** change the routes. If a test shows a real bug, stop and write it
-under this task; do not fix it in the same commit.
-
-**Done when:** each remaining route has at least four tests and verify
-passes. One route per commit is fine. Use `Part of #81`.
+- [x] Done on `next` for the five routes that were listed: `items/from-url`,
+  `import/create`, `import/parse`, `oauth/register`, `oauth/authorize`. Issue
+  #81 also names the connector route (`app/api/mcp`) and a revalidate route;
+  those are not done. The connector route needs care to mock; leave it unless
+  the owner asks.
 
 ### Task 4. Mock mode for outside APIs (issue #275)
 
