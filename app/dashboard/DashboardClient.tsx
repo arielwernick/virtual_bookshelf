@@ -6,7 +6,7 @@ import { EmptyState, BookshelfIcon } from '@/components/ui/EmptyState';
 import { SkeletonShelfGrid } from '@/components/ui/SkeletonLoader';
 import { AddItemModal } from '@/components/shelf/AddItemModal';
 import { ShelfPreviewCard } from '@/components/shelf/ShelfPreviewCard';
-import type { ShelfPreviewItem } from '@/lib/types/shelf';
+import type { ShelfPreviewItem, ShelfViewSummary } from '@/lib/types/shelf';
 
 interface Shelf {
   id: string;
@@ -16,6 +16,7 @@ interface Shelf {
   is_public: boolean;
   item_count: number;
   preview_items: ShelfPreviewItem[];
+  views?: ShelfViewSummary;
   created_at: string;
   updated_at: string;
 }

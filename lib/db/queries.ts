@@ -1,7 +1,7 @@
 import { deriveItemIdentity } from '@/lib/utils/itemIdentity';
 import { sql, sqlQuery, sqlTransaction } from './client';
 import { safeHttpUrl } from '../utils/validation';
-import { User, SignupSource, SignupAttribution, AdminOverview, AdminWeeklySignups, AdminAttributionRow, AdminRecentUser, AdminWeeklyViews, AdminTopShelf, AdminEmbedHost, ViewSurface, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
+import { User, SignupSource, SignupAttribution, AdminOverview, AdminWeeklySignups, AdminAttributionRow, AdminRecentUser, AdminWeeklyViews, AdminTopShelf, AdminEmbedHost, ViewSurface, ShelfViewSummary, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
 import { extractVideoId } from '../api/youtube';
 
@@ -1045,6 +1045,60 @@ export async function getAdminTopShelves(days: number = 30, limit: number = 10):
   `;
 
   return result as AdminTopShelf[];
+}
+
+/**
+ * View counts for every shelf a user owns, keyed by shelf id (issue #68).
+ *
+ * Shelves that have never been viewed are simply absent from the map. Reads
+ * the same daily counters as the admin dashboard, scoped to one owner.
+ */
+export async function getShelfViewsForOwner(userId: string): Promise<Map<string, ShelfViewSummary>> {
+  const [totals, hosts] = await Promise.all([
+    sql`
+      SELECT
+        v.shelf_id,
+        COALESCE(SUM(v.views) FILTER (WHERE v.day > CURRENT_DATE - 7), 0)::int AS views_7d,
+        SUM(v.views)::int AS views_total
+      FROM shelf_view_daily v
+      JOIN shelves s ON s.id = v.shelf_id
+      WHERE s.user_id = ${userId}
+      GROUP BY v.shelf_id
+    `,
+    // The busiest embedding site per shelf over the last 30 days
+    sql`
+      SELECT DISTINCT ON (v.shelf_id)
+        v.shelf_id,
+        v.embed_host,
+        SUM(v.views)::int AS views
+      FROM shelf_view_daily v
+      JOIN shelves s ON s.id = v.shelf_id
+      WHERE s.user_id = ${userId}
+        AND v.surface = 'embed'
+        AND v.embed_host <> ''
+        AND v.day > CURRENT_DATE - 30
+      GROUP BY v.shelf_id, v.embed_host
+      ORDER BY v.shelf_id, SUM(v.views) DESC
+    `,
+  ]);
+
+  const summary = new Map<string, ShelfViewSummary>();
+  for (const row of totals as { shelf_id: string; views_7d: number; views_total: number }[]) {
+    summary.set(row.shelf_id, {
+      views_7d: row.views_7d,
+      views_total: row.views_total,
+      top_embed_host: null,
+      top_embed_host_views: 0,
+    });
+  }
+  for (const row of hosts as { shelf_id: string; embed_host: string; views: number }[]) {
+    const entry = summary.get(row.shelf_id);
+    if (entry) {
+      entry.top_embed_host = row.embed_host;
+      entry.top_embed_host_views = row.views;
+    }
+  }
+  return summary;
 }
 
 /**

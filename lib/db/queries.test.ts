@@ -50,6 +50,7 @@ import {
   deleteItem,
   updateItemOrder,
   getNextOrderIndex,
+  getShelfViewsForOwner,
 } from './queries';
 
 // ============================================================================
@@ -1069,5 +1070,47 @@ describe('Admin Queries', () => {
     const [strings, ...values] = vi.mocked(sql).mock.calls[0];
     expect((strings as unknown as string[]).join('?')).toContain("embed_host <> ''");
     expect(values).toEqual([30, 10]);
+  });
+});
+
+// ============================================================================
+// OWNER VIEW COUNTS (issue #68)
+// ============================================================================
+
+describe('getShelfViewsForOwner', () => {
+  beforeEach(() => {
+    vi.mocked(sql).mockReset();
+  });
+
+  it('merges totals with the busiest embedding site per shelf', async () => {
+    vi.mocked(sql)
+      .mockResolvedValueOnce([
+        { shelf_id: 's1', views_7d: 14, views_total: 40 },
+        { shelf_id: 's2', views_7d: 0, views_total: 3 },
+      ] as never)
+      .mockResolvedValueOnce([{ shelf_id: 's1', embed_host: 'yoursite.com', views: 9 }] as never);
+
+    const views = await getShelfViewsForOwner('user-1');
+
+    expect(views.get('s1')).toEqual({
+      views_7d: 14,
+      views_total: 40,
+      top_embed_host: 'yoursite.com',
+      top_embed_host_views: 9,
+    });
+    expect(views.get('s2')).toMatchObject({ views_total: 3, top_embed_host: null });
+    expect(views.has('never-viewed')).toBe(false);
+  });
+
+  it('scopes both queries to the owner', async () => {
+    vi.mocked(sql).mockResolvedValue([] as never);
+
+    await getShelfViewsForOwner('user-1');
+
+    expect(sql).toHaveBeenCalledTimes(2);
+    for (const call of vi.mocked(sql).mock.calls) {
+      expect((call[0] as unknown as string[]).join('?')).toContain('s.user_id = ?');
+      expect(call.slice(1)).toContain('user-1');
+    }
   });
 });

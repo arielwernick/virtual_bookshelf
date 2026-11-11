@@ -83,6 +83,21 @@ export interface ShelfPreviewItem {
 export interface DashboardShelf extends Shelf {
   item_count: number;
   preview_items: ShelfPreviewItem[];
+  /** Absent when the shelf has never been viewed, or stats could not be loaded. */
+  views?: ShelfViewSummary;
+}
+
+// How often a shelf was seen, shown to its owner on the dashboard (issue #68).
+// Counts only: nothing is known about who viewed.
+export interface ShelfViewSummary {
+  /** Views of the shelf page and its embeds in the last 7 days. */
+  views_7d: number;
+  /** All recorded views. Counting began on Nov 5, 2026. */
+  views_total: number;
+  /** The site that showed the embed most in the last 30 days, if any. */
+  top_embed_host: string | null;
+  /** Embed views on that site in the last 30 days. */
+  top_embed_host_views: number;
 }
 
 // Public-facing shelf data (without sensitive user info)
