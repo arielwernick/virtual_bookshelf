@@ -108,24 +108,10 @@ Do them top to bottom. Each task says what "done" means. If a task is harder
 than it looks, stop, write what you found under the task, and move to the
 next one. A half-finished task must not be merged into `next`.
 
-### Task 1. Fix the stale README (docs only, low risk)
+### Task 1. Fix the stale README
 
-- [ ] Not started.
-
-**Why:** the README states old versions, links to doc paths that do not
-exist, and its environment variable list disagrees with `CLAUDE.md`.
-
-**Steps:**
-1. Read `README.md` and `CLAUDE.md`.
-2. Fix every factual error: framework versions (read them from
-   `package.json`), commands (`npm run setup`, `npm run verify`), the
-   required environment variables (copy the list from `CLAUDE.md`), and every
-   link (check each linked file exists with `ls`).
-3. Add a short "For AI agents" line pointing to `CLAUDE.md` and this file.
-4. Do **not** rewrite the product description or add marketing claims.
-
-**Done when:** every path and command in the README exists and works.
-No ticket exists; use `Part of #290`.
+- [x] Done on `next`. Versions, commands, environment variables, links and
+  the API list now match the code. The product description was left alone.
 
 ### Task 2. Project skills for recurring jobs (low risk)
 

@@ -26,20 +26,21 @@ A Next.js application for curating and sharing your favorite books, podcasts, mu
 |----------|------------|---------|
 | Framework | Next.js | 16.x |
 | UI Library | React | 19.x |
-| Language | TypeScript | 5.x |
+| Language | TypeScript | 6.x |
 | Styling | Tailwind CSS | 4.x |
 | Database | PostgreSQL | Neon Serverless |
 | Auth | jose (JWT) + bcryptjs | - |
-| Testing | Vitest + Testing Library | - |
+| Testing | Vitest + Testing Library, Playwright | - |
 | Analytics | Vercel Analytics | - |
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+ (see `.nvmrc`)
 - PostgreSQL database ([Neon](https://neon.tech) recommended)
 - Spotify API credentials (for music/podcast search)
+- Google OAuth credentials and a YouTube Data API key
 
 ### Environment Variables
 
@@ -50,16 +51,25 @@ DATABASE_URL=postgresql://...
 SESSION_SECRET=your-secure-random-string
 SPOTIFY_CLIENT_ID=your-spotify-client-id
 SPOTIFY_CLIENT_SECRET=your-spotify-client-secret
-NEXT_PUBLIC_BASE_URL=https://your-domain.com
+GOOGLE_CLIENT_ID=your-google-oauth-client-id
+GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
+YOUTUBE_API_KEY=your-youtube-data-api-key
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
 
 # Optional
-DEMO_SHELF_TOKEN=your-admin-shelf-share-token
+ADMIN_EMAILS=you@example.com        # who may open /admin
+EXTERNAL_APIS=mock                  # fixed search results, no outside requests (never in production)
 ```
+
+Point `DATABASE_URL` at a development database, never production. Migrations
+and seeds refuse to run against the production database
+(`lib/db/prodGuard.ts`).
 
 ### Installation
 
 ```bash
-npm install
+npm run setup        # npm ci, Playwright browser, env check
 npm run migrate:up   # bootstrap / update the database schema (idempotent)
 npm run dev
 ```
@@ -81,10 +91,14 @@ inline and run `npm run db:bootstrap`.
 | `npm run dev` | Start development server |
 | `npm run build` | Build for production |
 | `npm run start` | Start production server |
+| `npm run setup` | Install and check a fresh checkout |
+| `npm run verify` | Typecheck, lint and unit tests. The definition of done |
+| `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | Run ESLint |
 | `npm run test` | Run tests in watch mode |
 | `npm run test:run` | Run tests once |
 | `npm run test:ci` | Run tests with coverage |
+| `npm run e2e:public` | Playwright tests of the signed-out pages |
 | `npm run migrate:up` | Apply pending DB migrations (idempotent) |
 | `npm run migrate:status` | Show applied / pending migrations |
 | `npm run migrate:down` | Roll back the most recent migration |
@@ -100,11 +114,15 @@ app/                    # Next.js App Router
 │   ├── items/          # Item CRUD operations
 │   ├── og/             # OG image generation
 │   ├── search/         # Search functionality (books, spotify, youtube)
-│   └── shelf/          # Shelf management
+│   ├── shelf/          # Shelf management
+│   ├── account/        # Account export
+│   └── mcp/, oauth/    # Connector for AI assistants (MCP) and its OAuth server
 ├── dashboard/          # User dashboard
 ├── embed/              # Embeddable shelf views
 ├── import/             # Text import page
-├── s/                  # Public shelf view (/s/[shareToken])
+├── s/                  # Public shelf view (/s/[shareToken]) and its Markdown, JSON and feed forms
+├── oembed/             # oEmbed provider
+├── v/                  # Watch pages for videos on public shelves
 └── shelf/              # Shelf detail pages
 
 components/
@@ -118,6 +136,7 @@ lib/
 ├── constants/          # Application constants
 ├── db/                 # Database client and queries
 ├── hooks/              # Custom React hooks
+├── shelf/              # The public shelf document (one serializer, every format)
 ├── types/              # TypeScript type definitions
 └── utils/              # Utility functions
 ```
@@ -128,15 +147,19 @@ lib/
 |----------|-------------|
 | [Quick Start](docs/guides/QUICK_START.md) | Getting started guide |
 | [Deployment](docs/guides/DEPLOYMENT_CHECKLIST.md) | Production deployment guide |
-| [Code Patterns](docs/PATTERNS.md) | Coding patterns to follow |
-| [Anti-Patterns](docs/ANTI_PATTERNS.md) | Patterns to avoid |
+| [Code Patterns](docs/architecture/PATTERNS.md) | Coding patterns to follow |
+| [Anti-Patterns](docs/architecture/ANTI_PATTERNS.md) | Patterns to avoid |
+| [Public shelf format](docs/spec/SHELF_FORMAT.md) | The machine-readable forms of a public shelf |
+| [Roadmap](ROADMAP.md) | Now, next and later |
 | [Contributing](CONTRIBUTING.md) | Contribution guidelines |
 
 ### Additional Docs
 
 - **Architecture**: `docs/architecture/`
 - **Product Requirements**: `docs/prds/`
-- **Security**: `docs/security/`
+- **Security tasks**: `docs/security-tasks/`
+- **Decision records**: `docs/decisions/`
+- **Process**: `docs/process/`
 - **Migrations**: `docs/migrations/`
 
 ## API Overview
@@ -148,21 +171,35 @@ lib/
 - `GET /api/auth/google` - Google OAuth
 
 ### Shelves
-- `GET /api/shelf` - List user's shelves
-- `POST /api/shelf` - Create shelf
+- `GET /api/shelf/dashboard` - List your shelves
+- `POST /api/shelf/create` - Create shelf
 - `GET /api/shelf/[shelfId]` - Get shelf details
 - `PATCH /api/shelf/[shelfId]` - Update shelf
 - `DELETE /api/shelf/[shelfId]` - Delete shelf
+- `GET /api/account/export` - Download everything on your shelves as JSON
 
 ### Items
 - `POST /api/items` - Create item
-- `PATCH /api/items/[itemId]` - Update item
-- `DELETE /api/items/[itemId]` - Delete item
+- `POST /api/items/from-url` - Create a video or link item from a URL
+- `POST /api/items/reorder` - Reorder a shelf
+- `PATCH /api/items/[id]` - Update item
+- `DELETE /api/items/[id]` - Delete item
 
 ### Search
 - `GET /api/search/books` - Search Google Books
-- `GET /api/search/spotify` - Search Spotify
-- `GET /api/search/youtube` - Search YouTube
+- `GET /api/search/music` - Search Spotify albums and podcasts
+- `GET /api/search/episodes` - List a podcast's episodes
+
+### Public shelves (no sign-in)
+- `/s/<slug>-<token>` - The shelf page
+- `/s/<slug>-<token>/shelf.md`, `shelf.json`, `feed.json` - Markdown, JSON and JSON Feed forms
+- `/oembed?url=<shelf url>` - oEmbed
+- `/llms.txt` - Guidance and a list of public shelves for AI assistants
+
+## For AI agents
+
+Read [CLAUDE.md](CLAUDE.md) before changing anything. To continue the `next`
+branch, follow [docs/process/HANDOFF.md](docs/process/HANDOFF.md).
 
 ## Deployment
 
@@ -176,7 +213,7 @@ For the demo shelf on home page, see [Admin Demo Setup](docs/guides/ADMIN_DEMO_S
 
 ## Contributing
 
-We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) and follow the code patterns in [docs/PATTERNS.md](docs/PATTERNS.md).
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) and follow the code patterns in [docs/architecture/PATTERNS.md](docs/architecture/PATTERNS.md).
 
 ## License
 
