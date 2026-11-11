@@ -8,6 +8,7 @@ import { ShelfGridStatic } from '@/components/shelf/ShelfGridStatic';
 import { SharedShelfInteractive } from './SharedShelfInteractive';
 import { generateShelfSchemaJson } from '@/lib/utils/schemaMarkup';
 import { ViewBeacon } from '@/components/ViewBeacon';
+import { SHARED_SHELF_CTA_LINK } from '@/lib/utils/growthLinks';
 import { buildShelfUrls, redactItemForPublic } from '@/lib/shelf/publicShelf';
 
 // Serve cached HTML and re-render in the background at most every 5 minutes.
@@ -218,7 +219,7 @@ export default async function SharedShelfPage({ params }: PageProps) {
                 Want to curate your own collection?
               </p>
               <Link
-                href="/signup"
+                href={SHARED_SHELF_CTA_LINK}
                 className="inline-block px-6 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium"
               >
                 Create My Own Shelf
