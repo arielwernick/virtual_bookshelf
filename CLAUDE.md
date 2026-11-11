@@ -36,6 +36,7 @@ Safety rules and what enforces each one are in `docs/AGENT_SAFETY.md`. If a rule
 Run `npm run setup` first in any new checkout or worktree. Worktrees often have stale `node_modules`, and gitignored `.env.local` isn't copied into them; setup fixes both (it links the main checkout's `.env.local`). The first run may download Playwright's Chromium.
 
 - **Unit tests** (`npm run test:run`) need no database or env vars; `test/setup.ts` mocks them.
+- **Outside APIs:** set `EXTERNAL_APIS=mock` and Google Books, Spotify, YouTube and Microlink return fixed results with no network request (`lib/api/mockMode.ts`, fixtures in `lib/api/mockFixtures.ts`). A query containing "nothing" returns no results. It cannot turn on in production.
 - **Public e2e** (`npm run e2e:public`) starts `npm run dev` (or reuses one on port 3000) and checks the signed-out pages. Point it at a deployment with `PLAYWRIGHT_BASE_URL`.
 - **Signed-in e2e** (`npm run e2e`) creates a test user and shelf in whatever database the dev server uses.
 - **Database:** `.env.local` points `DATABASE_URL` at a schema-only Neon `dev` branch, never production. Migrations, seeds and e2e seeding refuse the production database unless `MIGRATE_ALLOW_PROD=1`, `SEED_ALLOW_PROD=1` or `E2E_ALLOW_PROD=1` is set (`lib/db/prodGuard.ts`). Don't set these unless the user asks for a production change.

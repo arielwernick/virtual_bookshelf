@@ -173,31 +173,13 @@ under this task; do not fix it in the same commit.
 **Done when:** each listed route has at least four tests and verify passes.
 Do one route per commit if that is easier. Use `Part of #81`.
 
-### Task 4. Mock mode for outside APIs (issue #275, medium risk)
+### Task 4. Mock mode for outside APIs (issue #275)
 
-- [ ] Not started.
-
-**Why:** end-to-end tests cannot add an item, because adding calls Google
-Books, Spotify, YouTube or Microlink. This is the largest gap in what agents
-can verify on their own.
-
-**Steps:**
-1. Read issue #275 and the four clients in `lib/api/` (`googleBooks.ts`,
-   `spotify.ts`, `youtube.ts`, `microlink.ts`).
-2. Add `lib/api/mockMode.ts` exporting `isMockMode()`, true only when
-   `process.env.EXTERNAL_APIS === 'mock'` **and**
-   `process.env.VERCEL_ENV !== 'production'`.
-3. In each client's exported search or lookup function, return a small fixed
-   fixture at the top when `isMockMode()` is true. Put fixtures in
-   `test/fixtures/external/<client>.ts`. Two results per client is enough.
-4. Test each client: with mock mode on, `fetch` is never called and the
-   fixture is returned; with it off, behaviour is unchanged. Test that mock
-   mode is off when `VERCEL_ENV` is `production` even if the variable is set.
-5. Document the variable in `CLAUDE.md` under "Agent testing".
-
-**Do not** write the end-to-end tests themselves; they need a database (#147).
-
-**Done when:** verify passes and mock mode cannot turn on in production.
+- [x] Done on `next`. Set `EXTERNAL_APIS=mock` and the four clients return
+  fixed results with no network request. See `lib/api/mockMode.ts`,
+  `lib/api/mockFixtures.ts` and `lib/api/mockMode.test.ts`. It cannot turn on
+  in production. The end-to-end tests that would use it still need a database
+  (#147, blocked).
 
 ### Task 5. Stable image sizes on shelf cards (low to medium risk, visible)
 
