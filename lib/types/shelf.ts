@@ -56,6 +56,10 @@ export interface Item {
   notes: string | null;
   rating: number | null;
   order_index: number;
+  /** Catalogue the identifier comes from, e.g. 'google_books' (issue #288). */
+  source?: string | null;
+  /** The item's id in that catalogue. See lib/utils/itemIdentity.ts. */
+  source_id?: string | null;
   created_at: Date;
   updated_at: Date;
 }

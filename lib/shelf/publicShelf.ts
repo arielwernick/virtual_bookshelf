@@ -33,6 +33,8 @@ export interface PublicShelfItem {
   image_url: string | null;
   note: string | null;
   rating: number | null;
+  /** Canonical identifier, when the item's URL carries one (issue #288). */
+  identifier: { source: string; id: string } | null;
   added_at: string;
 }
 
@@ -95,6 +97,8 @@ export function redactItemForPublic(item: Item): Item {
     notes: item.notes,
     rating: item.rating,
     order_index: item.order_index,
+    source: item.source ?? null,
+    source_id: item.source_id ?? null,
     created_at: item.created_at,
     updated_at: item.updated_at,
   };
@@ -122,6 +126,8 @@ export function toPublicShelf(shelf: Shelf, items: Item[], baseUrl = getBaseUrl(
       image_url: item.image_url || null,
       note: item.notes || null,
       rating: typeof item.rating === 'number' && item.rating > 0 ? item.rating : null,
+      identifier:
+        item.source && item.source_id ? { source: item.source, id: item.source_id } : null,
       added_at: toIso(item.created_at),
     })),
   };

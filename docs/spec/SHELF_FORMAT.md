@@ -52,6 +52,7 @@ lists the Markdown form of every public shelf.
       "image_url": "https://example.com/cover.jpg",
       "note": "Changed how I plan my week",
       "rating": 5,
+      "identifier": { "source": "google_books", "id": "abc" },
       "added_at": "2026-10-01T00:00:00.000Z"
     }
   ]
@@ -65,6 +66,7 @@ lists the Markdown form of every public shelf.
 | `items[].creator` | Author, artist, show or channel. For `stock` it is the ticker |
 | `items[].note` | The curator's own words about the item, or `null` |
 | `items[].rating` | 1 to 5, or `null` |
+| `items[].identifier` | Which catalogue and which id, or `null`. Sources: `google_books`, `open_library`, `goodreads`, `amazon`, `spotify` (`<kind>:<id>`), `apple_podcasts`, `youtube`, `ticker` |
 | `items[].added_at` | When the item was added to the shelf, not when the work was made |
 
 ## shelf.md
@@ -84,4 +86,5 @@ and `content_text` holds the title, creator and note.
 A `CollectionPage` whose `mainEntity` is an ordered `ItemList`. Item types are
 `Book`, `PodcastSeries`, `PodcastEpisode`, `MusicAlbum`, `MusicRecording`,
 `CreativeWork` (videos), `WebPage` (links) and `Corporation` (stocks). A note
-or rating is a `Review` with no author. See `lib/utils/schemaMarkup.ts`.
+or rating is a `Review` with no author. An item with a known identifier
+carries `sameAs`, the canonical address of the work. See `lib/utils/schemaMarkup.ts`.

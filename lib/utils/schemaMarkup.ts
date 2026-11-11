@@ -7,6 +7,7 @@
  */
 
 import { Item, ItemType, Shelf } from '@/lib/types/shelf';
+import { canonicalUrlForIdentity } from '@/lib/utils/itemIdentity';
 
 type SchemaObject = Record<string, unknown>;
 
@@ -97,6 +98,12 @@ function generateItemSchema(item: Item, index: number): SchemaObject {
 
   if (item.external_url) schema.url = item.external_url;
   if (item.image_url) schema.image = item.image_url;
+
+  // A stable, canonical address for the work, when the item has an identifier
+  // we recognise (issue #288). Lets a parser tell that two shelves hold the
+  // same book even when their links differ.
+  const sameAs = canonicalUrlForIdentity(item.source, item.source_id);
+  if (sameAs && sameAs !== item.external_url) schema.sameAs = sameAs;
 
   Object.assign(schema, creatorProperties(item), reviewProperties(item));
 

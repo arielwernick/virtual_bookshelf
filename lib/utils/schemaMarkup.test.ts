@@ -171,6 +171,21 @@ describe('generateShelfSchema (collection page)', () => {
     expect(review.author).toBeUndefined();
   });
 
+  it('adds sameAs from the canonical identifier when it differs from the link', () => {
+    const inner = getFirstItemSchema(createMockShelf(), [
+      createMockItem({
+        type: 'book',
+        external_url: 'http://books.google.com/books?id=zyTCAlFPjgYC&dq=x&source=gbs_api',
+        source: 'google_books',
+        source_id: 'zyTCAlFPjgYC',
+      }),
+    ]);
+    const plain = getFirstItemSchema(createMockShelf(), [createMockItem({ type: 'link' })]);
+
+    expect(inner.sameAs).toBe('https://books.google.com/books?id=zyTCAlFPjgYC');
+    expect(plain.sameAs).toBeUndefined();
+  });
+
   it('omits the review when there is no note and no rating', () => {
     const inner = getFirstItemSchema(createMockShelf(), [createMockItem({ notes: null, rating: null })]);
     expect(inner.review).toBeUndefined();

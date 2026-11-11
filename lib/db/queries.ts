@@ -1,3 +1,4 @@
+import { deriveItemIdentity } from '@/lib/utils/itemIdentity';
 import { sql, sqlQuery } from './client';
 import { User, SignupSource, SignupAttribution, AdminOverview, AdminWeeklySignups, AdminAttributionRow, AdminRecentUser, AdminWeeklyViews, AdminTopShelf, AdminEmbedHost, ViewSurface, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
@@ -502,9 +503,13 @@ export async function createItem(shelfId: string, itemData: CreateItemData, user
     order_index = 0,
   } = itemData;
 
+  // Canonical identity (issue #288): which catalogue, which id. NULL when the
+  // URL carries no identifier we recognise.
+  const identity = deriveItemIdentity(type, external_url, creator);
+
   const result = await sql`
-    INSERT INTO items (shelf_id, user_id, type, title, creator, image_url, external_url, notes, rating, order_index)
-    VALUES (${shelfId}, ${userId || null}, ${type}, ${title}, ${creator}, ${image_url}, ${external_url}, ${notes}, ${rating}, ${order_index})
+    INSERT INTO items (shelf_id, user_id, type, title, creator, image_url, external_url, notes, rating, order_index, source, source_id)
+    VALUES (${shelfId}, ${userId || null}, ${type}, ${title}, ${creator}, ${image_url}, ${external_url}, ${notes}, ${rating}, ${order_index}, ${identity?.source ?? null}, ${identity?.sourceId ?? null})
     RETURNING *
   `;
 
@@ -625,7 +630,25 @@ const ITEM_UPDATABLE_FIELDS = [
 export async function updateItem(itemId: string, itemData: UpdateItemData): Promise<Item> {
   const { query, values } = buildDynamicUpdate('items', itemId, itemData, ITEM_UPDATABLE_FIELDS);
   const result = await execParameterized(query, values);
-  return result[0] as Item;
+  const item = result[0] as Item;
+
+  // Keep the canonical identity in step when the URL (or a stock's ticker,
+  // stored in creator) changes.
+  if (item && (itemData.external_url !== undefined || itemData.creator !== undefined)) {
+    const identity = deriveItemIdentity(item.type, item.external_url, item.creator);
+    const source = identity?.source ?? null;
+    const sourceId = identity?.sourceId ?? null;
+    if (source !== (item.source ?? null) || sourceId !== (item.source_id ?? null)) {
+      const updated = await sql`
+        UPDATE items SET source = ${source}, source_id = ${sourceId}
+        WHERE id = ${itemId}
+        RETURNING *
+      `;
+      return updated[0] as Item;
+    }
+  }
+
+  return item;
 }
 
 /**

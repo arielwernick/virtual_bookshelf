@@ -80,6 +80,20 @@ describe('toPublicShelf', () => {
     ]);
   });
 
+  it('includes the canonical identifier when the item has one', () => {
+    const doc = toPublicShelf(
+      createMockShelf(),
+      [
+        createMockItem({ id: 'a', order_index: 0, source: 'google_books', source_id: 'abc' }),
+        createMockItem({ id: 'b', order_index: 1 }),
+      ],
+      BASE
+    );
+
+    expect(doc.items[0].identifier).toEqual({ source: 'google_books', id: 'abc' });
+    expect(doc.items[1].identifier).toBeNull();
+  });
+
   it('turns empty values into null', () => {
     const doc = toPublicShelf(
       createMockShelf({ description: '' }),
