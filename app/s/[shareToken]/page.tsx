@@ -81,6 +81,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         'text/markdown': twins.markdown,
         'application/json': twins.json,
         'application/feed+json': twins.json_feed,
+        // oEmbed discovery, so a pasted shelf link can unfurl as the embed (#286)
+        'application/json+oembed': `${baseUrl}/oembed?format=json&url=${encodeURIComponent(twins.html)}`,
       },
     },
     openGraph: {
