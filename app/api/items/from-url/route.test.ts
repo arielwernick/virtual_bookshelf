@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/utils/session', () => ({ getSession: vi.fn() }));
 vi.mock('@/lib/db/client', () => ({ sql: vi.fn() }));
+vi.mock('@/lib/db/queries', () => ({ createItem: vi.fn() }));
 vi.mock('@/lib/utils/revalidateShelf', () => ({ revalidateSharedShelf: vi.fn() }));
 vi.mock('@/lib/api/youtube', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/api/youtube')>()),
@@ -14,6 +15,7 @@ vi.mock('@/lib/api/microlink', async (importOriginal) => ({
 
 import { getSession } from '@/lib/utils/session';
 import { sql } from '@/lib/db/client';
+import { createItem } from '@/lib/db/queries';
 import { getVideoDetails } from '@/lib/api/youtube';
 import { fetchLinkMetadata, MicrolinkQuotaExceededError } from '@/lib/api/microlink';
 import { POST } from './route';
@@ -25,21 +27,21 @@ function fromUrlRequest(body: unknown) {
   });
 }
 
-/** Queue the three database calls of a successful add: shelf, next order, insert. */
-function mockOwnedShelf(created: Record<string, unknown> = { id: 'item-1', title: 'T' }) {
+/** Queue the two lookups of a successful add: the owned shelf, then the next position. */
+function mockOwnedShelf() {
   vi.mocked(sql)
     .mockResolvedValueOnce([{ id: 'shelf-1', share_token: 'tok', name: 'Shelf' }] as never)
-    .mockResolvedValueOnce([{ next_order: 3 }] as never)
-    .mockResolvedValueOnce([created] as never);
+    .mockResolvedValueOnce([{ next_order: 3 }] as never);
 }
 
-/** The values passed to the INSERT (the third sql call). */
-const insertValues = () => vi.mocked(sql).mock.calls[2].slice(1);
+/** What the route asked createItem to save. */
+const savedItem = () => vi.mocked(createItem).mock.calls[0][1];
 
 describe('POST /api/items/from-url', () => {
   beforeEach(() => {
     vi.mocked(getSession).mockReset().mockResolvedValue({ userId: 'user-1' } as never);
     vi.mocked(sql).mockReset();
+    vi.mocked(createItem).mockReset().mockResolvedValue({ id: 'item-1', title: 'T' } as never);
     vi.mocked(getVideoDetails).mockReset();
     vi.mocked(fetchLinkMetadata).mockReset();
   });
@@ -67,7 +69,7 @@ describe('POST /api/items/from-url', () => {
     const res = await POST(fromUrlRequest({ url: 'https://example.com/a', shelf_id: 'not-mine' }));
 
     expect(res.status).toBe(404);
-    expect(sql).toHaveBeenCalledTimes(1);
+    expect(createItem).not.toHaveBeenCalled();
     // The ownership check is scoped to the signed-in user
     expect(vi.mocked(sql).mock.calls[0].slice(1)).toEqual(['not-mine', 'user-1']);
     expect(fetchLinkMetadata).not.toHaveBeenCalled();
@@ -87,7 +89,18 @@ describe('POST /api/items/from-url', () => {
 
     expect(res.status).toBe(200);
     expect(getVideoDetails).toHaveBeenCalledWith('dQw4w9WgXcQ');
-    expect(insertValues()).toEqual(expect.arrayContaining(['A Video', 'A Channel', 3, 'dQw4w9WgXcQ']));
+    expect(vi.mocked(createItem).mock.calls[0]).toEqual([
+      'shelf-1',
+      {
+        type: 'video',
+        title: 'A Video',
+        creator: 'A Channel',
+        image_url: 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+        external_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        order_index: 3,
+      },
+      'user-1',
+    ]);
     expect(fetchLinkMetadata).not.toHaveBeenCalled();
   });
 
@@ -106,9 +119,13 @@ describe('POST /api/items/from-url', () => {
 
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);
-    expect(insertValues()).toEqual(
-      expect.arrayContaining(['A Post', 'example.com', 'https://example.com/og.png', 'https://example.com/post'])
-    );
+    expect(savedItem()).toMatchObject({
+      type: 'link',
+      title: 'A Post',
+      creator: 'example.com',
+      image_url: 'https://example.com/og.png',
+      external_url: 'https://example.com/post',
+    });
   });
 
   it('stores only web URLs, even when the metadata service returns something else', async () => {
@@ -122,12 +139,10 @@ describe('POST /api/items/from-url', () => {
     });
 
     await POST(fromUrlRequest({ url: 'https://example.com/post', shelf_id: 'shelf-1' }));
-    const values = insertValues();
 
-    expect(values).not.toContain('javascript:alert(1)');
-    expect(values).not.toContain('data:text/html,x');
-    // Falls back to the URL the person pasted
-    expect(values).toContain('https://example.com/post');
+    // Falls back to the URL the person pasted. The image is passed on to
+    // createItem, which drops anything that is not a web URL.
+    expect(savedItem().external_url).toBe('https://example.com/post');
   });
 
   it('answers 503 when the metadata quota is used up, and adds nothing', async () => {
@@ -141,6 +156,6 @@ describe('POST /api/items/from-url', () => {
 
     expect(res.status).toBe(503);
     expect(body.error).toBe('quota_exceeded');
-    expect(sql).toHaveBeenCalledTimes(2);
+    expect(createItem).not.toHaveBeenCalled();
   });
 });

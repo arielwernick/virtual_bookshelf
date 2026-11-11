@@ -3,9 +3,9 @@ import { getSession } from '@/lib/utils/session';
 import { extractVideoId, getVideoDetails } from '@/lib/api/youtube';
 import { fetchLinkMetadata, isYouTubeUrl, MicrolinkQuotaExceededError } from '@/lib/api/microlink';
 import { sql } from '@/lib/db/client';
+import { createItem } from '@/lib/db/queries';
 import { createLogger } from '@/lib/utils/logger';
 import { safeHttpUrl } from '@/lib/utils/validation';
-import { deriveItemIdentity } from '@/lib/utils/itemIdentity';
 import { revalidateSharedShelf } from '@/lib/utils/revalidateShelf';
 
 const logger = createLogger('ItemsFromUrl');
@@ -94,39 +94,25 @@ export async function POST(request: Request) {
         );
       }
 
-      // Create the video item
-      const result = await sql`
-        INSERT INTO items (
-          shelf_id,
-          user_id,
-          type,
-          title,
-          creator,
-          image_url,
-          external_url,
-          order_index,
-          source,
-          source_id
-        )
-        VALUES (
-          ${shelf_id},
-          ${session.userId},
-          'video',
-          ${videoDetails.title},
-          ${videoDetails.channelName},
-          ${safeHttpUrl(videoDetails.thumbnailUrl)},
-          ${safeHttpUrl(videoDetails.videoUrl)},
-          ${nextOrder},
-          'youtube',
-          ${videoId}
-        )
-        RETURNING *
-      `;
+      // Create the video item. createItem applies the same rules as every
+      // other add: only web URLs are stored and the identifier is recorded.
+      const item = await createItem(
+        shelf_id,
+        {
+          type: 'video',
+          title: videoDetails.title,
+          creator: videoDetails.channelName,
+          image_url: videoDetails.thumbnailUrl,
+          external_url: videoDetails.videoUrl,
+          order_index: nextOrder,
+        },
+        session.userId
+      );
       revalidateSharedShelf(shelfResult[0].share_token as string, shelfResult[0].name as string);
 
       return NextResponse.json({
         success: true,
-        data: result[0],
+        data: item,
       });
     }
 
@@ -160,43 +146,24 @@ export async function POST(request: Request) {
 
     // The metadata service returns the page's own URL, which is not ours to
     // trust: only web URLs are stored (issue #296), falling back to what the
-    // user pasted.
-    const linkUrl = safeHttpUrl(linkMetadata.url) ?? safeHttpUrl(url);
-    const linkIdentity = deriveItemIdentity('link', linkUrl);
-
-    // Create the link item
-    const result = await sql`
-      INSERT INTO items (
-        shelf_id,
-        user_id,
-        type,
-        title,
-        creator,
-        image_url,
-        external_url,
-        order_index,
-        source,
-        source_id
-      )
-      VALUES (
-        ${shelf_id},
-        ${session.userId},
-        'link',
-        ${linkMetadata.title},
-        ${linkMetadata.publisher},
-        ${safeHttpUrl(linkMetadata.image)},
-        ${linkUrl},
-        ${nextOrder},
-        ${linkIdentity?.source ?? null},
-        ${linkIdentity?.sourceId ?? null}
-      )
-      RETURNING *
-    `;
+    // user pasted. createItem checks the image the same way.
+    const item = await createItem(
+      shelf_id,
+      {
+        type: 'link',
+        title: linkMetadata.title,
+        creator: linkMetadata.publisher,
+        image_url: linkMetadata.image ?? undefined,
+        external_url: safeHttpUrl(linkMetadata.url) ?? safeHttpUrl(url) ?? undefined,
+        order_index: nextOrder,
+      },
+      session.userId
+    );
     revalidateSharedShelf(shelfResult[0].share_token as string, shelfResult[0].name as string);
 
     return NextResponse.json({
       success: true,
-      data: result[0],
+      data: item,
     });
   } catch (error) {
     logger.errorWithException('Failed to create item from URL', error);

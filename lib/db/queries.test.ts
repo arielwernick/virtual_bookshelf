@@ -652,19 +652,50 @@ describe('Item Queries', () => {
       expect(values).toContain('https://example.com/cover.jpg');
     });
 
-    it('records the canonical identifier for a recognised URL', async () => {
-      vi.mocked(sql).mockResolvedValueOnce([{ id: 'item-1' }]);
+    it('records the canonical identifier in a second statement', async () => {
+      vi.mocked(sql)
+        .mockResolvedValueOnce([{ id: 'item-1', type: 'video', external_url: 'https://youtu.be/dQw4w9WgXcQ' }])
+        .mockResolvedValueOnce([{ id: 'item-1', source: 'youtube', source_id: 'dQw4w9WgXcQ' }]);
 
-      await createItem('shelf-1', {
+      const item = await createItem('shelf-1', {
         type: 'video',
         title: 'T',
         creator: 'C',
         external_url: 'https://youtu.be/dQw4w9WgXcQ',
       });
 
-      const values = vi.mocked(sql).mock.calls[0].slice(1);
-      expect(values).toContain('youtube');
-      expect(values).toContain('dQw4w9WgXcQ');
+      expect(sql).toHaveBeenCalledTimes(2);
+      expect(vi.mocked(sql).mock.calls[1].slice(1)).toEqual(['youtube', 'dQw4w9WgXcQ', 'item-1']);
+      expect(item.source).toBe('youtube');
+    });
+
+    it('still saves the item when the identity columns are missing', async () => {
+      // Code deployed before migration 007: the insert works, the identity
+      // update fails, and the add must not fail with it.
+      const saved = { id: 'item-1', type: 'video', external_url: 'https://youtu.be/dQw4w9WgXcQ' };
+      vi.mocked(sql)
+        .mockResolvedValueOnce([saved])
+        .mockRejectedValueOnce(new Error('column "source" of relation "items" does not exist'));
+
+      const item = await createItem('shelf-1', {
+        type: 'video',
+        title: 'T',
+        creator: 'C',
+        external_url: 'https://youtu.be/dQw4w9WgXcQ',
+      });
+
+      expect(item).toEqual(saved);
+    });
+
+    it('does not name the identity columns in the insert', async () => {
+      vi.mocked(sql).mockResolvedValueOnce([{ id: 'item-1', type: 'link', external_url: null }]);
+
+      await createItem('shelf-1', { type: 'link', title: 'T', creator: 'C' });
+
+      const insertText = (vi.mocked(sql).mock.calls[0][0] as unknown as string[]).join('?');
+      expect(insertText).not.toContain('source');
+      // No identifier to record, so no second statement either
+      expect(sql).toHaveBeenCalledTimes(1);
     });
 
     it('creates item with required fields', async () => {
