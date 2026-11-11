@@ -27,6 +27,8 @@ npm run test:run -- --grep "ItemCard"
 
 A change is done when `npm run verify` is green and its output is pasted in the PR (see `.github/pull_request_template.md`). CI runs the same command. For UI or route changes, also check the Vercel preview and say what you looked at. One branch and one PR per issue; the PR body says `Closes #N`.
 
+If you are continuing work on the `next` branch, read `docs/process/HANDOFF.md` first: it has the task queue in order and the exact commands to land a ticket.
+
 Safety rules and what enforces each one are in `docs/AGENT_SAFETY.md`. If a rule blocks you, stop and ask; don't work around it.
 
 ## Agent testing

@@ -6,6 +6,7 @@ the database safety rules and what "done" means.
 
 Also useful:
 
+- [docs/process/HANDOFF.md](./docs/process/HANDOFF.md): **start here if you are continuing the `next` branch.** The task queue, how to land work, and what not to touch
 - [docs/AGENT_SAFETY.md](./docs/AGENT_SAFETY.md): what agents must never do, and what enforces each rule
 - [docs/process/RISK_TIERS.md](./docs/process/RISK_TIERS.md): which changes need a person to review them
 - [docs/process/INTEGRATION_BRANCH.md](./docs/process/INTEGRATION_BRANCH.md): how the `next` branch works
