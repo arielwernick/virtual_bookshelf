@@ -200,23 +200,12 @@ Update the component tests.
 **Done when:** verify passes. Say in the commit that it changes image loading
 and should be looked at on the preview.
 
-### Task 6. Content Security Policy in report-only mode (issue #82, medium risk)
+### Task 6. Content Security Policy in report-only mode (issue #82)
 
-- [ ] Not started.
-
-**Why:** the site sends no Content Security Policy.
-
-**Steps:** in `next.config.ts`, add a `Content-Security-Policy-Report-Only`
-header (not the enforcing header) to the non-embed routes. Start from:
-`default-src 'self'; img-src 'self' https: data:; script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; frame-src https://www.youtube.com https://open.spotify.com; frame-ancestors 'none'`.
-Add a test that reads the config and checks the header is present on `/` and
-absent on `/embed/x`.
-
-**Do not** send the enforcing `Content-Security-Policy` header. Report-only
-cannot break the site; enforcing can.
-
-**Done when:** verify passes and `npm run build` succeeds with
-`DATABASE_URL=postgresql://test:test@localhost:5432/test SESSION_SECRET=test-secret-for-build`.
+- [x] Done on `next`, in report-only mode. The policy is in
+  `lib/security/csp.ts`. **Do not** switch it to the enforcing
+  `Content-Security-Policy` header: that is the owner's call, after the
+  preview has been used with a clean browser console.
 
 ### Task 7. `apiError()` helper (issue #87, low risk)
 
