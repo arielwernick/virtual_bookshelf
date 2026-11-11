@@ -8,6 +8,8 @@ import { ShelfGridStatic } from '@/components/shelf/ShelfGridStatic';
 import { SharedShelfInteractive } from './SharedShelfInteractive';
 import { generateShelfSchemaJson } from '@/lib/utils/schemaMarkup';
 import { ViewBeacon } from '@/components/ViewBeacon';
+import { ShelfNotesStatic } from '@/components/shelf/ShelfNotesStatic';
+import { describeShelfForSearch, formatShelfDate } from '@/lib/utils/shelfSummary';
 import { SHARED_SHELF_CTA_LINK } from '@/lib/utils/growthLinks';
 import { buildShelfUrls, redactItemForPublic } from '@/lib/shelf/publicShelf';
 
@@ -56,13 +58,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const items = await getCachedItems(shelf.id);
-  const itemCount = items.length;
-  const itemText = itemCount === 1 ? '1 item' : `${itemCount} items`;
-  
-  // Build description
-  const description = shelf.description 
-    ? `${shelf.description.substring(0, 150)}${shelf.description.length > 150 ? '...' : ''}`
-    : `A curated collection of ${itemText} on Virtual Bookshelf`;
+  // The owner's description, or the first few titles when there is none
+  const description = describeShelfForSearch(
+    shelf.description,
+    [...items].sort((a, b) => a.order_index - b.order_index).map((item) => item.title)
+  );
 
   // Get the base URL for OG image
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
@@ -192,6 +192,11 @@ export default async function SharedShelfPage({ params }: PageProps) {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{shelfData.name}</h1>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {shelfData.items.length} {shelfData.items.length === 1 ? 'item' : 'items'}
+                {' · '}
+                Updated{' '}
+                <time dateTime={new Date(shelfData.shelf.updated_at).toISOString()}>
+                  {formatShelfDate(shelfData.shelf.updated_at)}
+                </time>
               </p>
             </div>
 
@@ -206,9 +211,14 @@ export default async function SharedShelfPage({ params }: PageProps) {
 
         {/* Main Content - Server Rendered Items with Client Interactivity */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Item cards use h3; this keeps the heading order h1 > h2 > h3 */}
+          <h2 className="sr-only">Items on this shelf</h2>
           <SharedShelfInteractive items={shelfData.items}>
             <ShelfGridStatic items={shelfData.items} />
           </SharedShelfInteractive>
+
+          {/* Every note in full, in the HTML, so it can be read and quoted (#293) */}
+          <ShelfNotesStatic items={shelfData.items} />
         </main>
 
         {/* CTA Section - Server Rendered */}
