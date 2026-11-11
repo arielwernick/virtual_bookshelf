@@ -16,6 +16,7 @@ Trust and the basics.
 - Privacy and Terms pages (needs the owner; blocks every email feature)
 - Sign-in on Better Auth with email verification and password reset: [#264](https://github.com/arielwernick/virtual_bookshelf/issues/264) to [#269](https://github.com/arielwernick/virtual_bookshelf/issues/269)
 - Three shelf visibility levels: [#263](https://github.com/arielwernick/virtual_bookshelf/issues/263)
+- Talk to real users: what makes a shelf worth coming back to? (needs the owner; no code)
 - End-to-end tests an agent can run alone: [#147](https://github.com/arielwernick/virtual_bookshelf/issues/147), [#275](https://github.com/arielwernick/virtual_bookshelf/issues/275)
 
 ## Next
@@ -25,6 +26,7 @@ Make each shelf worth citing, and make sharing pay back.
 - Keep adding after the first item, ask for a note, publish from the edit page: [#292](https://github.com/arielwernick/virtual_bookshelf/issues/292)
 - Full notes in the page, heading order, an updated date: [#293](https://github.com/arielwernick/virtual_bookshelf/issues/293)
 - Show owners their own view counts: [#68](https://github.com/arielwernick/virtual_bookshelf/issues/68)
+- Shelves as time capsules: mark a shelf as a dated snapshot ("Summer 2026") or as "what I'm into this week" (not ticketed yet)
 - A `/guides` section, with embed recipes per host: [#259](https://github.com/arielwernick/virtual_bookshelf/issues/259)
 
 ## Later
@@ -49,9 +51,16 @@ See `docs/process/INTEGRATION_BRANCH.md` for how promotion works.
 - Agent harness: [#290](https://github.com/arielwernick/virtual_bookshelf/issues/290)
 - Delivery process: [#291](https://github.com/arielwernick/virtual_bookshelf/issues/291)
 
-## Not doing
+## Recommended against
+
+These are the audit reviewers' recommendations, not decisions. The owner has
+not ruled on them.
 
 - A social graph: follows, likes, a discover feed. It fights the "coffee table, not a portfolio" positioning and would look empty.
 - More "alternative to" landing pages.
 - Recommendations by AI, real-time collaboration, federation, a native app.
-- More item types.
+
+## Open
+
+- PDF uploads as an item type. Planned, with an open question about whether people want it.
+- A founder blog at `/blog` beside `/guides`, for the origin and build stories.
