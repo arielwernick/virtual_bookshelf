@@ -79,9 +79,10 @@ git push origin next
 - If `git merge --ff-only` fails, someone else pushed. Run
   `git checkout agent/<issue>-<slug> && git rebase next`, re-run verify, and
   try again.
-- After pushing, tick the task in section 5 of this file in a small
-  follow-up commit (`docs: tick <task> in the handoff`), or include the tick
-  in the ticket's own commit.
+- After pushing, tick the task in section 5 of this file in its **own**
+  small commit (`docs: tick <task> in the handoff`). Do not put the tick in
+  the ticket's commit: it ties every ticket to this file and makes them
+  harder to promote separately.
 
 ## 4. Things only the owner can do (do not attempt)
 

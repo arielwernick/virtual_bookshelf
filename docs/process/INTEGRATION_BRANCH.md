@@ -24,19 +24,40 @@ git cherry -v origin/main origin/next    # "+" lines are not on main yet
 
 ## How to promote
 
-To take everything: open a pull request from `next` into `main`.
+Tested on Nov 11, 2026: most commits on `next` do **not** cherry-pick cleanly
+onto `main` on their own, and some that do would not compile, because later
+commits build on earlier ones (several touch the shelf page, the queries file
+and the handoff file). So pick by position, not by plucking.
 
-To take some of it:
+**Take everything.** Open a pull request from `next` into `main`.
+
+**Take the first few.** `next` is a straight line, so any commit and
+everything before it is a working state:
 
 ```bash
-git checkout -b promote/2026-11-12 origin/main
-git cherry-pick -x <commit> <commit>     # in the order they appear on next
-npm run verify
-git push -u origin promote/2026-11-12    # then open a PR into main
+git fetch origin
+git log --oneline --reverse origin/main..origin/next   # the order
+git checkout -b promote/2026-11-12 <last commit you want>
+npm ci && npm run verify
+git push -u origin promote/2026-11-12                  # then open a PR into main
 ```
 
-`-x` records where each commit came from. The promote PR must pass the
-preview smoke tests itself: "tested on next" is not "tested on main".
+**Take everything except one ticket.** Revert that ticket on a promote
+branch, then open the pull request:
+
+```bash
+git checkout -b promote/2026-11-12 origin/next
+git revert --no-edit <commit to leave out>             # fix conflicts if a later commit built on it
+npm run verify
+git push -u origin promote/2026-11-12
+```
+
+**One commit that does stand alone:** the first one on the branch,
+`80b460b` (#283). `git cherry-pick -x 80b460b` onto a branch from `main`
+works and should be promoted first.
+
+The promote pull request must pass the preview smoke tests itself: "tested
+on next" is not "tested on main".
 
 ## After promoting
 
@@ -50,8 +71,9 @@ This is the one place a force push is expected, and a person does it.
 
 ## Pitfalls
 
-- **Order matters.** A commit can depend on an earlier one. Each commit body
-  says what it depends on; promote in order.
+- **Order matters.** A commit can depend on an earlier one even when git
+  applies it without complaint: the account export (#289) picks cleanly onto
+  `main` but imports a file added by #285. Promote by position, as above.
 - **Migrations are promoted strictly in number order, never skipped.** Run
   `npm run migrate:up` on production before deploying code that needs the new
   columns.
