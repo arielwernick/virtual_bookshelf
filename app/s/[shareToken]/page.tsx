@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { permanentRedirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
 import { buildShareSlug, buildSharePath, extractShareToken } from '@/lib/utils/slug';
 import { ShelfGridStatic } from '@/components/shelf/ShelfGridStatic';
@@ -37,90 +37,64 @@ interface PageProps {
 }
 
 /**
- * Not Found component for shared shelves
- */
-function ShelfNotFound() {
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4">
-      <div className="text-center">
-        <h1 className="text-6xl font-bold text-gray-900 dark:text-gray-100 mb-4">404</h1>
-        <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Shelf Not Found</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-8">This shared bookshelf doesn&apos;t exist or is not public.</p>
-        <Link href="/" className="inline-block px-6 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium">
-          Go Home
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-/**
  * Generate dynamic metadata for shared shelves
  * This enables beautiful OG images when sharing on social media
  */
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { shareToken } = await params;
-  
-  try {
-    const shelf = await resolveShelf(shareToken);
 
-    if (!shelf || !shelf.is_public) {
-      return {
-        title: 'Shelf Not Found',
-        description: 'This shelf could not be found.',
-        robots: { index: false },
-      };
-    }
+  const shelf = await resolveShelf(shareToken);
 
-    const items = await getCachedItems(shelf.id);
-    const itemCount = items.length;
-    const itemText = itemCount === 1 ? '1 item' : `${itemCount} items`;
-    
-    // Build description
-    const description = shelf.description 
-      ? `${shelf.description.substring(0, 150)}${shelf.description.length > 150 ? '...' : ''}`
-      : `A curated collection of ${itemText} on Virtual Bookshelf`;
-
-    // Get the base URL for OG image
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
-    const ogImageUrl = `${baseUrl}/api/og/${shelf.share_token}`;
-
-    // Canonical URL includes the shelf-name slug for SEO
-    const canonicalPath = buildSharePath(shelf.name, shelf.share_token);
-
+  if (!shelf || !shelf.is_public) {
     return {
-      title: shelf.name,
-      description,
-      alternates: { canonical: canonicalPath },
-      openGraph: {
-        title: shelf.name,
-        description,
-        type: 'website',
-        url: `${baseUrl}${canonicalPath}`,
-        images: [
-          {
-            url: ogImageUrl,
-            width: 1200,
-            height: 630,
-            alt: `${shelf.name} - Virtual Bookshelf`,
-          },
-        ],
-        siteName: 'Virtual Bookshelf',
-      },
-      twitter: {
-        card: 'summary_large_image',
-        title: shelf.name,
-        description,
-        images: [ogImageUrl],
-      },
-    };
-  } catch (error) {
-    console.error('Error generating metadata:', error);
-    return {
-      title: { absolute: 'Virtual Bookshelf' },
-      description: 'Curate and share your favorite books, podcasts, and music.',
+      title: 'Shelf Not Found',
+      description: 'This shelf could not be found.',
+      robots: { index: false },
     };
   }
+
+  const items = await getCachedItems(shelf.id);
+  const itemCount = items.length;
+  const itemText = itemCount === 1 ? '1 item' : `${itemCount} items`;
+  
+  // Build description
+  const description = shelf.description 
+    ? `${shelf.description.substring(0, 150)}${shelf.description.length > 150 ? '...' : ''}`
+    : `A curated collection of ${itemText} on Virtual Bookshelf`;
+
+  // Get the base URL for OG image
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
+  const ogImageUrl = `${baseUrl}/api/og/${shelf.share_token}`;
+
+  // Canonical URL includes the shelf-name slug for SEO
+  const canonicalPath = buildSharePath(shelf.name, shelf.share_token);
+
+  return {
+    title: shelf.name,
+    description,
+    alternates: { canonical: canonicalPath },
+    openGraph: {
+      title: shelf.name,
+      description,
+      type: 'website',
+      url: `${baseUrl}${canonicalPath}`,
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: `${shelf.name} - Virtual Bookshelf`,
+        },
+      ],
+      siteName: 'Virtual Bookshelf',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: shelf.name,
+      description,
+      images: [ogImageUrl],
+    },
+  };
 }
 
 /**
@@ -128,28 +102,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * Returns null if shelf not found or not public
  */
 async function getShelfData(shareToken: string) {
-  try {
-    const shelf = await resolveShelf(shareToken);
+  // Database errors are left to throw: ISR then keeps serving the last good
+  // page instead of caching a "not found" for a shelf that exists.
+  const shelf = await resolveShelf(shareToken);
 
-    if (!shelf || !shelf.is_public) {
-      return null;
-    }
-
-    // Items are deduped with generateMetadata
-    const items = await getCachedItems(shelf.id);
-
-    return {
-      shelf,
-      id: shelf.id,
-      name: shelf.name,
-      description: shelf.description,
-      items,
-      created_at: shelf.created_at.toISOString(),
-    };
-  } catch (error) {
-    console.error('Error loading shared shelf:', error);
+  if (!shelf || !shelf.is_public) {
     return null;
   }
+
+  // Items are deduped with generateMetadata
+  const items = await getCachedItems(shelf.id);
+
+  return {
+    shelf,
+    id: shelf.id,
+    name: shelf.name,
+    description: shelf.description,
+    items,
+    created_at: shelf.created_at.toISOString(),
+  };
 }
 
 /**
@@ -163,7 +134,8 @@ export default async function SharedShelfPage({ params }: PageProps) {
   const shelfData = await getShelfData(shareToken);
 
   if (!shelfData) {
-    return <ShelfNotFound />;
+    // A real 404 status, not a "not found" page served with 200 (issue #284)
+    notFound();
   }
 
   // Permanently redirect bare-token and stale-slug URLs to the canonical
