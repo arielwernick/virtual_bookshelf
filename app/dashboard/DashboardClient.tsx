@@ -264,6 +264,20 @@ export default function DashboardClient() {
             ))}
           </div>
         )}
+
+        {/* Your shelves are yours: one file with everything on them (#289) */}
+        {data.shelves.length > 0 && (
+          <p className="mt-10 text-sm text-gray-500 dark:text-gray-400">
+            Your shelves are yours.{' '}
+            <a
+              href="/api/account/export"
+              download
+              className="font-medium text-gray-700 dark:text-gray-300 underline hover:text-gray-900 dark:hover:text-gray-100"
+            >
+              Export my data
+            </a>
+          </p>
+        )}
       </div>
 
       {/* Add Item Modal */}

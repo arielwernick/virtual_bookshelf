@@ -517,6 +517,21 @@ export async function createItem(shelfId: string, itemData: CreateItemData, user
 }
 
 /**
+ * Every item on every shelf a user owns, for the account export (issue #289).
+ * One query, ordered so callers can group by shelf without sorting.
+ */
+export async function getItemsForUserShelves(userId: string): Promise<Item[]> {
+  const result = await sql`
+    SELECT i.* FROM items i
+    JOIN shelves s ON s.id = i.shelf_id
+    WHERE s.user_id = ${userId}
+    ORDER BY i.shelf_id, i.order_index ASC
+  `;
+
+  return result as Item[];
+}
+
+/**
  * Get all items for a shelf
  */
 export async function getItemsByShelfId(shelfId: string): Promise<Item[]> {
