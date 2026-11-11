@@ -180,7 +180,10 @@ export default async function SharedShelfPage({ params }: PageProps) {
   }
 
   // Generate JSON-LD schema markup for AI readability
-  const schemaJson = generateShelfSchemaJson(shelfData.shelf, shelfData.items);
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
+  const schemaJson = generateShelfSchemaJson(shelfData.shelf, shelfData.items, {
+    url: `${baseUrl}/s/${canonicalSlug}`,
+  });
 
   return (
     <>
