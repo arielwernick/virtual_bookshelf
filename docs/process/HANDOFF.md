@@ -94,9 +94,10 @@ These are waiting on Ariel. Remind him; do not work around them.
       section on a public shelf (#293), adding several items in a row and
       publishing from the edit page (#292).
 - [ ] Run `npm run migrate:up` then
-      `npx tsx scripts/backfill-item-identity.ts` (dry run) on the Neon `dev`
-      branch for #288. Migration 007 must reach production **before** the code
-      that needs it.
+      `npx tsx scripts/backfill-item-identity.ts` (dry run first, then
+      `--apply`) on the Neon `dev` branch, and later on production, for #288.
+      Order no longer matters: items save even before migration 007 runs,
+      and the backfill fills in identifiers afterwards.
 - [ ] Privacy and Terms pages.
 - [ ] Resend, Sentry and Search Console accounts.
 - [ ] Repository settings: branch protection on `main`, auto-merge, the

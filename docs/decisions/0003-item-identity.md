@@ -32,5 +32,7 @@ columns match.
 
 - A Google Books volume id identifies an edition, so two editions of one book
   do not match yet. That is a missed match, not a wrong one.
-- Item writes need migration 007 applied first.
+- Identifiers are written in a second statement after the item is saved, and
+  a failure there does not fail the save. Code can therefore deploy before
+  migration 007; the backfill catches up any items saved in between.
 - Structured data can carry `sameAs`, and per-work pages become possible.
