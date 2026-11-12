@@ -169,7 +169,12 @@ export function toMarkdown(doc: PublicShelf): string {
 
   for (const item of doc.items) {
     const title = `**${markdownLink(escapeMarkdown(item.title), item.url)}**`;
-    const by = item.creator ? ` by ${escapeMarkdown(item.creator)}` : '';
+    // For a stock, `creator` holds the ticker: "Apple (AAPL)", not "by AAPL"
+    const by = !item.creator
+      ? ''
+      : item.type === 'stock'
+        ? ` (${escapeMarkdown(item.creator)})`
+        : ` by ${escapeMarkdown(item.creator)}`;
     const rating = item.rating ? `, rated ${item.rating}/5` : '';
     lines.push(`${item.position}. ${title}${by} (${TYPE_LABELS[item.type] ?? 'Item'}${rating})`);
     if (item.note) {
@@ -198,7 +203,12 @@ export function toJsonFeed(doc: PublicShelf): Record<string, unknown> {
     feed_url: doc.formats.json_feed,
     ...(doc.description ? { description: doc.description } : {}),
     items: newestFirst.map((item) => {
-      const summary = item.creator ? `${item.title} by ${item.creator}` : item.title;
+      const isStock = item.type === 'stock';
+      const summary = !item.creator
+        ? item.title
+        : isStock
+          ? `${item.title} (${item.creator})`
+          : `${item.title} by ${item.creator}`;
       return {
         // Position can change when a shelf is reordered; the time an item was
         // added does not, so it anchors the id.
@@ -209,7 +219,8 @@ export function toJsonFeed(doc: PublicShelf): Record<string, unknown> {
         content_text: item.note ? `${summary}\n\n${item.note}` : summary,
         ...(isHttpUrl(item.image_url) ? { image: item.image_url } : {}),
         date_published: item.added_at,
-        ...(item.creator ? { authors: [{ name: item.creator }] } : {}),
+        // A ticker is not an author
+        ...(item.creator && !isStock ? { authors: [{ name: item.creator }] } : {}),
         tags: [item.type],
       };
     }),

@@ -155,6 +155,20 @@ describe('toMarkdown', () => {
     expect(md).toContain('**Deep Work**');
   });
 
+  it('writes a stock as a name and ticker, not as a work with an author', () => {
+    const doc = toPublicShelf(
+      createMockShelf(),
+      [createMockItem({ type: 'stock', title: 'Apple', creator: 'AAPL', notes: null, rating: null })],
+      BASE
+    );
+    const feedItem = (toJsonFeed(doc).items as Array<Record<string, unknown>>)[0];
+
+    expect(toMarkdown(doc)).toContain('** (AAPL) (Stock)');
+    expect(toMarkdown(doc)).not.toContain('by AAPL');
+    expect(feedItem.content_text).toBe('Apple (AAPL)');
+    expect(feedItem.authors).toBeUndefined();
+  });
+
   it('handles an empty shelf', () => {
     const md = toMarkdown(toPublicShelf(createMockShelf(), [], BASE));
     expect(md).toContain('0 items');
