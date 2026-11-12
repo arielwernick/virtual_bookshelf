@@ -28,7 +28,11 @@ Migrations are plain SQL files in `migrations/`, run in number order by
    high risk: stop and ask the owner first.
 6. **Update the types and queries:** `lib/types/shelf.ts` and
    `lib/db/queries.ts`. Add tests in `lib/db/queries.test.ts`.
-7. **Run `npm run verify`.**
+7. **Prove it on a real engine.** `lib/db/queries.integration.test.ts` applies
+   every migration to an in-process Postgres (PGlite) and runs them twice.
+   Add a test there for your new columns or table, and one for the down file,
+   following the "007" example in that file.
+8. **Run `npm run verify`.**
 
 ## Do not
 

@@ -13,6 +13,7 @@ that does not depend on the agent choosing to behave.
 | Sending things to people | Agents draft replies and emails; a person sends them | Settled decision (Nov 4, 2026). No agent has send credentials | Applies to the planned SEO and PM agents |
 | Leaking who owns a shelf | Usernames and internal ids never appear on public surfaces | Field allowlists in `lib/shelf/publicShelf.ts`; `lib/utils/schemaMarkup.ts` | `lib/shelf/publicShelf.test.ts`, `lib/utils/schemaMarkup.test.ts` |
 | Exposing private shelves | Machine-readable views answer 404 unless the shelf is public | One check, `loadPublicShelf` in `lib/shelf/loadPublicShelf.ts` | `lib/shelf/loadPublicShelf.test.ts` |
+| Shipping SQL that was never run | Queries and migrations are run on a real Postgres engine in tests | `lib/db/queries.integration.test.ts`, using PGlite through `test/utils/pgliteClient.ts` | Part of `npm run verify` and CI |
 | Shipping unverified work | Done means `npm run verify` is green and its output is in the PR | CI runs the same command; `.github/pull_request_template.md` asks for the output | `.github/workflows/test.yml` |
 
 ## Not enforced yet

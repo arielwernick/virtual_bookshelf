@@ -36,6 +36,7 @@ Safety rules and what enforces each one are in `docs/AGENT_SAFETY.md`. If a rule
 Run `npm run setup` first in any new checkout or worktree. Worktrees often have stale `node_modules`, and gitignored `.env.local` isn't copied into them; setup fixes both (it links the main checkout's `.env.local`). The first run may download Playwright's Chromium.
 
 - **Unit tests** (`npm run test:run`) need no database or env vars; `test/setup.ts` mocks them.
+- **Database-backed tests** (`*.integration.test.ts`) run the real queries and migrations on PGlite, a real Postgres engine inside the test process. No network or credentials. When you add or change SQL in `lib/db/queries.ts` or a migration, add a case to `lib/db/queries.integration.test.ts` (`test/utils/pgliteClient.ts` explains how). They are part of `npm run verify`.
 - **Outside APIs:** set `EXTERNAL_APIS=mock` and Google Books, Spotify, YouTube and Microlink return fixed results with no network request (`lib/api/mockMode.ts`, fixtures in `lib/api/mockFixtures.ts`). A query containing "nothing" returns no results. It cannot turn on in production.
 - **Public e2e** (`npm run e2e:public`) starts `npm run dev` (or reuses one on port 3000) and checks the signed-out pages. Point it at a deployment with `PLAYWRIGHT_BASE_URL`.
 - **Signed-in e2e** (`npm run e2e`) creates a test user and shelf in whatever database the dev server uses.
