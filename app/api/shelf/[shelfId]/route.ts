@@ -3,6 +3,7 @@ import { getSession } from '@/lib/utils/session';
 import { getShelfById, getItemsByShelfId, updateShelf, deleteShelf } from '@/lib/db/queries';
 import type { Shelf } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
+import { redactItemForPublic } from '@/lib/shelf/publicShelf';
 import { revalidateSharedShelf } from '@/lib/utils/revalidateShelf';
 
 const logger = createLogger('ShelfById');
@@ -40,16 +41,23 @@ export async function GET(
         // Get shelf's items
         const items = await getItemsByShelfId(shelf.id);
 
+        // A public shelf can be read here by people who don't own it. They
+        // get the same shelf, without the owner's internal id on the shelf
+        // or on its items. `is_owner` is decided here, on the server, so the
+        // page doesn't need an id to compare against.
+        const isOwner = Boolean(session?.userId) && shelf.user_id === session?.userId;
+
         return NextResponse.json({
             success: true,
             data: {
                 id: shelf.id,
-                user_id: shelf.user_id,
+                ...(isOwner ? { user_id: shelf.user_id } : {}),
+                is_owner: isOwner,
                 name: shelf.name,
                 description: shelf.description,
                 is_public: shelf.is_public,
                 share_token: shelf.share_token,
-                items,
+                items: isOwner ? items : items.map(redactItemForPublic),
                 created_at: shelf.created_at,
             },
         });
