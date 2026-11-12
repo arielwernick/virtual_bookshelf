@@ -11,11 +11,17 @@ is unclear, stop and ask the owner (Ariel). Do not guess.
 
 - All work is on the branch `next`. `main` is untouched and deploys to
   production. **Never commit to or push `main`.**
+- `next` is open as **pull request #297** into `main`. Every push to `next`
+  updates that pull request and re-runs its checks. Its description holds the
+  owner's activation checklist. Do not merge it; the owner does.
 - `next` holds one commit per ticket on top of `main`. To list them:
   `git fetch origin && git log --oneline origin/main..origin/next`
 - The full audit and reasoning are in the private doc "Virtual Bookshelf —
   Next Level Audit and Plan". You do not need it to do the tasks below.
 - `ROADMAP.md` has the product order. This file has the task-level detail.
+- **The branch is large. Prefer making what is there safer over adding
+  features.** Tests, small fixes and documentation are welcome. A new feature
+  is not, unless the owner asks for it.
 
 ## 2. The rules (do not skip)
 
@@ -48,7 +54,19 @@ is unclear, stop and ask the owner (Ariel). Do not guess.
 11. **If `npm run dev` runs, Next.js rewrites a block at the bottom of
     `AGENTS.md`.** That block is already committed. If `git status` shows
     `AGENTS.md` changed and you did not edit it, run `git checkout AGENTS.md`.
-12. **Delete any temporary page or script before committing.** Run
+12. **After every push, check the pull request's checks.** Wait a few
+    minutes, then run:
+    `gh api repos/arielwernick/virtual_bookshelf/commits/$(git rev-parse HEAD)/check-runs --jq '.check_runs[] | "\(.name): \(.status) \(.conclusion)"'`
+    `test`, `lint`, `build` and `smoke` must end in `success`. `smoke` runs the
+    Playwright tests in `e2e/smoke.spec.ts` against the live preview, which has
+    a real database. `CodeQL` shows one known failure (see section 4); a
+    second one is new and yours to fix. If you broke a check, fix it in a new
+    commit before doing anything else.
+13. **SQL must run on a real engine before it lands.** If you add or change a
+    query in `lib/db/queries.ts` or a file in `migrations/`, add a case to
+    `lib/db/queries.integration.test.ts`. It runs on PGlite, a real Postgres
+    inside the test process. A mocked test alone is not enough for SQL.
+14. **Delete any temporary page or script before committing.** Run
     `git status --short` and read every line before you commit.
 
 ## 3. How to land one ticket (copy these commands)
@@ -98,6 +116,9 @@ These are waiting on Ariel. Remind him; do not work around them.
       `--apply`) on the Neon `dev` branch, and later on production, for #288.
       Order no longer matters: items save even before migration 007 runs,
       and the backfill fills in identifiers afterwards.
+- [ ] Decide the one CodeQL alert on pull request #297 ("Server-side request
+      forgery" at `lib/utils/safeFetch.ts`). It points at the guarded fetch
+      this branch added. Agents: do not try to silence it.
 - [ ] Privacy and Terms pages.
 - [ ] Resend, Sentry and Search Console accounts.
 - [ ] Repository settings: branch protection on `main`, auto-merge, the
@@ -151,13 +172,79 @@ next one. A half-finished task must not be merged into `next`.
   `Content-Security-Policy` header: that is the owner's call, after the
   preview has been used with a clean browser console.
 
-### Task 7. `apiError()` helper (issue #87, low risk)
+### Task 7. `apiError()` helper (issue #87)
+
+- [ ] **Blocked: do not start.** The issue asks for a new error format that
+  it describes as breaking for consumers, and an earlier attempt (pull
+  request #113) was closed. The owner must choose first: keep `error` as a
+  string and add a `code` beside it (safe), or change `error` into an object
+  (breaks every page that reads it).
+
+### Task 8. More database-backed tests (low risk)
 
 - [ ] Not started.
 
-Read the issue. Add the helper and its tests, and migrate **only** the routes
-under `app/api/shelf/`. Leave every other route alone. Response bodies must
-stay byte-for-byte the same for existing callers.
+**Why:** `lib/db/queries.integration.test.ts` runs real SQL on a real engine,
+but only covers the queries added on this branch. Most of
+`lib/db/queries.ts` has only mocked tests.
+
+**Steps:**
+1. Read `test/utils/pgliteClient.ts` and the existing integration test.
+2. Add `describe` blocks to the same file for these functions, a few per
+   commit: `getUserByEmail`, `getUserByUsername`, `updateShelf`,
+   `deleteShelf` (check its items are deleted too), `deleteItem`,
+   `getNextOrderIndex`, `getShelvesWithItems`, `getPublicVideoByVideoId`,
+   `getPublicVideoItems`, `recordShelfView` (two views on one day make one
+   row with `views = 2`), and the OAuth functions (`createOAuthClient`,
+   `createOAuthAuthorizationCode`, `consumeOAuthAuthorizationCode`: a code
+   can be consumed once, and not after it expires).
+3. Use the helpers already in the file (`createTestUser`, `createTestShelf`).
+
+**Do not** change `lib/db/queries.ts`. If a test shows a real bug, stop, write
+what you found under this task, and tell the owner.
+
+**Done when:** each listed function has at least two tests and verify passes.
+Use `Part of #147`.
+
+### Task 9. Do not send the owner's id to visitors of a public shelf page (low to medium risk)
+
+- [ ] Not started.
+
+**Why:** `GET /api/shelf/[shelfId]` serves the signed-in shelf page. For a
+public shelf it also answers people who are not the owner, and it sends them
+the same rows the owner gets, which include internal `user_id` values.
+Public surfaces must not carry those (see `docs/AGENT_SAFETY.md`).
+
+**Steps:**
+1. Read `app/api/shelf/[shelfId]/route.ts` (the `GET` handler) and
+   `app/shelf/[shelfId]/page.tsx`, which decides `isOwner` on the client.
+2. In the `GET` handler, work out `isOwner` on the server
+   (`shelf.user_id === session?.userId`). Add `is_owner: isOwner` to the
+   response. When the caller is **not** the owner, map the items through
+   `redactItemForPublic` from `lib/shelf/publicShelf.ts` and leave `user_id`
+   out of the response.
+3. In `app/shelf/[shelfId]/page.tsx`, use `is_owner` from the response
+   instead of comparing ids. Check `app/shelf/[shelfId]/edit/page.tsx` too:
+   it compares `user_id` with the signed-in user. The owner still receives
+   `user_id`, so it keeps working, but read it and make sure.
+4. Add `app/api/shelf/[shelfId]/route.test.ts` cases: owner gets `user_id`
+   and `is_owner: true`; a visitor to a public shelf gets no `user_id`
+   anywhere in the JSON and `is_owner: false`; a visitor to a private shelf
+   still gets what they get today.
+
+**Done when:** verify passes. Say in the commit that it changes what the
+signed-in shelf page receives and should be checked on the preview.
+
+### Task 10. Accessibility checks in the smoke tests (issue #84, low risk)
+
+- [ ] Not started.
+
+Read the issue. Add `@axe-core/playwright` as a dev dependency and one test
+in `e2e/smoke.spec.ts` that runs it on `/`, `/login` and `/signup` and fails
+only on violations of impact `critical`. Do **not** fix the violations in the
+same commit: list what it finds under this task. If it finds any, mark the
+test `test.fixme` with a comment, so the smoke check stays green, and tell
+the owner.
 
 ## 6. Tasks that are blocked. Do not start them
 
