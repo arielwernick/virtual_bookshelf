@@ -206,34 +206,10 @@ what you found under this task, and tell the owner.
 **Done when:** each listed function has at least two tests and verify passes.
 Use `Part of #147`.
 
-### Task 9. Do not send the owner's id to visitors of a public shelf page (low to medium risk)
+### Task 9. Do not send the owner's id to visitors of a public shelf page
 
-- [ ] Not started.
-
-**Why:** `GET /api/shelf/[shelfId]` serves the signed-in shelf page. For a
-public shelf it also answers people who are not the owner, and it sends them
-the same rows the owner gets, which include internal `user_id` values.
-Public surfaces must not carry those (see `docs/AGENT_SAFETY.md`).
-
-**Steps:**
-1. Read `app/api/shelf/[shelfId]/route.ts` (the `GET` handler) and
-   `app/shelf/[shelfId]/page.tsx`, which decides `isOwner` on the client.
-2. In the `GET` handler, work out `isOwner` on the server
-   (`shelf.user_id === session?.userId`). Add `is_owner: isOwner` to the
-   response. When the caller is **not** the owner, map the items through
-   `redactItemForPublic` from `lib/shelf/publicShelf.ts` and leave `user_id`
-   out of the response.
-3. In `app/shelf/[shelfId]/page.tsx`, use `is_owner` from the response
-   instead of comparing ids. Check `app/shelf/[shelfId]/edit/page.tsx` too:
-   it compares `user_id` with the signed-in user. The owner still receives
-   `user_id`, so it keeps working, but read it and make sure.
-4. Add `app/api/shelf/[shelfId]/route.test.ts` cases: owner gets `user_id`
-   and `is_owner: true`; a visitor to a public shelf gets no `user_id`
-   anywhere in the JSON and `is_owner: false`; a visitor to a private shelf
-   still gets what they get today.
-
-**Done when:** verify passes. Say in the commit that it changes what the
-signed-in shelf page receives and should be checked on the preview.
+- [x] Done on `next`. `GET /api/shelf/[shelfId]` returns `is_owner` and
+  leaves the owner's id out for visitors. See its `route.test.ts`.
 
 ### Task 10. Accessibility checks in the smoke tests (issue #84, low risk)
 
