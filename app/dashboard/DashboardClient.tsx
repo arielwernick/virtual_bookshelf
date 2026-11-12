@@ -282,7 +282,9 @@ export default function DashboardClient() {
       </div>
 
       {/* Add Item Modal */}
+      {/* Keyed by shelf, so a second new shelf starts with a clean "added" count */}
       <AddItemModal
+        key={newShelfId || 'none'}
         isOpen={showAddItemModal}
         onClose={() => {
           setShowAddItemModal(false);

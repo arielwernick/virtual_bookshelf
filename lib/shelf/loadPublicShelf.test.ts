@@ -93,8 +93,12 @@ describe('machine-readable shelf routes', () => {
 });
 
 describe('twinHeaders', () => {
-  it('lets the CDN cache the twin', () => {
+  it('caches briefly, so an unpublished shelf stops being served within minutes', () => {
     const headers = twinHeaders(createMockShelf(), 'text/markdown') as Record<string, string>;
-    expect(headers['Cache-Control']).toContain('s-maxage');
+    const maxAge = Number(/s-maxage=(\d+)/.exec(headers['Cache-Control'])?.[1]);
+    const stale = Number(/stale-while-revalidate=(\d+)/.exec(headers['Cache-Control'])?.[1]);
+
+    expect(maxAge).toBeLessThanOrEqual(60);
+    expect(stale).toBeLessThanOrEqual(300);
   });
 });

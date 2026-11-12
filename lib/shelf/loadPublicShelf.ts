@@ -28,12 +28,14 @@ export async function loadPublicShelf(
   return { shelf, items };
 }
 
+/** Fresh for a minute at the CDN, then refreshed in the background. */
+export const PUBLIC_SHELF_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=300';
+
 /**
  * Headers shared by the machine-readable twins of a shelf page.
  *
  * The HTML page stays the one search engines index: each twin names it as
- * canonical and asks not to be indexed itself. Cached at the CDN like the
- * embed API.
+ * canonical and asks not to be indexed itself.
  */
 export function twinHeaders(shelf: Shelf, contentType: string): HeadersInit {
   const { html } = buildShelfUrls(shelf.name, shelf.share_token);
@@ -41,7 +43,9 @@ export function twinHeaders(shelf: Shelf, contentType: string): HeadersInit {
     'Content-Type': contentType,
     Link: `<${html}>; rel="canonical"`,
     'X-Robots-Tag': 'noindex',
-    'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600',
+    // Short on purpose: when an owner unpublishes a shelf, its twins must
+    // stop being served quickly. Same window as the embed API.
+    'Cache-Control': PUBLIC_SHELF_CACHE_CONTROL,
   };
 }
 

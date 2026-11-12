@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loadPublicShelf } from '@/lib/shelf/loadPublicShelf';
+import { loadPublicShelf, PUBLIC_SHELF_CACHE_CONTROL } from '@/lib/shelf/loadPublicShelf';
 import { buildShelfUrls, getBaseUrl } from '@/lib/shelf/publicShelf';
 import { createLogger } from '@/lib/utils/logger';
 
@@ -93,11 +93,11 @@ export async function GET(request: NextRequest) {
         thumbnail_url: `${baseUrl}/api/og/${encodeURIComponent(shelf.share_token)}`,
         thumbnail_width: 1200,
         thumbnail_height: 630,
-        cache_age: 3600,
+        cache_age: 300,
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600',
+          'Cache-Control': PUBLIC_SHELF_CACHE_CONTROL,
           'X-Robots-Tag': 'noindex',
         },
       }

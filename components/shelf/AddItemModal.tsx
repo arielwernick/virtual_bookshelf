@@ -84,7 +84,7 @@ export function AddItemModal({
               <span className="font-medium">&ldquo;{shelfName}&rdquo;</span> is ready to go
             </p>
             <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {hasAddedItems ? 'Keep going, add another' : 'Let&apos;s add your first item ✨'}
+              {hasAddedItems ? 'Keep going, add another' : "Let's add your first item ✨"}
             </p>
           </div>
         </div>
