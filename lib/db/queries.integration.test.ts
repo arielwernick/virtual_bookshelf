@@ -27,6 +27,17 @@ import {
   getShelfViewsForOwner,
   getPublicShelves,
   recordShelfView,
+  deleteShelf,
+  deleteItem,
+  getNextOrderIndex,
+  getPublicVideoByVideoId,
+  createOAuthClient,
+  getOAuthClientByClientId,
+  createOAuthAuthorizationCode,
+  consumeOAuthAuthorizationCode,
+  createOAuthAccessToken,
+  getLiveOAuthAccessToken,
+  deleteOAuthAccessTokensForUser,
 } from './queries';
 
 let counter = 0;
@@ -297,6 +308,136 @@ describe('queries against a real database', () => {
 
       expect(names).toContain('Published Shelf');
       expect(names).not.toContain('Hidden Draft Shelf');
+    });
+  });
+
+  describe('deletes', () => {
+    it('deleting a shelf removes its items too', async () => {
+      const me = await createTestUser();
+      const shelf = await createTestShelf(me.id);
+      await createItem(shelf.id, book('A', 0), me.id);
+
+      expect(await deleteShelf(shelf.id)).toBe(true);
+      expect(await getItemsByShelfId(shelf.id)).toEqual([]);
+      expect(await deleteShelf(shelf.id)).toBe(false);
+    });
+
+    it('deleting an item frees its position for the next add', async () => {
+      const me = await createTestUser();
+      const shelf = await createTestShelf(me.id);
+      await createItem(shelf.id, book('A', 0), me.id);
+      const b = await createItem(shelf.id, book('B', 1), me.id);
+
+      expect(await getNextOrderIndex(shelf.id)).toBe(2);
+      expect(await deleteItem(b.id)).toBe(true);
+      expect(await getNextOrderIndex(shelf.id)).toBe(1);
+    });
+
+    it('starts an empty shelf at position 0', async () => {
+      const me = await createTestUser();
+      const shelf = await createTestShelf(me.id);
+      expect(await getNextOrderIndex(shelf.id)).toBe(0);
+    });
+  });
+
+  describe('recordShelfView', () => {
+    beforeEach(async () => {
+      await getTestDatabase().exec('DELETE FROM shelf_view_daily');
+    });
+
+    it('keeps one row per shelf, day and surface, and counts in it', async () => {
+      const me = await createTestUser();
+      const shelf = await createTestShelf(me.id, { isPublic: true });
+
+      await recordShelfView(shelf.share_token, 'shelf');
+      await recordShelfView(shelf.share_token, 'shelf');
+
+      const rows = (
+        await getTestDatabase().query<{ views: number }>(
+          'SELECT views FROM shelf_view_daily WHERE shelf_id = $1',
+          [shelf.id]
+        )
+      ).rows;
+      expect(rows).toEqual([{ views: 2 }]);
+    });
+
+    it('does not count views of a private shelf', async () => {
+      const me = await createTestUser();
+      const shelf = await createTestShelf(me.id);
+
+      await recordShelfView(shelf.share_token, 'shelf');
+
+      const count = (
+        await getTestDatabase().query<{ n: number }>('SELECT COUNT(*)::int AS n FROM shelf_view_daily')
+      ).rows[0].n;
+      expect(count).toBe(0);
+    });
+  });
+
+  describe('getPublicVideoByVideoId (/v/ watch pages)', () => {
+    it('finds a video only on a public shelf, by exact id', async () => {
+      const me = await createTestUser();
+      const hidden = await createTestShelf(me.id, { name: 'Hidden' });
+      const shown = await createTestShelf(me.id, { name: 'Shown', isPublic: true });
+      await createItem(hidden.id, { type: 'video', title: 'Private copy', creator: 'C', external_url: 'https://youtu.be/aaaaaaaaaaa' }, me.id);
+      await createItem(shown.id, { type: 'video', title: 'Public copy', creator: 'C', external_url: 'https://www.youtube.com/watch?v=bbbbbbbbbbb' }, me.id);
+
+      expect(await getPublicVideoByVideoId('aaaaaaaaaaa')).toBeNull();
+      const found = await getPublicVideoByVideoId('bbbbbbbbbbb');
+      expect(found).toMatchObject({ shelfName: 'Shown', item: { title: 'Public copy' } });
+      // An id that only appears inside another id does not match
+      expect(await getPublicVideoByVideoId('bbbbbbbbbb')).toBeNull();
+    });
+  });
+
+  describe('OAuth for the connector', () => {
+    async function clientAndUser() {
+      const me = await createTestUser();
+      counter += 1;
+      const client = await createOAuthClient(`client-${counter}`, 'Test client', ['https://example.com/cb']);
+      return { me, client };
+    }
+
+    it('stores a client with its redirect URIs as a list', async () => {
+      const { client } = await clientAndUser();
+      const found = await getOAuthClientByClientId(client.client_id);
+
+      expect(found?.redirect_uris).toEqual(['https://example.com/cb']);
+      expect(await getOAuthClientByClientId('no-such-client')).toBeNull();
+    });
+
+    it('lets an authorization code be used exactly once', async () => {
+      const { me, client } = await clientAndUser();
+      await createOAuthAuthorizationCode({
+        codeHash: `hash-${counter}`,
+        clientId: client.client_id,
+        userId: me.id,
+        redirectUri: 'https://example.com/cb',
+        codeChallenge: 'challenge',
+        scope: 'shelves',
+        expiresAt: new Date(Date.now() + 60_000),
+      });
+
+      const first = await consumeOAuthAuthorizationCode(`hash-${counter}`);
+      const second = await consumeOAuthAuthorizationCode(`hash-${counter}`);
+
+      expect(first?.user_id).toBe(me.id);
+      expect(second).toBeNull();
+    });
+
+    it('accepts a live access token, refuses an expired one, and can revoke all of a user\'s tokens', async () => {
+      const { me, client } = await clientAndUser();
+      const base = { clientId: client.client_id, userId: me.id, scope: 'shelves' };
+      await createOAuthAccessToken({ ...base, tokenHash: `live-${counter}`, expiresAt: new Date(Date.now() + 60_000) });
+      await createOAuthAccessToken({ ...base, tokenHash: `old-${counter}`, expiresAt: new Date(Date.now() - 60_000) });
+
+      const live = await getLiveOAuthAccessToken(`live-${counter}`);
+      expect(live?.user_id).toBe(me.id);
+      expect(live?.last_used_at).toBeTruthy();
+      expect(await getLiveOAuthAccessToken(`old-${counter}`)).toBeNull();
+
+      expect(await deleteOAuthAccessTokensForUser(me.id)).toBe(2);
+      expect(await getLiveOAuthAccessToken(`live-${counter}`)).toBeNull();
     });
   });
 });

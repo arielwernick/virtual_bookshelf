@@ -607,16 +607,18 @@ describe('Shelf Queries', () => {
   });
 
   describe('deleteShelf', () => {
-    it('returns true when shelf deleted', async () => {
-      vi.mocked(sql).mockResolvedValueOnce([{ id: 'shelf-1' }]);
+    it('deletes the items and the shelf in one transaction', async () => {
+      vi.mocked(sqlTransaction).mockReset().mockResolvedValueOnce([[], [{ id: 'shelf-1' }]]);
 
       const result = await deleteShelf('shelf-1');
 
       expect(result).toBe(true);
+      expect(sqlTransaction).toHaveBeenCalledTimes(1);
+      expect(sql).not.toHaveBeenCalled();
     });
 
     it('returns false when shelf not found', async () => {
-      vi.mocked(sql).mockResolvedValueOnce([]);
+      vi.mocked(sqlTransaction).mockReset().mockResolvedValueOnce([[], []]);
 
       const result = await deleteShelf('nonexistent');
 

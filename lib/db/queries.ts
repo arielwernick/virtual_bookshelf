@@ -476,16 +476,19 @@ export async function getPublicShelves(): Promise<{ share_token: string; name: s
 }
 
 /**
- * Delete shelf (cascades to items)
+ * Delete a shelf and its items
  */
 export async function deleteShelf(shelfId: string): Promise<boolean> {
-  const result = await sql`
-    DELETE FROM shelves
-    WHERE id = ${shelfId}
-    RETURNING id
-  `;
+  // items.shelf_id has no foreign key yet (migration 002 deferred it until the
+  // existing orphans are cleaned up, issue #153), so nothing cascades: the
+  // items must be deleted here. Both statements run as one transaction, so a
+  // shelf is never left half-deleted.
+  const [, deletedShelves] = (await sqlTransaction((tx) => [
+    tx`DELETE FROM items WHERE shelf_id = ${shelfId}`,
+    tx`DELETE FROM shelves WHERE id = ${shelfId} RETURNING id`,
+  ])) as [unknown[], unknown[]];
 
-  return result.length > 0;
+  return deletedShelves.length > 0;
 }
 
 // ============================================================================

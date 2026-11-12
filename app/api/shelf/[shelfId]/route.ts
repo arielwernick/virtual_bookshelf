@@ -221,7 +221,7 @@ export async function DELETE(
             );
         }
 
-        // Delete shelf (cascades to items)
+        // Delete the shelf and its items
         await deleteShelf(shelfId);
         revalidateSharedShelf(shelf.share_token, shelf.name);
 
