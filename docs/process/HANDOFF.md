@@ -182,26 +182,28 @@ next one. A half-finished task must not be merged into `next`.
 
 ### Task 8. More database-backed tests (low risk)
 
-- [ ] Not started.
+- [ ] Partly done. Covered on `next`: `deleteShelf`, `deleteItem`,
+  `getNextOrderIndex`, `recordShelfView`, `getPublicVideoByVideoId` and the
+  OAuth client, code and token functions. These tests found a real bug
+  (deleting a shelf left its items behind), fixed in commit `f9b87e0`.
 
-**Why:** `lib/db/queries.integration.test.ts` runs real SQL on a real engine,
-but only covers the queries added on this branch. Most of
-`lib/db/queries.ts` has only mocked tests.
+**Still to do:** `getUserByEmail`, `getUserByUsername`, `getUserByGoogleId`,
+`updateShelf`, `getShelvesWithItems`, `getPublicVideoItems`, `touchUserLastSeen`
+and the admin queries (`getAdminOverview`, `getAdminWeeklySignups`,
+`getAdminAttribution`, `getAdminRecentUsers`, `getAdminViewStats`,
+`getAdminTopShelves`, `getAdminEmbedHosts`).
 
 **Steps:**
-1. Read `test/utils/pgliteClient.ts` and the existing integration test.
-2. Add `describe` blocks to the same file for these functions, a few per
-   commit: `getUserByEmail`, `getUserByUsername`, `updateShelf`,
-   `deleteShelf` (check its items are deleted too), `deleteItem`,
-   `getNextOrderIndex`, `getShelvesWithItems`, `getPublicVideoByVideoId`,
-   `getPublicVideoItems`, `recordShelfView` (two views on one day make one
-   row with `views = 2`), and the OAuth functions (`createOAuthClient`,
-   `createOAuthAuthorizationCode`, `consumeOAuthAuthorizationCode`: a code
-   can be consumed once, and not after it expires).
-3. Use the helpers already in the file (`createTestUser`, `createTestShelf`).
+1. Read `test/utils/pgliteClient.ts` and `lib/db/queries.integration.test.ts`.
+2. Add `describe` blocks to the same file, a few functions per commit. Use the
+   helpers already there (`createTestUser`, `createTestShelf`, `book`).
+3. For the admin queries, check counts against data you created, and that
+   private shelves are not counted where they should not be.
 
-**Do not** change `lib/db/queries.ts`. If a test shows a real bug, stop, write
-what you found under this task, and tell the owner.
+**Do not** change `lib/db/queries.ts` in the same commit. If a test shows a
+real bug, commit the failing test as `it.fails(...)` with a comment, write
+what you found under this task, and tell the owner. A fix goes in its own
+commit.
 
 **Done when:** each listed function has at least two tests and verify passes.
 Use `Part of #147`.
