@@ -111,6 +111,8 @@ These are waiting on Ariel. Remind him; do not work around them.
       drag-and-drop reorder (#296), the dashboard view line (#68), the notes
       section on a public shelf (#293), adding several items in a row and
       publishing from the edit page (#292).
+- [ ] Migration 008 (the page each signup landed on) arrives with the same
+      `npm run migrate:up`. It needs no backfill.
 - [ ] Run `npm run migrate:up` then
       `npx tsx scripts/backfill-item-identity.ts` (dry run first, then
       `--apply`) on the Neon `dev` branch, and later on production, for #288.
