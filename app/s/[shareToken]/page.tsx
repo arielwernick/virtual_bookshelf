@@ -1,13 +1,17 @@
 import { cache } from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { permanentRedirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
 import { buildShareSlug, buildSharePath, extractShareToken } from '@/lib/utils/slug';
 import { ShelfGridStatic } from '@/components/shelf/ShelfGridStatic';
 import { SharedShelfInteractive } from './SharedShelfInteractive';
 import { generateShelfSchemaJson } from '@/lib/utils/schemaMarkup';
 import { ViewBeacon } from '@/components/ViewBeacon';
+import { ShelfNotesStatic } from '@/components/shelf/ShelfNotesStatic';
+import { describeShelfForSearch, formatShelfDate } from '@/lib/utils/shelfSummary';
+import { SHARED_SHELF_CTA_LINK } from '@/lib/utils/growthLinks';
+import { buildShelfUrls, redactItemForPublic } from '@/lib/shelf/publicShelf';
 
 // Serve cached HTML and re-render in the background at most every 5 minutes.
 // Mutations trigger immediate refreshes via revalidateSharedShelf().
@@ -37,90 +41,73 @@ interface PageProps {
 }
 
 /**
- * Not Found component for shared shelves
- */
-function ShelfNotFound() {
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4">
-      <div className="text-center">
-        <h1 className="text-6xl font-bold text-gray-900 dark:text-gray-100 mb-4">404</h1>
-        <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Shelf Not Found</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-8">This shared bookshelf doesn&apos;t exist or is not public.</p>
-        <Link href="/" className="inline-block px-6 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium">
-          Go Home
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-/**
  * Generate dynamic metadata for shared shelves
  * This enables beautiful OG images when sharing on social media
  */
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { shareToken } = await params;
-  
-  try {
-    const shelf = await resolveShelf(shareToken);
 
-    if (!shelf || !shelf.is_public) {
-      return {
-        title: 'Shelf Not Found',
-        description: 'This shelf could not be found.',
-        robots: { index: false },
-      };
-    }
+  const shelf = await resolveShelf(shareToken);
 
-    const items = await getCachedItems(shelf.id);
-    const itemCount = items.length;
-    const itemText = itemCount === 1 ? '1 item' : `${itemCount} items`;
-    
-    // Build description
-    const description = shelf.description 
-      ? `${shelf.description.substring(0, 150)}${shelf.description.length > 150 ? '...' : ''}`
-      : `A curated collection of ${itemText} on Virtual Bookshelf`;
-
-    // Get the base URL for OG image
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
-    const ogImageUrl = `${baseUrl}/api/og/${shelf.share_token}`;
-
-    // Canonical URL includes the shelf-name slug for SEO
-    const canonicalPath = buildSharePath(shelf.name, shelf.share_token);
-
+  if (!shelf || !shelf.is_public) {
     return {
-      title: shelf.name,
-      description,
-      alternates: { canonical: canonicalPath },
-      openGraph: {
-        title: shelf.name,
-        description,
-        type: 'website',
-        url: `${baseUrl}${canonicalPath}`,
-        images: [
-          {
-            url: ogImageUrl,
-            width: 1200,
-            height: 630,
-            alt: `${shelf.name} - Virtual Bookshelf`,
-          },
-        ],
-        siteName: 'Virtual Bookshelf',
-      },
-      twitter: {
-        card: 'summary_large_image',
-        title: shelf.name,
-        description,
-        images: [ogImageUrl],
-      },
-    };
-  } catch (error) {
-    console.error('Error generating metadata:', error);
-    return {
-      title: { absolute: 'Virtual Bookshelf' },
-      description: 'Curate and share your favorite books, podcasts, and music.',
+      title: 'Shelf Not Found',
+      description: 'This shelf could not be found.',
+      robots: { index: false },
     };
   }
+
+  const items = await getCachedItems(shelf.id);
+  // The owner's description, or the first few titles when there is none
+  const description = describeShelfForSearch(
+    shelf.description,
+    [...items].sort((a, b) => a.order_index - b.order_index).map((item) => item.title)
+  );
+
+  // Get the base URL for OG image
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
+  const ogImageUrl = `${baseUrl}/api/og/${shelf.share_token}`;
+
+  // Canonical URL includes the shelf-name slug for SEO
+  const canonicalPath = buildSharePath(shelf.name, shelf.share_token);
+  const twins = buildShelfUrls(shelf.name, shelf.share_token, baseUrl);
+
+  return {
+    title: shelf.name,
+    description,
+    alternates: {
+      canonical: canonicalPath,
+      // Machine-readable twins of this page (issue #285)
+      types: {
+        'text/markdown': twins.markdown,
+        'application/json': twins.json,
+        'application/feed+json': twins.json_feed,
+        // oEmbed discovery, so a pasted shelf link can unfurl as the embed (#286)
+        'application/json+oembed': `${baseUrl}/oembed?format=json&url=${encodeURIComponent(twins.html)}`,
+      },
+    },
+    openGraph: {
+      title: shelf.name,
+      description,
+      type: 'website',
+      url: `${baseUrl}${canonicalPath}`,
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: `${shelf.name} - Virtual Bookshelf`,
+        },
+      ],
+      siteName: 'Virtual Bookshelf',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: shelf.name,
+      description,
+      images: [ogImageUrl],
+    },
+  };
 }
 
 /**
@@ -128,28 +115,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * Returns null if shelf not found or not public
  */
 async function getShelfData(shareToken: string) {
-  try {
-    const shelf = await resolveShelf(shareToken);
+  // Database errors are left to throw: ISR then keeps serving the last good
+  // page instead of caching a "not found" for a shelf that exists.
+  const shelf = await resolveShelf(shareToken);
 
-    if (!shelf || !shelf.is_public) {
-      return null;
-    }
-
-    // Items are deduped with generateMetadata
-    const items = await getCachedItems(shelf.id);
-
-    return {
-      shelf,
-      id: shelf.id,
-      name: shelf.name,
-      description: shelf.description,
-      items,
-      created_at: shelf.created_at.toISOString(),
-    };
-  } catch (error) {
-    console.error('Error loading shared shelf:', error);
+  if (!shelf || !shelf.is_public) {
     return null;
   }
+
+  // Items are deduped with generateMetadata. Owner and shelf ids are blanked
+  // before the rows are passed to client components and into the page payload.
+  const items = (await getCachedItems(shelf.id)).map(redactItemForPublic);
+
+  return {
+    shelf,
+    name: shelf.name,
+    description: shelf.description,
+    items,
+    created_at: shelf.created_at.toISOString(),
+  };
 }
 
 /**
@@ -163,7 +147,8 @@ export default async function SharedShelfPage({ params }: PageProps) {
   const shelfData = await getShelfData(shareToken);
 
   if (!shelfData) {
-    return <ShelfNotFound />;
+    // A real 404 status, not a "not found" page served with 200 (issue #284)
+    notFound();
   }
 
   // Permanently redirect bare-token and stale-slug URLs to the canonical
@@ -180,7 +165,10 @@ export default async function SharedShelfPage({ params }: PageProps) {
   }
 
   // Generate JSON-LD schema markup for AI readability
-  const schemaJson = generateShelfSchemaJson(shelfData.shelf, shelfData.items);
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
+  const schemaJson = generateShelfSchemaJson(shelfData.shelf, shelfData.items, {
+    url: `${baseUrl}/s/${canonicalSlug}`,
+  });
 
   return (
     <>
@@ -204,6 +192,11 @@ export default async function SharedShelfPage({ params }: PageProps) {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{shelfData.name}</h1>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {shelfData.items.length} {shelfData.items.length === 1 ? 'item' : 'items'}
+                {' · '}
+                Updated{' '}
+                <time dateTime={new Date(shelfData.shelf.updated_at).toISOString()}>
+                  {formatShelfDate(shelfData.shelf.updated_at)}
+                </time>
               </p>
             </div>
 
@@ -218,9 +211,14 @@ export default async function SharedShelfPage({ params }: PageProps) {
 
         {/* Main Content - Server Rendered Items with Client Interactivity */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Item cards use h3; this keeps the heading order h1 > h2 > h3 */}
+          <h2 className="sr-only">Items on this shelf</h2>
           <SharedShelfInteractive items={shelfData.items}>
             <ShelfGridStatic items={shelfData.items} />
           </SharedShelfInteractive>
+
+          {/* Every note in full, in the HTML, so it can be read and quoted (#293) */}
+          <ShelfNotesStatic items={shelfData.items} />
         </main>
 
         {/* CTA Section - Server Rendered */}
@@ -231,7 +229,7 @@ export default async function SharedShelfPage({ params }: PageProps) {
                 Want to curate your own collection?
               </p>
               <Link
-                href="/signup"
+                href={SHARED_SHELF_CTA_LINK}
                 className="inline-block px-6 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium"
               >
                 Create My Own Shelf

@@ -1,4 +1,8 @@
+import { fetchPublicUrl } from '@/lib/utils/safeFetch';
+
 export const IMAGE_FETCH_TIMEOUT_MS = 2500;
+/** Largest cover image that will be loaded into a share card. */
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const OG_CACHE_CONTROL = 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
 
 /**
@@ -13,14 +17,22 @@ export async function fetchAsDataUrl(url: string): Promise<string | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
+    // Cover URLs come from shelf owners. Only public addresses are fetched,
+    // and each redirect hop is checked the same way (lib/utils/safeFetch.ts).
+    const { response: res } = await fetchPublicUrl(url, {
       signal: controller.signal,
       headers: { Accept: 'image/*' },
     });
     if (!res.ok) return null;
     const contentType = res.headers.get('content-type') || 'image/jpeg';
     if (!contentType.startsWith('image/')) return null;
+
+    // A share card needs a thumbnail, not a 50 MB file held in memory.
+    const declaredSize = Number(res.headers.get('content-length') ?? 0);
+    if (declaredSize > MAX_IMAGE_BYTES) return null;
     const buffer = await res.arrayBuffer();
+    if (buffer.byteLength > MAX_IMAGE_BYTES) return null;
+
     return `data:${contentType};base64,${uint8ToBase64(new Uint8Array(buffer))}`;
   } catch {
     return null;

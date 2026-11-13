@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/utils/session';
-import { getShelvesForDashboard, touchUserLastSeen } from '@/lib/db/queries';
+import { getShelvesForDashboard, getShelfViewsForOwner, touchUserLastSeen } from '@/lib/db/queries';
+import type { ShelfViewSummary } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
 
 const logger = createLogger('ShelfDashboard');
@@ -23,8 +24,13 @@ export async function GET(_request: Request) {
 
     // Single query: all shelves with total counts + preview items.
     // Activity tracking runs alongside and must never fail the dashboard.
-    const [shelves] = await Promise.all([
+    const [shelves, views] = await Promise.all([
       getShelvesForDashboard(session.userId),
+      // View counts are a nice-to-have: the dashboard still loads without them
+      getShelfViewsForOwner(session.userId).catch((error) => {
+        logger.errorWithException('Failed to load shelf view counts', error);
+        return new Map<string, ShelfViewSummary>();
+      }),
       touchUserLastSeen(session.userId).catch((error) =>
         logger.errorWithException('Failed to update last_seen_at', error)
       ),
@@ -44,6 +50,7 @@ export async function GET(_request: Request) {
           is_public: shelf.is_public,
           item_count: shelf.item_count,
           preview_items: shelf.preview_items,
+          views: views.get(shelf.id),
           created_at: shelf.created_at,
           updated_at: shelf.updated_at,
         })),

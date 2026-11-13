@@ -9,13 +9,18 @@ interface ItemCardImageProps {
   style?: CSSProperties;
   /** Shown in place of the image when it fails to load */
   fallback: ReactNode;
+  /**
+   * True for covers likely to be on screen at first paint. They load at once
+   * and ahead of other images; the rest wait until they are scrolled near.
+   */
+  priority?: boolean;
 }
 
 /**
  * Image for ItemCardStatic. The <img> stays in the server HTML so crawlers can
  * read it; this client wrapper only swaps in the fallback when loading fails.
  */
-export function ItemCardImage({ src, alt, className, style, fallback }: ItemCardImageProps) {
+export function ItemCardImage({ src, alt, className, style, fallback, priority = false }: ItemCardImageProps) {
   const imgRef = useRef<HTMLImageElement>(null);
   const [failed, setFailed] = useState(false);
 
@@ -37,7 +42,9 @@ export function ItemCardImage({ src, alt, className, style, fallback }: ItemCard
       alt={alt}
       className={className}
       style={style}
-      loading="lazy"
+      loading={priority ? 'eager' : 'lazy'}
+      fetchPriority={priority ? 'high' : 'auto'}
+      decoding="async"
       onError={() => setFailed(true)}
     />
   );

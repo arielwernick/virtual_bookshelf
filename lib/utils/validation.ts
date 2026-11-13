@@ -120,6 +120,31 @@ export function validateUrl(url: string, fieldName: string = 'URL'): { valid: bo
   }
 }
 
+/** Longest URL the app stores. */
+export const MAX_URL_LENGTH = 2048;
+
+/**
+ * Return the URL if it is a web address that is safe to store and link to,
+ * otherwise null.
+ *
+ * Only http and https are accepted. Anything else (javascript:, data:, file:,
+ * a bare string) could end up in an href or in structured data, so it is
+ * never stored. Every path that writes an item's link or image goes through
+ * this, and createItem / updateItem apply it again as a last line (issue #296).
+ */
+export function safeHttpUrl(url: unknown): string | null {
+  if (typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed || trimmed.length > MAX_URL_LENGTH) return null;
+
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? trimmed : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Validate notes
  */

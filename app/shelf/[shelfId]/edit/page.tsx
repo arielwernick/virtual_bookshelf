@@ -3,7 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ShelfGrid } from '@/components/shelf/ShelfGrid';
-import { AddItemForm } from '@/components/shelf/AddItemForm';
+import { AddItemForm, AddedItem } from '@/components/shelf/AddItemForm';
+import { AddedItemPrompt } from '@/components/shelf/AddedItemPrompt';
+import { ShareModal } from '@/components/shelf/ShareModal';
 import { NoteEditorModal } from '@/components/shelf/NoteEditorModal';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState, BookshelfIcon } from '@/components/ui/EmptyState';
@@ -12,6 +14,8 @@ import { Item } from '@/lib/types/shelf';
 import Link from 'next/link';
 
 const MAX_DESCRIPTION_LENGTH = 500;
+// From this many items on, a private shelf gets a gentle prompt to publish.
+const PUBLISH_NUDGE_ITEMS = 3;
 
 interface ShelfData {
     id: string;
@@ -32,6 +36,10 @@ export default function EditShelfPage() {
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
+    // Items added since the add window was opened, so it can stay open (#292)
+    const [addedCount, setAddedCount] = useState(0);
+    const [lastAdded, setLastAdded] = useState<AddedItem | undefined>();
+    const [showShareModal, setShowShareModal] = useState(false);
     
     // Note editing state
     const [noteEditItem, setNoteEditItem] = useState<Item | null>(null);
@@ -176,6 +184,23 @@ export default function EditShelfPage() {
         });
     };
 
+    const openAddModal = () => {
+        setAddedCount(0);
+        setLastAdded(undefined);
+        setShowAddModal(true);
+    };
+
+    const handlePublishToggle = async (isPublic: boolean) => {
+        const res = await fetch(`/api/shelf/${shelfId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_public: isPublic }),
+        });
+        if (res.ok) {
+            setShelfData(prev => prev ? { ...prev, is_public: isPublic } : null);
+        }
+    };
+
     const handleDeleteShelf = async () => {
         if (!confirm('Are you sure you want to delete this shelf and all its items? This cannot be undone.')) {
             return;
@@ -229,6 +254,12 @@ export default function EditShelfPage() {
                             Editing • {shelfData.items.length} items
                         </p>
                         <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowShareModal(true)}
+                                className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors text-sm font-medium"
+                            >
+                                {shelfData.is_public ? 'Share' : 'Publish and share'}
+                            </button>
                             <Link
                                 href={`/shelf/${shelfId}`}
                                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-medium"
@@ -358,10 +389,26 @@ export default function EditShelfPage() {
                     </div>
                 )}
 
+                {/* A shelf with a few items on it is ready to show. Say so once,
+                    plainly, and make clear nothing is public until they choose. */}
+                {!shelfData.is_public && shelfData.items.length >= PUBLISH_NUDGE_ITEMS && (
+                    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 px-4 py-3">
+                        <p className="text-sm text-amber-900 dark:text-amber-200">
+                            Ready to show someone? This shelf is private until you publish it.
+                        </p>
+                        <button
+                            onClick={() => setShowShareModal(true)}
+                            className="px-3 py-1.5 text-sm font-medium rounded-lg border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                        >
+                            Publish and share
+                        </button>
+                    </div>
+                )}
+
                 {/* Add Item Button */}
                 <div className="mb-6">
                     <button
-                        onClick={() => setShowAddModal(true)}
+                        onClick={openAddModal}
                         className="px-6 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium"
                     >
                         + Add Item
@@ -400,15 +447,43 @@ export default function EditShelfPage() {
             </main>
 
             {/* Add Item Modal */}
+            {/* Add Item Modal. It stays open after an add so several items can
+                go on in a row; the shelf behind it refreshes each time. */}
             <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)}>
+                {addedCount > 0 && (
+                    // Padding matches AddItemForm; the right gap clears the close button
+                    <div className="px-6 pt-6 pr-12 -mb-4">
+                        <AddedItemPrompt item={lastAdded} count={addedCount} onNoteSaved={fetchShelf} />
+                    </div>
+                )}
                 <AddItemForm
                     shelfId={shelfId}
-                    onItemAdded={() => {
-                        setShowAddModal(false);
+                    onItemAdded={(item) => {
+                        setAddedCount((count) => count + 1);
+                        setLastAdded(item);
                         fetchShelf();
                     }}
                 />
+                {addedCount > 0 && (
+                    <div className="px-6 pb-6 -mt-2 flex justify-end">
+                        <button
+                            onClick={() => setShowAddModal(false)}
+                            className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors text-sm font-medium"
+                        >
+                            Done
+                        </button>
+                    </div>
+                )}
             </Modal>
+
+            <ShareModal
+                isOpen={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                shareToken={shelfData.share_token}
+                shelfName={shelfData.name}
+                isPublic={shelfData.is_public}
+                onPublishToggle={handlePublishToggle}
+            />
 
             {/* Note Editor Modal */}
             {noteEditItem && (

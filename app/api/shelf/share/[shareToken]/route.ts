@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getShelfByShareToken, getItemsByShelfId } from '@/lib/db/queries';
 import { createLogger } from '@/lib/utils/logger';
+import { redactItemForPublic } from '@/lib/shelf/publicShelf';
 
 const logger = createLogger('ShelfShare');
 
@@ -33,10 +34,10 @@ export async function GET(
       {
         success: true,
         data: {
-          id: shelf.id,
+          // Explicit fields only: no owner id, no internal shelf id (#285)
           name: shelf.name,
           description: shelf.description,
-          items,
+          items: items.map(redactItemForPublic),
           created_at: shelf.created_at,
         },
       },

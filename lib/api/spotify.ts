@@ -1,3 +1,5 @@
+import { isMockMode } from './mockMode';
+import { MOCK_ALBUMS, MOCK_EPISODES, MOCK_PODCASTS, wantsNoResults } from './mockFixtures';
 // Spotify API integration for music and podcast search
 
 import { createLogger } from '@/lib/utils/logger';
@@ -129,6 +131,8 @@ async function getAccessToken(): Promise<string> {
  * Search for albums on Spotify
  */
 export async function searchAlbums(query: string): Promise<SpotifyItem[]> {
+  if (isMockMode()) return wantsNoResults(query) ? [] : MOCK_ALBUMS;
+
   const token = await getAccessToken();
 
   const response = await fetch(
@@ -161,6 +165,8 @@ export async function searchAlbums(query: string): Promise<SpotifyItem[]> {
  * Search for podcasts (shows) on Spotify
  */
 export async function searchPodcasts(query: string): Promise<SpotifyItem[]> {
+  if (isMockMode()) return wantsNoResults(query) ? [] : MOCK_PODCASTS;
+
   const token = await getAccessToken();
 
   const response = await fetch(
@@ -197,6 +203,13 @@ export async function getShowEpisodes(
   options: { offset?: number; limit?: number } = {}
 ): Promise<EpisodesResponse> {
   const { offset = 0, limit = 20 } = options;
+  if (isMockMode()) {
+    return {
+      episodes: MOCK_EPISODES.slice(offset, offset + limit),
+      total: MOCK_EPISODES.length,
+      showName: MOCK_EPISODES[0].showName,
+    };
+  }
   const token = await getAccessToken();
 
   // First get the show info to get the show name
@@ -273,6 +286,11 @@ export async function searchEpisodesInShow(
   offset: number = 0,
   limit: number = 20
 ): Promise<{ episodes: Episode[]; total: number }> {
+  if (isMockMode()) {
+    const episodes = wantsNoResults(query) ? [] : MOCK_EPISODES;
+    return { episodes: episodes.slice(offset, offset + limit), total: episodes.length };
+  }
+
   const token = await getAccessToken();
 
   // First get the show info to get the show name

@@ -1,3 +1,4 @@
+import { fetchPublicUrl, isPublicHttpUrl, UnsafeUrlError } from './safeFetch';
 /**
  * URL Resolver Utility
  * 
@@ -59,7 +60,10 @@ function parseUrl(url: string): URL | null {
  * Check if a hostname belongs to LinkedIn
  */
 function isLinkedInHost(hostname: string): boolean {
-  return hostname.includes('linkedin.com') || hostname.includes('lnkd.in');
+  // Exact host or a subdomain. A substring test would also match look-alikes
+  // such as "linkedin.com.example.org".
+  const host = hostname.toLowerCase();
+  return ['linkedin.com', 'lnkd.in'].some((domain) => host === domain || host.endsWith(`.${domain}`));
 }
 
 // =============================================================================
@@ -228,15 +232,16 @@ async function resolveWithFetch(url: string, timeoutMs: number): Promise<string>
     }
 
     // Fall back to GET request and HTML extraction
-    const response = await fetch(url, {
+    // Redirects are followed one hop at a time so each target can be checked
+    // before it is requested (lib/utils/safeFetch.ts).
+    const { response, finalUrl } = await fetchPublicUrl(url, {
       method: 'GET',
-      redirect: 'follow',
       signal: controller.signal,
       headers: FETCH_HEADERS,
     });
 
     clearTimeout(timeoutId);
-    return await extractFinalUrl(response, url);
+    return await extractFinalUrl(response, finalUrl, url);
   } catch (error) {
     clearTimeout(timeoutId);
     throw error;
@@ -247,6 +252,7 @@ async function resolveWithFetch(url: string, timeoutMs: number): Promise<string>
  * Try to get redirect URL via HEAD request
  */
 async function tryHeadRedirect(url: string, signal: AbortSignal): Promise<string | null> {
+  if (!isPublicHttpUrl(url)) throw new UnsafeUrlError(url);
   try {
     const response = await fetch(url, {
       method: 'HEAD',
@@ -288,9 +294,11 @@ async function processResolvedUrl(url: string, timeoutMs: number): Promise<strin
 /**
  * Extract the final destination URL from a fetch response
  */
-async function extractFinalUrl(response: Response, originalUrl: string): Promise<string> {
-  const finalUrl = response.url;
-  
+async function extractFinalUrl(
+  response: Response,
+  finalUrl: string,
+  originalUrl: string
+): Promise<string> {  
   // Check for LinkedIn redirect in final URL
   const extracted = extractLinkedInRedirectUrl(finalUrl);
   if (extracted) return extracted;

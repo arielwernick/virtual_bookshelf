@@ -10,6 +10,8 @@ npm run test:all     # Unit tests, lint, then public Playwright tests
 npm run dev          # Start development server
 npm run build        # Production build
 npm run lint         # ESLint
+npm run typecheck    # tsc --noEmit
+npm run verify       # Typecheck, lint and unit tests. The definition of done
 npm run test         # Vitest in watch mode
 npm run test:run     # Single run (CI)
 npm run test:ci      # With coverage report
@@ -21,11 +23,21 @@ npm run test -- --run path/to/Component.test.tsx
 npm run test:run -- --grep "ItemCard"
 ```
 
+## Definition of done
+
+A change is done when `npm run verify` is green and its output is pasted in the PR (see `.github/pull_request_template.md`). CI runs the same command. For UI or route changes, also check the Vercel preview and say what you looked at. One branch and one PR per issue; the PR body says `Closes #N`.
+
+If you are continuing work on the `next` branch, read `docs/process/HANDOFF.md` first: it has the task queue in order and the exact commands to land a ticket.
+
+Safety rules and what enforces each one are in `docs/AGENT_SAFETY.md`. If a rule blocks you, stop and ask; don't work around it.
+
 ## Agent testing
 
 Run `npm run setup` first in any new checkout or worktree. Worktrees often have stale `node_modules`, and gitignored `.env.local` isn't copied into them; setup fixes both (it links the main checkout's `.env.local`). The first run may download Playwright's Chromium.
 
 - **Unit tests** (`npm run test:run`) need no database or env vars; `test/setup.ts` mocks them.
+- **Database-backed tests** (`*.integration.test.ts`) run the real queries and migrations on PGlite, a real Postgres engine inside the test process. No network or credentials. When you add or change SQL in `lib/db/queries.ts` or a migration, add a case to `lib/db/queries.integration.test.ts` (`test/utils/pgliteClient.ts` explains how). They are part of `npm run verify`.
+- **Outside APIs:** set `EXTERNAL_APIS=mock` and Google Books, Spotify, YouTube and Microlink return fixed results with no network request (`lib/api/mockMode.ts`, fixtures in `lib/api/mockFixtures.ts`). A query containing "nothing" returns no results. It cannot turn on in production.
 - **Public e2e** (`npm run e2e:public`) starts `npm run dev` (or reuses one on port 3000) and checks the signed-out pages. Point it at a deployment with `PLAYWRIGHT_BASE_URL`.
 - **Signed-in e2e** (`npm run e2e`) creates a test user and shelf in whatever database the dev server uses.
 - **Database:** `.env.local` points `DATABASE_URL` at a schema-only Neon `dev` branch, never production. Migrations, seeds and e2e seeding refuse the production database unless `MIGRATE_ALLOW_PROD=1`, `SEED_ALLOW_PROD=1` or `E2E_ALLOW_PROD=1` is set (`lib/db/prodGuard.ts`). Don't set these unless the user asks for a production change.
@@ -49,6 +61,8 @@ Run `npm run setup` first in any new checkout or worktree. Worktrees often have 
 - `lib/contexts/ShelfContext.tsx` — React context to reduce prop drilling in shelf components
 - `lib/utils/` — session (JWT), validation, password (bcrypt), logger, rateLimit, env
 - `lib/constants/errors.ts` — Centralized error message strings
+- `lib/shelf/publicShelf.ts` — The public shelf document. **Every** public, machine-readable view of a shelf is built from it through a field allowlist (`docs/spec/SHELF_FORMAT.md`)
+- `lib/utils/itemIdentity.ts` — Canonical identifiers for items (`source`, `source_id`), derived from URLs
 - `docs/architecture/PATTERNS.md` — Detailed code patterns reference
 - `docs/architecture/ANTI_PATTERNS.md` — Patterns to avoid
 
@@ -71,7 +85,7 @@ All queries are in `lib/db/queries.ts`. Always use `sql\`...\`` tagged template 
 
 ### Item Types
 
-`type ItemType = 'book' | 'podcast' | 'music' | 'podcast_episode' | 'video' | 'link'`
+`type ItemType = 'book' | 'podcast' | 'music' | 'podcast_episode' | 'video' | 'link' | 'stock'`
 
 ### Testing Patterns
 

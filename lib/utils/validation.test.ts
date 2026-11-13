@@ -7,6 +7,7 @@ import {
   validateText,
   validateUrl,
   validateNotes,
+  safeHttpUrl,
 } from './validation';
 
 // ============================================================================
@@ -390,5 +391,32 @@ describe('validateNotes', () => {
     const result = validateNotes('a'.repeat(501));
     expect(result.valid).toBe(false);
     expect(result.error).toBe('Notes must be 500 characters or less');
+  });
+});
+
+describe('safeHttpUrl', () => {
+  it('returns web URLs unchanged, trimmed', () => {
+    expect(safeHttpUrl('https://example.com/a?b=1')).toBe('https://example.com/a?b=1');
+    expect(safeHttpUrl('  http://example.com  ')).toBe('http://example.com');
+  });
+
+  it.each([
+    ['javascript:alert(1)'],
+    ['JaVaScRiPt:alert(1)'],
+    ['data:text/html,<script>alert(1)</script>'],
+    ['file:///etc/passwd'],
+    ['vbscript:msgbox(1)'],
+    ['//example.com/no-scheme'],
+    ['not a url'],
+    [''],
+  ])('rejects %s', (value) => {
+    expect(safeHttpUrl(value)).toBeNull();
+  });
+
+  it('rejects non-strings and over-long URLs', () => {
+    expect(safeHttpUrl(null)).toBeNull();
+    expect(safeHttpUrl(undefined)).toBeNull();
+    expect(safeHttpUrl(42)).toBeNull();
+    expect(safeHttpUrl(`https://example.com/${'a'.repeat(2100)}`)).toBeNull();
   });
 });

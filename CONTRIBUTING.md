@@ -60,7 +60,7 @@ Use descriptive branch names with prefixes:
 
 | Prefix | Use Case | Example |
 |--------|----------|---------|
-| `feature/` | New features | `feature/text-to-shelf-import` |
+| `feat/` | New features | `feat/text-to-shelf-import` |
 | `fix/` | Bug fixes | `fix/modal-close-button` |
 | `chore/` | Maintenance | `chore/update-dependencies` |
 | `docs/` | Documentation | `docs/api-documentation` |
@@ -72,14 +72,14 @@ Use descriptive branch names with prefixes:
 # 1. Create a branch from main
 git checkout main
 git pull
-git checkout -b feature/your-feature-name
+git checkout -b feat/your-feature-name
 
 # 2. Make changes and commit frequently
 git add .
 git commit -m "feat: add new component"
 
 # 3. Push to remote
-git push -u origin feature/your-feature-name
+git push -u origin feat/your-feature-name
 
 # 4. Create Pull Request on GitHub
 ```
@@ -225,9 +225,9 @@ BREAKING CHANGE: API now returns { success, data } instead of raw data"
 
 ### Before Creating PR
 
-1. **Run tests**: `npm run test:run`
-2. **Run linter**: `npm run lint`
-3. **Build check**: `npm run build`
+1. **Run `npm run verify`** (typecheck, lint and unit tests) and paste its output in the PR
+2. **Build check**: `npm run build`
+3. **Fill in the PR template**, including the risk tier (`docs/process/RISK_TIERS.md`)
 4. **Update documentation** if needed
 
 ### PR Title Format

@@ -33,9 +33,11 @@ interface ItemCardStaticProps {
   item: Item;
   /** Optional: ID to use for click handling via client wrapper */
   'data-item-id'?: string;
+  /** Load this card's cover straight away (first cards on the page). */
+  priority?: boolean;
 }
 
-export function ItemCardStatic({ item, ...props }: ItemCardStaticProps) {
+export function ItemCardStatic({ item, priority = false, ...props }: ItemCardStaticProps) {
   const baseRatioStr = getAspectRatio(item.type);
   const baseRatioNum = getAspectRatioNumeric(item.type);
   const jitter = item.type === 'book' ? calculateJitter(item.id, 0.07) : 0;
@@ -81,6 +83,7 @@ export function ItemCardStatic({ item, ...props }: ItemCardStaticProps) {
             className={`w-full h-full object-center ${item.type === 'stock' ? 'object-contain' : 'object-cover'}`}
             style={item.type === 'stock' ? { padding: '8%' } : undefined}
             fallback={fallbackIcon}
+            priority={priority}
           />
         ) : (
           fallbackIcon

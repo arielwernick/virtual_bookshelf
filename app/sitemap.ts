@@ -39,12 +39,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   return [
-    { url: baseUrl, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
+    // No lastModified here: stamping "now" on every request tells crawlers
+    // nothing and teaches them to ignore the field on the other entries.
+    { url: baseUrl, changeFrequency: 'weekly', priority: 1 },
     { url: `${baseUrl}/bento-alternative`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/linktree-alternative`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/goodreads-alternative`, changeFrequency: 'monthly', priority: 0.9 },
-    { url: `${baseUrl}/login`, changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${baseUrl}/signup`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${baseUrl}/curate-conference-resources`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/embed-anywhere`, changeFrequency: 'monthly', priority: 0.9 },
     ...shelfUrls,

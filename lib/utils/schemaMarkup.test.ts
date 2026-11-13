@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   generateShelfSchema,
+  generateShelfSchemaJson,
   generateVideoObjectSchema,
+  generateVideoObjectSchemaJson,
 } from './schemaMarkup';
 import { Item, ItemType, Shelf } from '@/lib/types/shelf';
 
@@ -38,22 +40,96 @@ function createMockShelf(overrides: Partial<Shelf> = {}): Shelf {
   } as Shelf;
 }
 
+function getList(schema: Record<string, unknown>): Array<Record<string, unknown>> {
+  const list = schema.mainEntity as Record<string, unknown>;
+  return list.itemListElement as Array<Record<string, unknown>>;
+}
+
 function getFirstItemSchema(shelf: Shelf, items: Item[]): Record<string, unknown> {
-  const schema = generateShelfSchema(shelf, items) as Record<string, unknown>;
-  const list = schema.itemListElement as Array<Record<string, unknown>>;
-  return list[0].item as Record<string, unknown>;
+  return getList(generateShelfSchema(shelf, items))[0].item as Record<string, unknown>;
+}
+
+// Every type the generator may emit. All exist on schema.org.
+const VALID_TYPES = new Set([
+  'CollectionPage', 'ItemList', 'ListItem', 'Book', 'PodcastSeries', 'PodcastEpisode',
+  'MusicAlbum', 'MusicRecording', 'CreativeWork', 'WebPage', 'Corporation',
+  'Person', 'Organization', 'MusicGroup', 'Review', 'Rating',
+]);
+
+function collectTypes(value: unknown, found: string[] = []): string[] {
+  if (Array.isArray(value)) {
+    value.forEach((v) => collectTypes(v, found));
+  } else if (value && typeof value === 'object') {
+    for (const [key, v] of Object.entries(value)) {
+      if (key === '@type') found.push(v as string);
+      else collectTypes(v, found);
+    }
+  }
+  return found;
 }
 
 describe('generateShelfSchema (collection page)', () => {
+  it('is a CollectionPage whose main entity is an ordered ItemList', () => {
+    const url = 'https://virtualbookshelf.app/s/my-shelf-abc';
+    const schema = generateShelfSchema(createMockShelf(), [createMockItem()], { url });
+    const list = schema.mainEntity as Record<string, unknown>;
+
+    expect(schema['@type']).toBe('CollectionPage');
+    expect(schema['@id']).toBe(url);
+    expect(schema.url).toBe(url);
+    expect(list['@type']).toBe('ItemList');
+    expect(list.numberOfItems).toBe(1);
+  });
+
+  it('orders list items by order_index', () => {
+    const schema = generateShelfSchema(createMockShelf(), [
+      createMockItem({ id: 'b', title: 'Second', order_index: 1 }),
+      createMockItem({ id: 'a', title: 'First', order_index: 0 }),
+    ]);
+    const names = getList(schema).map((li) => (li.item as Record<string, unknown>).name);
+
+    expect(names).toEqual(['First', 'Second']);
+    expect(getList(schema)[1].position).toBe(2);
+  });
+
+  it('only emits types that exist on schema.org, for every item type', () => {
+    const types: ItemType[] = ['book', 'podcast', 'podcast_episode', 'music', 'video', 'link', 'stock'];
+    const items = types.map((type, i) =>
+      createMockItem({ id: `i${i}`, type, order_index: i, rating: 4 })
+    );
+    const found = collectTypes(generateShelfSchema(createMockShelf(), items));
+
+    expect(found).not.toContain('Linkage');
+    for (const type of found) expect(VALID_TYPES.has(type)).toBe(true);
+  });
+
+  it.each([
+    ['book', 'Book'],
+    ['podcast', 'PodcastSeries'],
+    ['podcast_episode', 'PodcastEpisode'],
+    ['link', 'WebPage'],
+    ['stock', 'Corporation'],
+  ] as Array<[ItemType, string]>)('maps %s to %s', (type, expected) => {
+    const inner = getFirstItemSchema(createMockShelf(), [createMockItem({ type })]);
+    expect(inner['@type']).toBe(expected);
+  });
+
+  it('tells albums from tracks by the URL', () => {
+    const album = getFirstItemSchema(createMockShelf(), [
+      createMockItem({ type: 'music', external_url: 'https://open.spotify.com/album/abc' }),
+    ]);
+    const track = getFirstItemSchema(createMockShelf(), [
+      createMockItem({ type: 'music', external_url: 'https://open.spotify.com/track/abc' }),
+    ]);
+
+    expect(album['@type']).toBe('MusicAlbum');
+    expect(track['@type']).toBe('MusicRecording');
+  });
+
   it('serializes video items as CreativeWork, never VideoObject', () => {
-    const shelf = createMockShelf();
-    const items = [createMockItem()];
-    const schema = generateShelfSchema(shelf, items);
+    const schema = generateShelfSchema(createMockShelf(), [createMockItem()]);
 
-    const listItem = (schema.itemListElement as Record<string, unknown>[])[0];
-    const inner = listItem.item as Record<string, unknown>;
-
-    expect(inner['@type']).toBe('CreativeWork');
+    expect(getFirstItemSchema(createMockShelf(), [createMockItem()])['@type']).toBe('CreativeWork');
     // The whole collection must not claim VideoObject anywhere — that's what
     // triggered "Video isn't on a watch page" in Search Console. VideoObject
     // now lives only on the dedicated /v/[videoId] watch pages.
@@ -62,27 +138,87 @@ describe('generateShelfSchema (collection page)', () => {
 
   it('does not name the shelf owner, but keeps per-item creators', () => {
     const schema = generateShelfSchema(createMockShelf(), [createMockItem({ creator: 'Some Channel' })]);
-    const listItem = (schema.itemListElement as Record<string, unknown>[])[0];
-    const inner = listItem.item as Record<string, unknown>;
+    const inner = getList(schema)[0].item as Record<string, unknown>;
 
     expect(schema.creator).toBeUndefined();
-    expect(inner.creator).toMatchObject({ name: 'Some Channel' });
+    expect(schema.author).toBeUndefined();
+    expect(inner.creator).toMatchObject({ '@type': 'Organization', name: 'Some Channel' });
   });
 
-  it('uses dateCreated (not the VideoObject-only uploadDate) for video items', () => {
-    const item = createMockItem();
-    const inner = getFirstItemSchema(createMockShelf(), [item]);
+  it('uses the right creator property per item type', () => {
+    const shelf = createMockShelf();
+    const book = getFirstItemSchema(shelf, [createMockItem({ type: 'book', creator: 'Ursula K. Le Guin' })]);
+    const music = getFirstItemSchema(shelf, [createMockItem({ type: 'music', creator: 'Radiohead' })]);
+    const episode = getFirstItemSchema(shelf, [createMockItem({ type: 'podcast_episode', creator: 'The Show' })]);
+    const stock = getFirstItemSchema(shelf, [createMockItem({ type: 'stock', creator: 'AAPL' })]);
 
-    expect(inner.dateCreated).toBe(item.created_at.toISOString());
+    expect(book.author).toEqual({ '@type': 'Person', name: 'Ursula K. Le Guin' });
+    expect(music.byArtist).toEqual({ '@type': 'MusicGroup', name: 'Radiohead' });
+    expect(episode.partOfSeries).toEqual({ '@type': 'PodcastSeries', name: 'The Show' });
+    expect(stock.tickerSymbol).toBe('AAPL');
+  });
+
+  it('emits the curator note as a Review, not as the work description', () => {
+    const inner = getFirstItemSchema(createMockShelf(), [
+      createMockItem({ notes: 'Changed how I plan my week', rating: 5 }),
+    ]);
+    const review = inner.review as Record<string, unknown>;
+
+    expect(inner.description).toBeUndefined();
+    expect(review['@type']).toBe('Review');
+    expect(review.reviewBody).toBe('Changed how I plan my week');
+    expect(review.reviewRating).toMatchObject({ ratingValue: 5, bestRating: 5 });
+    expect(review.author).toBeUndefined();
+  });
+
+  it('adds sameAs from the canonical identifier when it differs from the link', () => {
+    const inner = getFirstItemSchema(createMockShelf(), [
+      createMockItem({
+        type: 'book',
+        external_url: 'http://books.google.com/books?id=zyTCAlFPjgYC&dq=x&source=gbs_api',
+        source: 'google_books',
+        source_id: 'zyTCAlFPjgYC',
+      }),
+    ]);
+    const plain = getFirstItemSchema(createMockShelf(), [createMockItem({ type: 'link' })]);
+
+    expect(inner.sameAs).toBe('https://books.google.com/books?id=zyTCAlFPjgYC');
+    expect(plain.sameAs).toBeUndefined();
+  });
+
+  it('omits the review when there is no note and no rating', () => {
+    const inner = getFirstItemSchema(createMockShelf(), [createMockItem({ notes: null, rating: null })]);
+    expect(inner.review).toBeUndefined();
+  });
+
+  it('does not claim a creation date for the work', () => {
+    const inner = getFirstItemSchema(createMockShelf(), [createMockItem()]);
+
+    expect(inner.dateCreated).toBeUndefined();
     expect(inner.uploadDate).toBeUndefined();
   });
+});
 
-  it('does not add video metadata to non-video items', () => {
-    const item = createMockItem({ type: 'book' as ItemType });
-    const inner = getFirstItemSchema(createMockShelf(), [item]);
+describe('serializeJsonLd', () => {
+  it('cannot be ended early by user text, and parses back unchanged', () => {
+    const shelf = createMockShelf({ name: 'Books </script><script>alert(1)</script> & more' });
+    const item = createMockItem({ notes: '<!-- note -->   line' });
+    const json = generateShelfSchemaJson(shelf, [item]);
 
-    expect(inner['@type']).toBe('Book');
-    expect(inner.dateCreated).toBeUndefined();
+    expect(json).not.toContain('<');
+    expect(json).not.toContain('>');
+    expect(json).not.toContain('&');
+    expect(json).not.toContain(' ');
+    expect(JSON.parse(json)).toEqual(generateShelfSchema(shelf, [item]));
+  });
+
+  it('escapes the watch page markup the same way', () => {
+    const json = generateVideoObjectSchemaJson(createMockItem({ title: '</script>' }), {
+      embedUrl: 'https://www.youtube.com/embed/x',
+      contentUrl: 'https://www.youtube.com/watch?v=x',
+      thumbnailUrl: 'https://img.youtube.com/vi/x/hqdefault.jpg',
+    });
+    expect(json).not.toContain('<');
   });
 });
 
@@ -108,7 +244,7 @@ describe('generateVideoObjectSchema (watch page)', () => {
   it('includes description and creator when present, omits when absent', () => {
     const withMeta = generateVideoObjectSchema(createMockItem(), opts);
     expect(withMeta.description).toBe('A great explainer');
-    expect(withMeta.creator).toMatchObject({ '@type': 'Person', name: 'Some Channel' });
+    expect(withMeta.creator).toMatchObject({ '@type': 'Organization', name: 'Some Channel' });
 
     const withoutMeta = generateVideoObjectSchema(
       createMockItem({ notes: null, creator: '' }),

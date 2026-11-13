@@ -22,6 +22,7 @@ import { extractVideoId, getVideoDetails } from '@/lib/api/youtube';
 import { fetchLinkMetadata, isYouTubeUrl } from '@/lib/api/microlink';
 import { getOAuthIssuer, hashToken } from '@/lib/utils/oauth';
 import { createLogger } from '@/lib/utils/logger';
+import { safeHttpUrl } from '@/lib/utils/validation';
 import { RESOURCE_ERRORS } from '@/lib/constants/errors';
 import type { Item, ItemType, Shelf } from '@/lib/types/shelf';
 
@@ -219,6 +220,7 @@ const handler = createMcpHandler(
         image_url: z
           .string()
           .url()
+          .refine((value) => safeHttpUrl(value) !== null, 'Must be an http or https URL')
           .optional()
           .describe(
             'Only pass a URL copied verbatim from a search_catalog result. Otherwise omit — ' +
@@ -229,6 +231,7 @@ const handler = createMcpHandler(
         external_url: z
           .string()
           .url()
+          .refine((value) => safeHttpUrl(value) !== null, 'Must be an http or https URL')
           .optional()
           .describe('Link to the item — a YouTube, Spotify, article, or product page URL'),
         notes: z

@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
-import { AddItemForm } from '@/components/shelf/AddItemForm';
+import { AddItemForm, AddedItem } from '@/components/shelf/AddItemForm';
+import { AddedItemPrompt } from '@/components/shelf/AddedItemPrompt';
 import { useRouter } from 'next/navigation';
 
 interface AddItemModalProps {
@@ -21,17 +22,17 @@ export function AddItemModal({
   onItemAdded 
 }: AddItemModalProps) {
   const router = useRouter();
-  const [hasAddedItems, setHasAddedItems] = useState(false);
+  const [addedCount, setAddedCount] = useState(0);
+  const [lastAdded, setLastAdded] = useState<AddedItem | undefined>();
+  const hasAddedItems = addedCount > 0;
 
-
-  const handleItemAdded = () => {
-    setHasAddedItems(true);
+  // Stay in the form after an add. It used to send the person to the
+  // read-only shelf page a second later, so adding a second item meant
+  // finding "Edit Shelf" and "Add Item" again (issue #292).
+  const handleItemAdded = (item?: AddedItem) => {
+    setAddedCount((count) => count + 1);
+    setLastAdded(item);
     onItemAdded();
-    
-    // Automatically navigate to shelf view after first item is added
-    setTimeout(() => {
-      router.push(`/shelf/${shelfId}`);
-    }, 1000); // Small delay to let the user see the success state
   };
 
   // Handle animation state based on modal visibility
@@ -43,8 +44,10 @@ export function AddItemModal({
     actions: `transform transition-all duration-700 delay-600 ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`
   };
 
+  // With items on it, "done" lands on the edit page, where the shelf can be
+  // arranged, annotated and published.
   const handleViewShelf = () => {
-    router.push(`/shelf/${shelfId}`);
+    router.push(hasAddedItems ? `/shelf/${shelfId}/edit` : `/shelf/${shelfId}`);
   };
 
   const handleSkip = () => {
@@ -81,13 +84,14 @@ export function AddItemModal({
               <span className="font-medium">&ldquo;{shelfName}&rdquo;</span> is ready to go
             </p>
             <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Let&apos;s add your first item ✨
+              {hasAddedItems ? 'Keep going, add another' : "Let's add your first item ✨"}
             </p>
           </div>
         </div>
 
         {/* Add Item Form */}
         <div className={`mb-6 ${animationClasses.form}`}>
+          <AddedItemPrompt item={lastAdded} count={addedCount} onNoteSaved={onItemAdded} />
           <AddItemForm
             shelfId={shelfId}
             onItemAdded={handleItemAdded}
@@ -100,20 +104,20 @@ export function AddItemModal({
             onClick={handleViewShelf}
             className="flex-1 px-4 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-all duration-200 font-medium text-center transform hover:scale-105 active:scale-95"
           >
-            {hasAddedItems ? 'View My Shelf Now' : 'View Empty Shelf'}
+            {hasAddedItems ? 'Done' : 'View Empty Shelf'}
           </button>
           <button
             onClick={handleSkip}
             className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 font-medium text-center transform hover:scale-105 active:scale-95"
           >
-            {hasAddedItems ? 'Add More Items' : 'Add Items Later'}
+            {hasAddedItems ? 'Back to My Shelves' : 'Add Items Later'}
           </button>
         </div>
 
         {/* Helper Text */}
         <p className={`text-xs text-gray-500 dark:text-gray-400 text-center mt-3 ${animationClasses.actions}`}>
           {hasAddedItems 
-            ? 'Redirecting to your shelf in a moment... or click above to go now' 
+            ? 'Done takes you to your shelf, where you can arrange it and share it' 
             : 'You can always add or edit items later from your shelf page'
           }
         </p>

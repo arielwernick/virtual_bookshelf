@@ -1,5 +1,10 @@
-import { sql, sqlQuery } from './client';
-import { User, SignupSource, SignupAttribution, AdminOverview, AdminWeeklySignups, AdminAttributionRow, AdminRecentUser, AdminWeeklyViews, AdminTopShelf, AdminEmbedHost, ViewSurface, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
+import { deriveItemIdentity } from '@/lib/utils/itemIdentity';
+import { sql, sqlQuery, sqlTransaction } from './client';
+import { safeHttpUrl } from '../utils/validation';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('Queries');
+import { User, SignupSource, SignupAttribution, AdminOverview, AdminWeeklySignups, AdminAttributionRow, AdminRecentUser, AdminWeeklyViews, AdminTopShelf, AdminEmbedHost, ViewSurface, ShelfViewSummary, Item, Shelf, CreateItemData, UpdateItemData, ShelfWithItems, DashboardShelf, ShelfPreviewItem, OAuthClient, OAuthAuthorizationCode, OAuthAccessToken } from '../types/shelf';
 import { generateShortToken } from '../utils/token';
 import { extractVideoId } from '../api/youtube';
 
@@ -89,8 +94,22 @@ export async function createUser(
     )
     RETURNING *
   `;
+  const user = result[0] as User;
 
-  return result[0] as User;
+  // The landing page arrives with migration 008. Written separately, and never
+  // allowed to fail the signup, so accounts can be created before it runs.
+  if (attribution?.landingPath) {
+    try {
+      await sql`
+        UPDATE users SET first_landing_path = ${attribution.landingPath}
+        WHERE id = ${user.id}
+      `;
+    } catch (error) {
+      logger.errorWithException('Could not record the signup landing page', error, { userId: user.id });
+    }
+  }
+
+  return user;
 }
 
 /**
@@ -471,16 +490,19 @@ export async function getPublicShelves(): Promise<{ share_token: string; name: s
 }
 
 /**
- * Delete shelf (cascades to items)
+ * Delete a shelf and its items
  */
 export async function deleteShelf(shelfId: string): Promise<boolean> {
-  const result = await sql`
-    DELETE FROM shelves
-    WHERE id = ${shelfId}
-    RETURNING id
-  `;
+  // items.shelf_id has no foreign key yet (migration 002 deferred it until the
+  // existing orphans are cleaned up, issue #153), so nothing cascades: the
+  // items must be deleted here. Both statements run as one transaction, so a
+  // shelf is never left half-deleted.
+  const [, deletedShelves] = (await sqlTransaction((tx) => [
+    tx`DELETE FROM items WHERE shelf_id = ${shelfId}`,
+    tx`DELETE FROM shelves WHERE id = ${shelfId} RETURNING id`,
+  ])) as [unknown[], unknown[]];
 
-  return result.length > 0;
+  return deletedShelves.length > 0;
 }
 
 // ============================================================================
@@ -495,12 +517,15 @@ export async function createItem(shelfId: string, itemData: CreateItemData, user
     type,
     title,
     creator,
-    image_url = null,
-    external_url = null,
     notes = null,
     rating = null,
     order_index = 0,
   } = itemData;
+
+  // Last line of defence: whatever path the item came by, only web URLs are
+  // stored (issue #296).
+  const image_url = safeHttpUrl(itemData.image_url);
+  const external_url = safeHttpUrl(itemData.external_url);
 
   const result = await sql`
     INSERT INTO items (shelf_id, user_id, type, title, creator, image_url, external_url, notes, rating, order_index)
@@ -508,7 +533,54 @@ export async function createItem(shelfId: string, itemData: CreateItemData, user
     RETURNING *
   `;
 
-  return result[0] as Item;
+  return saveItemIdentity(result[0] as Item);
+}
+
+/**
+ * Record an item's canonical identity (issue #288): which catalogue, which id.
+ *
+ * Written as its own statement, after the item itself is saved, and never
+ * allowed to fail the save. The identity columns arrive with migration 007;
+ * if code reaches production before that migration does, items must still be
+ * addable. The backfill script fills in anything missed.
+ */
+async function saveItemIdentity(item: Item): Promise<Item> {
+  const identity = deriveItemIdentity(item.type, item.external_url, item.creator);
+  const source = identity?.source ?? null;
+  const sourceId = identity?.sourceId ?? null;
+
+  if (source === (item.source ?? null) && sourceId === (item.source_id ?? null)) {
+    return item;
+  }
+
+  try {
+    const updated = await sql`
+      UPDATE items SET source = ${source}, source_id = ${sourceId}
+      WHERE id = ${item.id}
+      RETURNING *
+    `;
+    return (updated[0] as Item) ?? item;
+  } catch (error) {
+    logger.errorWithException('Could not save item identity; the item itself was saved', error, {
+      itemId: item.id,
+    });
+    return item;
+  }
+}
+
+/**
+ * Every item on every shelf a user owns, for the account export (issue #289).
+ * One query, ordered so callers can group by shelf without sorting.
+ */
+export async function getItemsForUserShelves(userId: string): Promise<Item[]> {
+  const result = await sql`
+    SELECT i.* FROM items i
+    JOIN shelves s ON s.id = i.shelf_id
+    WHERE s.user_id = ${userId}
+    ORDER BY i.shelf_id, i.order_index ASC
+  `;
+
+  return result as Item[];
 }
 
 /**
@@ -623,9 +695,26 @@ const ITEM_UPDATABLE_FIELDS = [
  * Only the supplied fields are written; all others are left untouched.
  */
 export async function updateItem(itemId: string, itemData: UpdateItemData): Promise<Item> {
-  const { query, values } = buildDynamicUpdate('items', itemId, itemData, ITEM_UPDATABLE_FIELDS);
+  // Only web URLs are stored (issue #296). `undefined` still means "leave as is".
+  const data: UpdateItemData = { ...itemData };
+  if (typeof data.external_url === 'string') {
+    data.external_url = safeHttpUrl(data.external_url) ?? (null as unknown as string);
+  }
+  if (typeof data.image_url === 'string') {
+    data.image_url = safeHttpUrl(data.image_url) ?? (null as unknown as string);
+  }
+
+  const { query, values } = buildDynamicUpdate('items', itemId, data, ITEM_UPDATABLE_FIELDS);
   const result = await execParameterized(query, values);
-  return result[0] as Item;
+  const item = result[0] as Item;
+
+  // Keep the canonical identity in step when the URL (or a stock's ticker,
+  // stored in creator) changes.
+  if (item && (itemData.external_url !== undefined || itemData.creator !== undefined)) {
+    return saveItemIdentity(item);
+  }
+
+  return item;
 }
 
 /**
@@ -646,23 +735,29 @@ export async function deleteItem(itemId: string): Promise<boolean> {
  * Uses two-pass approach to avoid unique constraint violations on (shelf_id, order_index)
  */
 export async function updateItemOrder(shelfId: string, itemIds: string[]): Promise<void> {
-  // First pass: set all items to negative temporary indices to avoid conflicts
-  for (let i = 0; i < itemIds.length; i++) {
-    await sql`
-      UPDATE items
-      SET order_index = ${-(i + 1)}
-      WHERE id = ${itemIds[i]} AND shelf_id = ${shelfId}
-    `;
-  }
-  
-  // Second pass: set items to their final positive indices
-  for (let i = 0; i < itemIds.length; i++) {
-    await sql`
-      UPDATE items
-      SET order_index = ${i}
-      WHERE id = ${itemIds[i]} AND shelf_id = ${shelfId}
-    `;
-  }
+  if (itemIds.length === 0) return;
+
+  // (shelf_id, order_index) is unique, so items can't be moved straight to
+  // their new positions: each first goes to a negative placeholder, then to
+  // its final index. All of it runs as one transaction in one round trip, so
+  // a failure part-way leaves the old order untouched instead of a shelf with
+  // negative positions (issue #296).
+  await sqlTransaction((tx) => [
+    ...itemIds.map(
+      (id, i) => tx`
+        UPDATE items
+        SET order_index = ${-(i + 1)}
+        WHERE id = ${id} AND shelf_id = ${shelfId}
+      `
+    ),
+    ...itemIds.map(
+      (id, i) => tx`
+        UPDATE items
+        SET order_index = ${i}
+        WHERE id = ${id} AND shelf_id = ${shelfId}
+      `
+    ),
+  ]);
 }
 
 /**
@@ -876,13 +971,16 @@ export async function getAdminWeeklySignups(weeks: number = 12): Promise<AdminWe
 export async function getAdminAttribution(days: number = 90): Promise<AdminAttributionRow[]> {
   const result = await sql`
     SELECT
-      signup_source IS NOT NULL AS tracked,
-      first_referrer,
-      utm_source,
+      u.signup_source IS NOT NULL AS tracked,
+      u.first_referrer,
+      u.utm_source,
+      -- Read through to_jsonb so this returns NULL, rather than failing, on a
+      -- database where migration 008 has not run yet
+      to_jsonb(u) ->> 'first_landing_path' AS first_landing_path,
       COUNT(*)::int AS count
-    FROM users
-    WHERE created_at > NOW() - make_interval(days => ${days})
-    GROUP BY 1, 2, 3
+    FROM users u
+    WHERE u.created_at > NOW() - make_interval(days => ${days})
+    GROUP BY 1, 2, 3, 4
     ORDER BY count DESC
   `;
 
@@ -902,6 +1000,7 @@ export async function getAdminRecentUsers(limit: number = 50): Promise<AdminRece
       u.signup_source IS NOT NULL AS tracked,
       u.first_referrer,
       u.utm_source,
+      to_jsonb(u) ->> 'first_landing_path' AS first_landing_path,
       u.created_at,
       u.last_seen_at,
       (SELECT COUNT(*)::int FROM shelves s WHERE s.user_id = u.id) AS shelf_count,
@@ -988,6 +1087,60 @@ export async function getAdminTopShelves(days: number = 30, limit: number = 10):
   `;
 
   return result as AdminTopShelf[];
+}
+
+/**
+ * View counts for every shelf a user owns, keyed by shelf id (issue #68).
+ *
+ * Shelves that have never been viewed are simply absent from the map. Reads
+ * the same daily counters as the admin dashboard, scoped to one owner.
+ */
+export async function getShelfViewsForOwner(userId: string): Promise<Map<string, ShelfViewSummary>> {
+  const [totals, hosts] = await Promise.all([
+    sql`
+      SELECT
+        v.shelf_id,
+        COALESCE(SUM(v.views) FILTER (WHERE v.day > CURRENT_DATE - 7), 0)::int AS views_7d,
+        SUM(v.views)::int AS views_total
+      FROM shelf_view_daily v
+      JOIN shelves s ON s.id = v.shelf_id
+      WHERE s.user_id = ${userId}
+      GROUP BY v.shelf_id
+    `,
+    // The busiest embedding site per shelf over the last 30 days
+    sql`
+      SELECT DISTINCT ON (v.shelf_id)
+        v.shelf_id,
+        v.embed_host,
+        SUM(v.views)::int AS views
+      FROM shelf_view_daily v
+      JOIN shelves s ON s.id = v.shelf_id
+      WHERE s.user_id = ${userId}
+        AND v.surface = 'embed'
+        AND v.embed_host <> ''
+        AND v.day > CURRENT_DATE - 30
+      GROUP BY v.shelf_id, v.embed_host
+      ORDER BY v.shelf_id, SUM(v.views) DESC
+    `,
+  ]);
+
+  const summary = new Map<string, ShelfViewSummary>();
+  for (const row of totals as { shelf_id: string; views_7d: number; views_total: number }[]) {
+    summary.set(row.shelf_id, {
+      views_7d: row.views_7d,
+      views_total: row.views_total,
+      top_embed_host: null,
+      top_embed_host_views: 0,
+    });
+  }
+  for (const row of hosts as { shelf_id: string; embed_host: string; views: number }[]) {
+    const entry = summary.get(row.shelf_id);
+    if (entry) {
+      entry.top_embed_host = row.embed_host;
+      entry.top_embed_host_views = row.views;
+    }
+  }
+  return summary;
 }
 
 /**
