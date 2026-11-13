@@ -29,6 +29,8 @@ export interface SignupAttribution {
   utmSource: string | null;
   utmMedium: string | null;
   utmCampaign: string | null;
+  /** First page of the visit, secrets redacted (lib/utils/attribution.ts). */
+  landingPath?: string | null;
 }
 
 export interface Shelf {
@@ -204,6 +206,8 @@ export interface AdminAttributionRow {
   tracked: boolean;
   first_referrer: string | null;
   utm_source: string | null;
+  /** NULL before migration 008, and for signups before landing pages were recorded */
+  first_landing_path: string | null;
   count: number;
 }
 
@@ -216,6 +220,7 @@ export interface AdminRecentUser {
   tracked: boolean;
   first_referrer: string | null;
   utm_source: string | null;
+  first_landing_path: string | null;
   created_at: Date;
   last_seen_at: Date | null;
   shelf_count: number;

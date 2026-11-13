@@ -94,8 +94,22 @@ export async function createUser(
     )
     RETURNING *
   `;
+  const user = result[0] as User;
 
-  return result[0] as User;
+  // The landing page arrives with migration 008. Written separately, and never
+  // allowed to fail the signup, so accounts can be created before it runs.
+  if (attribution?.landingPath) {
+    try {
+      await sql`
+        UPDATE users SET first_landing_path = ${attribution.landingPath}
+        WHERE id = ${user.id}
+      `;
+    } catch (error) {
+      logger.errorWithException('Could not record the signup landing page', error, { userId: user.id });
+    }
+  }
+
+  return user;
 }
 
 /**
@@ -957,13 +971,16 @@ export async function getAdminWeeklySignups(weeks: number = 12): Promise<AdminWe
 export async function getAdminAttribution(days: number = 90): Promise<AdminAttributionRow[]> {
   const result = await sql`
     SELECT
-      signup_source IS NOT NULL AS tracked,
-      first_referrer,
-      utm_source,
+      u.signup_source IS NOT NULL AS tracked,
+      u.first_referrer,
+      u.utm_source,
+      -- Read through to_jsonb so this returns NULL, rather than failing, on a
+      -- database where migration 008 has not run yet
+      to_jsonb(u) ->> 'first_landing_path' AS first_landing_path,
       COUNT(*)::int AS count
-    FROM users
-    WHERE created_at > NOW() - make_interval(days => ${days})
-    GROUP BY 1, 2, 3
+    FROM users u
+    WHERE u.created_at > NOW() - make_interval(days => ${days})
+    GROUP BY 1, 2, 3, 4
     ORDER BY count DESC
   `;
 
@@ -983,6 +1000,7 @@ export async function getAdminRecentUsers(limit: number = 50): Promise<AdminRece
       u.signup_source IS NOT NULL AS tracked,
       u.first_referrer,
       u.utm_source,
+      to_jsonb(u) ->> 'first_landing_path' AS first_landing_path,
       u.created_at,
       u.last_seen_at,
       (SELECT COUNT(*)::int FROM shelves s WHERE s.user_id = u.id) AS shelf_count,

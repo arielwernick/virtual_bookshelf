@@ -242,6 +242,8 @@ describe('POST /api/auth/signup', () => {
           utmSource: 'newsletter',
           utmMedium: null,
           utmCampaign: null,
+          // Cookies set before landing pages were recorded have none
+          landingPath: null,
         },
       }));
     });

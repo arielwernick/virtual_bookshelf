@@ -38,6 +38,8 @@ import {
   createOAuthAccessToken,
   getLiveOAuthAccessToken,
   deleteOAuthAccessTokensForUser,
+  getAdminAttribution,
+  getAdminRecentUsers,
 } from './queries';
 
 let counter = 0;
@@ -438,6 +440,56 @@ describe('queries against a real database', () => {
 
       expect(await deleteOAuthAccessTokensForUser(me.id)).toBe(2);
       expect(await getLiveOAuthAccessToken(`live-${counter}`)).toBeNull();
+    });
+  });
+
+  describe('signup landing page (migration 008)', () => {
+    const attribution = {
+      firstReferrer: null,
+      utmSource: 'chatgpt.com',
+      utmMedium: null,
+      utmCampaign: null,
+      landingPath: '/goodreads-alternative',
+    };
+
+    it('is stored at signup and shown by the admin queries', async () => {
+      counter += 1;
+      const user = await createUser({
+        username: `landing${counter}`,
+        email: `landing${counter}@example.com`,
+        passwordHash: 'not-a-real-hash',
+        signupSource: 'email',
+        attribution,
+      });
+
+      const recent = (await getAdminRecentUsers(500)).find((row) => row.id === user.id);
+      expect(recent?.first_landing_path).toBe('/goodreads-alternative');
+
+      const rows = await getAdminAttribution(90);
+      expect(rows.some((row) => row.first_landing_path === '/goodreads-alternative' && row.utm_source === 'chatgpt.com')).toBe(true);
+    });
+
+    it('does not block signups, or break the admin page, before migration 008 runs', async () => {
+      const db = getTestDatabase();
+      await db.exec(readMigration('008_signup_landing_path.down.sql'));
+      try {
+        counter += 1;
+        const user = await createUser({
+          username: `early${counter}`,
+          email: `early${counter}@example.com`,
+          passwordHash: 'not-a-real-hash',
+          signupSource: 'email',
+          attribution,
+        });
+
+        expect(user.id).toBeTruthy();
+        const recent = (await getAdminRecentUsers(500)).find((row) => row.id === user.id);
+        expect(recent).toBeDefined();
+        expect(recent?.first_landing_path).toBeNull();
+        await expect(getAdminAttribution(90)).resolves.toBeDefined();
+      } finally {
+        await db.exec(readMigration('008_signup_landing_path.sql'));
+      }
     });
   });
 });
