@@ -217,9 +217,55 @@ export async function resolveUrl(
 }
 
 /**
+ * The URL to request for a short link, rebuilt on the shortener's own fixed
+ * address. Returns null for anything that is not one of the known shorteners.
+ *
+ * Short links come from text a person pastes. Only the path and query are
+ * taken from it; the scheme and host are always one of the literals below,
+ * so a pasted link can never make the server request another address. Each
+ * redirect the shortener answers with is then checked by fetchPublicUrl.
+ */
+export function shortenerRequestUrl(url: string): string | null {
+  const parsed = parseUrl(url);
+  if (!parsed) return null;
+
+  const rest = `${parsed.pathname.replace(/^\/+/, '')}${parsed.search}`;
+  switch (parsed.hostname.toLowerCase().replace(/^www\./, '')) {
+    case 'lnkd.in':
+      return `https://lnkd.in/${rest}`;
+    case 'bit.ly':
+      return `https://bit.ly/${rest}`;
+    case 't.co':
+      return `https://t.co/${rest}`;
+    case 'tinyurl.com':
+      return `https://tinyurl.com/${rest}`;
+    case 'goo.gl':
+      return `https://goo.gl/${rest}`;
+    case 'ow.ly':
+      return `https://ow.ly/${rest}`;
+    case 'is.gd':
+      return `https://is.gd/${rest}`;
+    case 'buff.ly':
+      return `https://buff.ly/${rest}`;
+    case 'j.mp':
+      return `https://j.mp/${rest}`;
+    case 'short.link':
+      return `https://short.link/${rest}`;
+    case 'rb.gy':
+      return `https://rb.gy/${rest}`;
+    default:
+      return null;
+  }
+}
+
+/**
  * Resolve a shortened URL by fetching it
  */
-async function resolveWithFetch(url: string, timeoutMs: number): Promise<string> {
+async function resolveWithFetch(shortUrl: string, timeoutMs: number): Promise<string> {
+  // Only a known shortener's own address is ever requested (see above)
+  const url = shortenerRequestUrl(shortUrl);
+  if (!url) return shortUrl;
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -241,7 +287,9 @@ async function resolveWithFetch(url: string, timeoutMs: number): Promise<string>
     });
 
     clearTimeout(timeoutId);
-    return await extractFinalUrl(response, finalUrl, url);
+    const resolved = await extractFinalUrl(response, finalUrl, url);
+    // Nothing better found: give back what the person pasted, not our rebuild
+    return resolved === url ? shortUrl : resolved;
   } catch (error) {
     clearTimeout(timeoutId);
     throw error;
@@ -252,6 +300,7 @@ async function resolveWithFetch(url: string, timeoutMs: number): Promise<string>
  * Try to get redirect URL via HEAD request
  */
 async function tryHeadRedirect(url: string, signal: AbortSignal): Promise<string | null> {
+  // Callers pass a URL from shortenerRequestUrl; checked again as a guard
   if (!isPublicHttpUrl(url)) throw new UnsafeUrlError(url);
   try {
     const response = await fetch(url, {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isShortUrl, resolveUrl, resolveUrls, getDomain, extractLinkedInRedirectUrl, needsResolution, extractCanonicalUrl } from './urlResolver';
+import { isShortUrl, resolveUrl, resolveUrls, getDomain, extractLinkedInRedirectUrl, needsResolution, extractCanonicalUrl, shortenerRequestUrl } from './urlResolver';
 
 // ============================================================================
 // extractCanonicalUrl Tests
@@ -416,5 +416,60 @@ describe('resolveUrls', () => {
 
     expect(result.resolved['https://example.com/regular']).toBe('https://example.com/regular');
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('shortenerRequestUrl', () => {
+  it('rebuilds a short link on the shortener\'s own address, keeping path and query', () => {
+    expect(shortenerRequestUrl('https://bit.ly/abc123')).toBe('https://bit.ly/abc123');
+    expect(shortenerRequestUrl('http://www.bit.ly/abc123?x=1')).toBe('https://bit.ly/abc123?x=1');
+    expect(shortenerRequestUrl('https://T.CO/xyz')).toBe('https://t.co/xyz');
+    expect(shortenerRequestUrl('https://lnkd.in/gAbCdEf')).toBe('https://lnkd.in/gAbCdEf');
+  });
+
+  it('never keeps a host, port or credentials from the pasted text', () => {
+    expect(shortenerRequestUrl('https://user:pass@bit.ly:8080/abc')).toBe('https://bit.ly/abc');
+    expect(shortenerRequestUrl('https://bit.ly//169.254.169.254/latest')).toBe(
+      'https://bit.ly/169.254.169.254/latest'
+    );
+  });
+
+  it('refuses anything that is not a known shortener', () => {
+    expect(shortenerRequestUrl('https://example.com/abc')).toBeNull();
+    expect(shortenerRequestUrl('https://bit.ly.evil.example/abc')).toBeNull();
+    expect(shortenerRequestUrl('http://127.0.0.1/abc')).toBeNull();
+    expect(shortenerRequestUrl('not a url')).toBeNull();
+  });
+});
+
+describe('resolveUrl only requests a shortener\'s own address', () => {
+  const originalFetch = global.fetch;
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('requests the rebuilt address, not the pasted host', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      status: 301,
+      url: '',
+      headers: new Headers({ location: 'https://example.com/final' }),
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const result = await resolveUrl('http://user:pass@www.bit.ly:8080/abc');
+
+    expect(result).toBe('https://example.com/final');
+    expect(fetchMock.mock.calls[0][0]).toBe('https://bit.ly/abc');
+  });
+
+  it('gives back the pasted link when nothing better is found', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      status: 200,
+      url: '',
+      headers: new Headers(),
+      text: async () => '<html></html>',
+    }) as unknown as typeof fetch;
+
+    expect(await resolveUrl('https://bit.ly/abc')).toBe('https://bit.ly/abc');
   });
 });
