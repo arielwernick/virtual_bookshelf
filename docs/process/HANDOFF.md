@@ -59,8 +59,8 @@ is unclear, stop and ask the owner (Ariel). Do not guess.
     `gh api repos/arielwernick/virtual_bookshelf/commits/$(git rev-parse HEAD)/check-runs --jq '.check_runs[] | "\(.name): \(.status) \(.conclusion)"'`
     `test`, `lint`, `build` and `smoke` must end in `success`. `smoke` runs the
     Playwright tests in `e2e/smoke.spec.ts` against the live preview, which has
-    a real database. `CodeQL` shows one known failure (see section 4); a
-    second one is new and yours to fix. If you broke a check, fix it in a new
+    a real database. `CodeQL` must pass too; any alert it raises is yours
+    to fix, never to dismiss. If you broke a check, fix it in a new
     commit before doing anything else.
 13. **SQL must run on a real engine before it lands.** If you add or change a
     query in `lib/db/queries.ts` or a file in `migrations/`, add a case to
@@ -118,9 +118,6 @@ These are waiting on Ariel. Remind him; do not work around them.
       `--apply`) on the Neon `dev` branch, and later on production, for #288.
       Order no longer matters: items save even before migration 007 runs,
       and the backfill fills in identifiers afterwards.
-- [ ] Decide the one CodeQL alert on pull request #297 ("Server-side request
-      forgery" at `lib/utils/safeFetch.ts`). It points at the guarded fetch
-      this branch added. Agents: do not try to silence it.
 - [ ] Privacy and Terms pages.
 - [ ] Resend, Sentry and Search Console accounts.
 - [ ] Repository settings: branch protection on `main`, auto-merge, the

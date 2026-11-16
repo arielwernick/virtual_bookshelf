@@ -1,29 +1,104 @@
-import { fetchPublicUrl } from '@/lib/utils/safeFetch';
-
 export const IMAGE_FETCH_TIMEOUT_MS = 2500;
 /** Largest cover image that will be loaded into a share card. */
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const OG_CACHE_CONTROL = 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
 
+/** Redirects followed for one cover. Each hop must also be a known image host. */
+const MAX_IMAGE_REDIRECTS = 2;
+
 /**
- * Fetch an external image and return it as a base64 data URL.
+ * The URL to request for a cover image, rebuilt on a fixed address for each
+ * image host the app's own integrations use. Returns null for any other host.
+ *
+ * Cover URLs are stored on items by their owners, so the server only ever
+ * requests one of the hosts written below; only the path and query come from
+ * the stored URL. Covers from other sites (for example a link's preview
+ * image) are not fetched, and the share card shows a placeholder for them.
+ * The shelf page itself still shows them: the visitor's browser loads those.
+ */
+export function coverRequestUrl(url: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
+
+  const rest = `${parsed.pathname.replace(/^\/+/, '')}${parsed.search}`;
+  switch (parsed.hostname.toLowerCase()) {
+    // Google Books covers
+    case 'books.google.com':
+      return `https://books.google.com/${rest}`;
+    case 'books.googleusercontent.com':
+      return `https://books.googleusercontent.com/${rest}`;
+    // Spotify album, show and episode art
+    case 'i.scdn.co':
+      return `https://i.scdn.co/${rest}`;
+    case 'mosaic.scdn.co':
+      return `https://mosaic.scdn.co/${rest}`;
+    case 'image-cdn-ak.spotifycdn.com':
+      return `https://image-cdn-ak.spotifycdn.com/${rest}`;
+    case 'image-cdn-fa.spotifycdn.com':
+      return `https://image-cdn-fa.spotifycdn.com/${rest}`;
+    // YouTube thumbnails
+    case 'i.ytimg.com':
+      return `https://i.ytimg.com/${rest}`;
+    case 'img.youtube.com':
+      return `https://img.youtube.com/${rest}`;
+    // Apple Podcasts artwork
+    case 'is1-ssl.mzstatic.com':
+      return `https://is1-ssl.mzstatic.com/${rest}`;
+    case 'is2-ssl.mzstatic.com':
+      return `https://is2-ssl.mzstatic.com/${rest}`;
+    case 'is3-ssl.mzstatic.com':
+      return `https://is3-ssl.mzstatic.com/${rest}`;
+    case 'is4-ssl.mzstatic.com':
+      return `https://is4-ssl.mzstatic.com/${rest}`;
+    case 'is5-ssl.mzstatic.com':
+      return `https://is5-ssl.mzstatic.com/${rest}`;
+    // Stock logos (app/api/finance/quote)
+    case 'financialmodelingprep.com':
+      return `https://financialmodelingprep.com/${rest}`;
+    case 't1.gstatic.com':
+      return `https://t1.gstatic.com/${rest}`;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Fetch a cover image and return it as a base64 data URL.
  *
  * Used by edge OG routes to prefetch covers before handing them to Satori.
  * Satori has no built-in timeout and will abort the whole render if a single
  * image hangs — fetching here lets a slow/broken cover fail in isolation so
  * the route can fall back to a placeholder for that one tile.
+ *
+ * Only known image hosts are requested (see coverRequestUrl), and a redirect
+ * is only followed to another known image host.
  */
 export async function fetchAsDataUrl(url: string): Promise<string | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
   try {
-    // Cover URLs come from shelf owners. Only public addresses are fetched,
-    // and each redirect hop is checked the same way (lib/utils/safeFetch.ts).
-    const { response: res } = await fetchPublicUrl(url, {
-      signal: controller.signal,
-      headers: { Accept: 'image/*' },
-    });
-    if (!res.ok) return null;
+    let target = coverRequestUrl(url);
+    let res: Response | null = null;
+
+    for (let hop = 0; target && hop <= MAX_IMAGE_REDIRECTS; hop++) {
+      res = await fetch(target, {
+        signal: controller.signal,
+        headers: { Accept: 'image/*' },
+        redirect: 'manual',
+      });
+      const location =
+        res.status >= 300 && res.status < 400 ? res.headers.get('location') : null;
+      if (!location) break;
+      target = coverRequestUrl(new URL(location, target).href);
+      res = null;
+    }
+
+    if (!res || !res.ok) return null;
     const contentType = res.headers.get('content-type') || 'image/jpeg';
     if (!contentType.startsWith('image/')) return null;
 

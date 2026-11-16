@@ -35,8 +35,12 @@ plain message. Never return the error object or a stack trace.
 
 - **URLs from a person go through `safeHttpUrl`** (`lib/utils/validation.ts`)
   before they are stored. Only `http` and `https` are kept.
-- **The server only fetches user-supplied URLs with `fetchPublicUrl`**
-  (`lib/utils/safeFetch.ts`), never plain `fetch`.
+- **The server never requests a host a user chose.** A URL that came from a
+  person may only be fetched after rebuilding it on a fixed, known host
+  written in the code, as `coverRequestUrl` (`lib/og/imageLoader.ts`) and
+  `shortenerRequestUrl` (`lib/utils/urlResolver.ts`) do. Redirects are read or
+  rebuilt the same way, never followed blindly. CodeQL checks this on every
+  pull request.
 - **Public responses are built field by field.** Use `toPublicShelf` or
   `redactItemForPublic` from `lib/shelf/publicShelf.ts`. Never return a
   database row as it is: rows carry the owner's id.

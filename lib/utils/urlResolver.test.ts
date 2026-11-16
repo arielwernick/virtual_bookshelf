@@ -261,52 +261,85 @@ describe('resolveUrl', () => {
     expect(result).toBe('https://github.com/repo');
   });
 
-  it('resolves shortened URL via fetch', async () => {
+  // A shortener answers with a redirect; the server reads where it points
+  // and never requests that address itself.
+  const redirectTo = (location: string) => ({
+    status: 301,
+    url: '',
+    headers: new Headers({ location }),
+  });
+
+  it('resolves a shortened URL from the shortener\'s redirect, without visiting the destination', async () => {
     const shortUrl = 'https://bit.ly/abc123';
     const resolvedUrl = 'https://example.com/final-destination';
-
-    global.fetch = vi.fn().mockResolvedValue({
-      url: resolvedUrl,
-    });
+    global.fetch = vi.fn().mockResolvedValue(redirectTo(resolvedUrl));
 
     const result = await resolveUrl(shortUrl);
+
     expect(result).toBe(resolvedUrl);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(global.fetch).toHaveBeenCalledWith(
       shortUrl,
-      expect.objectContaining({ method: 'HEAD' })
+      expect.objectContaining({ method: 'HEAD', redirect: 'manual' })
     );
   });
 
-  it('extracts real URL when fetch resolves to LinkedIn redirect', async () => {
+  it('extracts real URL when the shortener points at a LinkedIn redirect', async () => {
     const shortUrl = 'https://lnkd.in/abc123';
-    // Sometimes lnkd.in resolves to a LinkedIn redirect page
     const linkedInRedirect = 'https://www.linkedin.com/redir/redirect?url=https%3A%2F%2Fexample.com%2Ftarget';
-
-    global.fetch = vi.fn().mockResolvedValue({
-      url: linkedInRedirect,
-    });
+    global.fetch = vi.fn().mockResolvedValue(redirectTo(linkedInRedirect));
 
     const result = await resolveUrl(shortUrl);
+
     expect(result).toBe('https://example.com/target');
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back to GET if HEAD fails', async () => {
+  it('falls back to a GET on the shortener if HEAD fails, still without following', async () => {
     const shortUrl = 'https://bit.ly/abc123';
     const resolvedUrl = 'https://example.com/final-destination';
 
     let callCount = 0;
     global.fetch = vi.fn().mockImplementation(() => {
       callCount++;
-      if (callCount === 1) {
-        // HEAD request fails
-        return Promise.reject(new Error('HEAD not supported'));
-      }
-      // GET request succeeds
-      return Promise.resolve({ url: resolvedUrl });
+      if (callCount === 1) return Promise.reject(new Error('HEAD not supported'));
+      return Promise.resolve(redirectTo(resolvedUrl));
     });
 
     const result = await resolveUrl(shortUrl);
+
     expect(result).toBe(resolvedUrl);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(global.fetch).mock.calls[1]).toEqual([
+      shortUrl,
+      expect.objectContaining({ method: 'GET', redirect: 'manual' }),
+    ]);
+  });
+
+  it('reads the destination from the shortener\'s page when it does not redirect', async () => {
+    global.fetch = vi.fn().mockImplementation((_url: string, init: RequestInit) =>
+      init.method === 'HEAD'
+        ? Promise.resolve({ status: 200, url: '', headers: new Headers() })
+        : Promise.resolve({
+            status: 200,
+            url: '',
+            headers: new Headers(),
+            text: async () => '<html><head><link rel="canonical" href="https://example.com/real"></head></html>',
+          })
+    );
+
+    expect(await resolveUrl('https://bit.ly/abc123')).toBe('https://example.com/real');
+  });
+
+  it('stops when two short links point at each other', async () => {
+    global.fetch = vi.fn().mockImplementation((url: string) =>
+      Promise.resolve(redirectTo(url.includes('bit.ly') ? 'https://t.co/b' : 'https://bit.ly/a'))
+    );
+
+    const result = await resolveUrl('https://bit.ly/a');
+
+    expect(['https://bit.ly/a', 'https://t.co/b']).toContain(result);
+    expect(vi.mocked(global.fetch).mock.calls.length).toBeLessThanOrEqual(12);
   });
 
   it('returns original URL on timeout', async () => {
