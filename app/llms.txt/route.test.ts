@@ -32,6 +32,12 @@ describe('buildLlmsTxt', () => {
     expect(text).toContain('Shelves start private');
   });
 
+  it('links the Privacy and Terms pages', () => {
+    const text = buildLlmsTxt(BASE, []);
+    expect(text).toContain(`- [Privacy](${BASE}/privacy)`);
+    expect(text).toContain(`- [Terms](${BASE}/terms)`);
+  });
+
   it('caps the list', () => {
     const many = Array.from({ length: 150 }, (_, i) => ({ ...shelf, share_token: `tok${i}` }));
     expect(buildLlmsTxt(BASE, many).match(/shelf\.md\)/g)).toHaveLength(100);

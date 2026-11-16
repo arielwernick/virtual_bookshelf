@@ -5,6 +5,7 @@ import { DemoShelf } from '@/components/home/DemoShelf';
 import { RotatingDemoShelf, ShelfPreview } from '@/components/home/RotatingDemoShelf';
 import { CapabilityShowcase } from '@/components/home/CapabilityShowcase';
 import { HOW_IT_WORKS } from '@/lib/constants/landingShowcase';
+import { LegalLinks } from '@/components/legal/LegalLinks';
 
 const MAX_DEMO_SHELVES = 5;
 const MAX_ITEMS_PER_SHELF = 12;
@@ -309,6 +310,7 @@ export default async function Home() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400">
             <p>© {new Date().getFullYear()} Virtual Bookshelf</p>
+            <LegalLinks />
             <a
               href="https://github.com/arielwernick/virtual_bookshelf"
               target="_blank"
