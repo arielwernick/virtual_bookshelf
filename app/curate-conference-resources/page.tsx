@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { CapabilityShowcase } from '@/components/home/CapabilityShowcase';
 import { LiveShelfExamples } from '@/components/landing/LiveShelfExamples';
 import { faqPageJsonLd, breadcrumbJsonLd, type FaqItem } from '@/lib/utils/landingSchema';
+import { LegalLinks } from '@/components/legal/LegalLinks';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app';
 
@@ -260,6 +261,7 @@ export default function CurateConferenceResourcesPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400">
             <p>© {new Date().getFullYear()} Virtual Bookshelf</p>
+            <LegalLinks />
             <Link href="/" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors font-medium">Back to home</Link>
           </div>
         </div>
