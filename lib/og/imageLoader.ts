@@ -13,8 +13,7 @@ const MAX_IMAGE_REDIRECTS = 2;
  * Cover URLs are stored on items by their owners, so the server only ever
  * requests one of the hosts written below; only the path and query come from
  * the stored URL. Covers from other sites (for example a link's preview
- * image) are not fetched, and the share card shows a placeholder for them.
- * The shelf page itself still shows them: the visitor's browser loads those.
+ * image) go through the site's image optimizer instead (optimizedCoverUrl).
  */
 export function coverRequestUrl(url: string): string | null {
   let parsed: URL;
@@ -68,6 +67,43 @@ export function coverRequestUrl(url: string): string | null {
 }
 
 /**
+ * This site's own address, for requests the server makes to itself. Taken
+ * from configuration, never from the incoming request.
+ *
+ * Production uses the public domain. A preview uses its deployment address;
+ * previews behind Vercel's login wall answer 401 to this, so their share
+ * cards show placeholders for covers from other sites. Production does not
+ * have that problem.
+ */
+function ownOrigin(): string {
+  if (process.env.VERCEL_ENV !== 'production' && process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return (process.env.NEXT_PUBLIC_BASE_URL || 'https://virtualbookshelf.app').replace(/\/+$/, '');
+}
+
+/**
+ * The request for a cover on any other site: this site's own image optimizer
+ * (`/_next/image`), which fetches it. The optimizer resolves the host, refuses
+ * private and internal addresses, and pins the address it checked
+ * (`images.dangerouslyAllowLocalIP` is false by default in Next.js 16). So the
+ * server itself still only ever calls its own address.
+ *
+ * Width and quality must be values next.config allows (defaults: 256, 75).
+ * Only https covers qualify, as next.config's remotePatterns require.
+ */
+export function optimizedCoverUrl(url: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== 'https:') return null;
+  return `${ownOrigin()}/_next/image?url=${encodeURIComponent(parsed.href)}&w=256&q=75`;
+}
+
+/**
  * Fetch a cover image and return it as a base64 data URL.
  *
  * Used by edge OG routes to prefetch covers before handing them to Satori.
@@ -75,26 +111,32 @@ export function coverRequestUrl(url: string): string | null {
  * image hangs — fetching here lets a slow/broken cover fail in isolation so
  * the route can fall back to a placeholder for that one tile.
  *
- * Only known image hosts are requested (see coverRequestUrl), and a redirect
- * is only followed to another known image host.
+ * Covers on the known image hosts are requested directly (coverRequestUrl),
+ * following a redirect only to another known host. Every other cover goes
+ * through this site's own image optimizer (optimizedCoverUrl). The server never
+ * requests an address a user chose.
  */
 export async function fetchAsDataUrl(url: string): Promise<string | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
   try {
-    let target = coverRequestUrl(url);
+    const direct = coverRequestUrl(url);
+    let target = direct ?? optimizedCoverUrl(url);
     let res: Response | null = null;
 
     for (let hop = 0; target && hop <= MAX_IMAGE_REDIRECTS; hop++) {
       res = await fetch(target, {
         signal: controller.signal,
-        headers: { Accept: 'image/*' },
+        // PNG or JPEG only: the share-card renderer cannot draw WebP or AVIF,
+        // and the optimizer picks its output format from this header
+        headers: { Accept: 'image/png,image/jpeg,image/gif' },
         redirect: 'manual',
       });
       const location =
         res.status >= 300 && res.status < 400 ? res.headers.get('location') : null;
       if (!location) break;
-      target = coverRequestUrl(new URL(location, target).href);
+      // The optimizer answers directly; only a known host's redirect is followed
+      target = direct ? coverRequestUrl(new URL(location, target).href) : null;
       res = null;
     }
 

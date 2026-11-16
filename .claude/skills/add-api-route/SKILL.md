@@ -38,7 +38,9 @@ plain message. Never return the error object or a stack trace.
 - **The server never requests a host a user chose.** A URL that came from a
   person may only be fetched after rebuilding it on a fixed, known host
   written in the code, as `coverRequestUrl` (`lib/og/imageLoader.ts`) and
-  `shortenerRequestUrl` (`lib/utils/urlResolver.ts`) do. Redirects are read or
+  `shortenerRequestUrl` (`lib/utils/urlResolver.ts`) do. For an image from
+  any site, go through the site's own optimizer (`optimizedCoverUrl`), which
+  refuses private addresses itself. Redirects are read or
   rebuilt the same way, never followed blindly. CodeQL checks this on every
   pull request.
 - **Public responses are built field by field.** Use `toPublicShelf` or

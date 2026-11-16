@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { coverRequestUrl, fetchAsDataUrl, MAX_IMAGE_BYTES } from './imageLoader';
+import { coverRequestUrl, fetchAsDataUrl, optimizedCoverUrl, MAX_IMAGE_BYTES } from './imageLoader';
 
 describe('coverRequestUrl', () => {
   it.each([
@@ -62,10 +62,39 @@ describe('fetchAsDataUrl', () => {
     expect(fetchMock).toHaveBeenCalledWith('https://i.scdn.co/image/abc', expect.objectContaining({ redirect: 'manual' }));
   });
 
-  it('makes no request for a cover on any other host', async () => {
+  it('loads a cover from any other site through the site\'s own image optimizer', async () => {
+    vi.stubEnv('VERCEL_ENV', 'production');
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://virtualbookshelf.app');
+    fetchMock.mockResolvedValueOnce(image());
+
+    const result = await fetchAsDataUrl('https://example.com/og.png?v=1');
+
+    expect(result).toMatch(/^data:image\/png;base64,/);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      'https://virtualbookshelf.app/_next/image?url=https%3A%2F%2Fexample.com%2Fog.png%3Fv%3D1&w=256&q=75'
+    );
+    vi.unstubAllEnvs();
+  });
+
+  it('never follows a redirect from the optimizer', async () => {
+    fetchMock.mockResolvedValueOnce(redirect('https://example.com/elsewhere.png'));
+
     expect(await fetchAsDataUrl('https://example.com/og.png')).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('makes no request for a cover that is not an https URL on another site', async () => {
     expect(await fetchAsDataUrl('http://169.254.169.254/')).toBeNull();
+    expect(await fetchAsDataUrl('data:image/png;base64,AAAA')).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('asks for a format the share-card renderer can draw', async () => {
+    fetchMock.mockResolvedValueOnce(image());
+    await fetchAsDataUrl('https://example.com/og.png');
+
+    const accept = (fetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    expect(accept.Accept).not.toMatch(/webp|avif|\*/);
   });
 
   it('follows a redirect only to another known image host', async () => {
@@ -91,5 +120,31 @@ describe('fetchAsDataUrl', () => {
       arrayBuffer: async () => new ArrayBuffer(4),
     } as unknown as Response);
     expect(await fetchAsDataUrl('https://i.scdn.co/image/abc')).toBeNull();
+  });
+});
+
+describe('optimizedCoverUrl', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('uses the public domain in production, whatever the request said', () => {
+    vi.stubEnv('VERCEL_ENV', 'production');
+    vi.stubEnv('VERCEL_URL', 'some-deployment.vercel.app');
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://virtualbookshelf.app/');
+
+    expect(optimizedCoverUrl('https://example.com/a.png')).toMatch(/^https:\/\/virtualbookshelf\.app\/_next\/image\?url=/);
+  });
+
+  it('uses the deployment address on a preview', () => {
+    vi.stubEnv('VERCEL_ENV', 'preview');
+    vi.stubEnv('VERCEL_URL', 'preview-abc.vercel.app');
+
+    expect(optimizedCoverUrl('https://example.com/a.png')).toMatch(/^https:\/\/preview-abc\.vercel\.app\/_next\/image\?url=/);
+  });
+
+  it('only accepts https covers, as next.config requires', () => {
+    expect(optimizedCoverUrl('http://example.com/a.png')).toBeNull();
+    expect(optimizedCoverUrl('not a url')).toBeNull();
   });
 });
