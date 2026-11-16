@@ -16,10 +16,43 @@ export const ATTRIBUTION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 const MAX_REFERRER_LENGTH = 500;
 const MAX_UTM_LENGTH = 100;
+const MAX_LANDING_PATH_LENGTH = 200;
 
-/** Compact cookie payload: r = referrer, us/um/uc = utm source/medium/campaign. */
+/**
+ * Pages whose path holds a secret or a private id. Only the prefix is kept:
+ * a share token is a link-only secret for shelves that are not public, and
+ * attribution is stored on the user who signs up.
+ */
+const REDACTED_PATH_PREFIXES = ['/s/', '/embed/', '/shelf/', '/oauth/'];
+
+/**
+ * The path a visitor first landed on, without query string or fragment, with
+ * secrets replaced by "*". Returns null for anything that is not a plain path.
+ */
+export function cleanLandingPath(path: unknown): string | null {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) return null;
+  let clean = path.split(/[?#]/)[0];
+  try {
+    clean = decodeURI(clean);
+  } catch {
+    // keep it encoded
+  }
+  if (/[\u0000-\u001f<>"]/.test(clean)) return null;
+
+  const redacted = REDACTED_PATH_PREFIXES.find((prefix) => clean.startsWith(prefix));
+  if (redacted) return `${redacted}*`;
+
+  clean = clean.length > 1 ? clean.replace(/\/+$/, '') : clean;
+  return clean.slice(0, MAX_LANDING_PATH_LENGTH) || null;
+}
+
+/**
+ * Compact cookie payload: r = referrer, us/um/uc = utm source/medium/campaign,
+ * l = landing page path.
+ */
 interface AttributionCookiePayload {
   r?: string;
+  l?: string;
   us?: string;
   um?: string;
   uc?: string;
@@ -67,6 +100,9 @@ export function buildAttributionCookieValue(href: string, referrer: string): str
   if (um) payload.um = um;
   if (uc) payload.uc = uc;
 
+  const l = cleanLandingPath(url.pathname);
+  if (l) payload.l = l;
+
   return encodeURIComponent(JSON.stringify(payload));
 }
 
@@ -92,6 +128,7 @@ export function parseAttributionCookie(raw: string | undefined): SignupAttributi
     utmSource: cleanUtm(p.us),
     utmMedium: cleanUtm(p.um),
     utmCampaign: cleanUtm(p.uc),
+    landingPath: cleanLandingPath(p.l),
   };
 }
 
@@ -129,6 +166,24 @@ const SOCIAL_HOSTS: Record<string, string> = {
   'youtube.com': 'YouTube',
 };
 
+/**
+ * The channel name for a utm_source that names a known site, such as
+ * "chatgpt.com", "chatgpt", "perplexity" or "linkedin". Null otherwise.
+ */
+function knownSourceForUtm(utmSource: string): string | null {
+  const value = stripWww(utmSource.trim().toLowerCase());
+  const candidates = [value, `${value}.com`, `${value}.ai`];
+
+  for (const candidate of candidates) {
+    if (AI_ASSISTANTS[candidate]) return AI_ASSISTANTS[candidate];
+    if (SOCIAL_HOSTS[candidate]) return SOCIAL_HOSTS[candidate];
+  }
+  const bare = value.replace(/\.(com|ai|org|net)$/, '');
+  if (bare === 'chatgpt' || bare === 'openai') return 'ChatGPT';
+  if (SEARCH_ENGINES[bare]) return SEARCH_ENGINES[bare];
+  return null;
+}
+
 function stripWww(host: string): string {
   return host.replace(/^(www|m|l|lm)\./, '');
 }
@@ -142,7 +197,13 @@ export function classifyAttribution(
   tracked: boolean = true,
 ): string {
   if (!tracked) return 'Before tracking';
-  if (utmSource) return `Campaign: ${utmSource}`;
+  if (utmSource) {
+    // Some sites tag their outbound links with their own name: ChatGPT adds
+    // utm_source=chatgpt.com to every link it cites. Those are the same
+    // channel as a referrer from that site, so they get the same label.
+    // Only tags nobody else would set (our own, a newsletter) are campaigns.
+    return knownSourceForUtm(utmSource) ?? `Campaign: ${utmSource}`;
+  }
   if (!firstReferrer) return 'Direct';
 
   let host: string;

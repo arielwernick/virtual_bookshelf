@@ -29,6 +29,8 @@ export interface SignupAttribution {
   utmSource: string | null;
   utmMedium: string | null;
   utmCampaign: string | null;
+  /** First page of the visit, secrets redacted (lib/utils/attribution.ts). */
+  landingPath?: string | null;
 }
 
 export interface Shelf {
@@ -56,6 +58,10 @@ export interface Item {
   notes: string | null;
   rating: number | null;
   order_index: number;
+  /** Catalogue the identifier comes from, e.g. 'google_books' (issue #288). */
+  source?: string | null;
+  /** The item's id in that catalogue. See lib/utils/itemIdentity.ts. */
+  source_id?: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -79,6 +85,21 @@ export interface ShelfPreviewItem {
 export interface DashboardShelf extends Shelf {
   item_count: number;
   preview_items: ShelfPreviewItem[];
+  /** Absent when the shelf has never been viewed, or stats could not be loaded. */
+  views?: ShelfViewSummary;
+}
+
+// How often a shelf was seen, shown to its owner on the dashboard (issue #68).
+// Counts only: nothing is known about who viewed.
+export interface ShelfViewSummary {
+  /** Views of the shelf page and its embeds in the last 7 days. */
+  views_7d: number;
+  /** All recorded views. Counting began on Nov 5, 2026. */
+  views_total: number;
+  /** The site that showed the embed most in the last 30 days, if any. */
+  top_embed_host: string | null;
+  /** Embed views on that site in the last 30 days. */
+  top_embed_host_views: number;
 }
 
 // Public-facing shelf data (without sensitive user info)
@@ -185,6 +206,8 @@ export interface AdminAttributionRow {
   tracked: boolean;
   first_referrer: string | null;
   utm_source: string | null;
+  /** NULL before migration 008, and for signups before landing pages were recorded */
+  first_landing_path: string | null;
   count: number;
 }
 
@@ -197,6 +220,7 @@ export interface AdminRecentUser {
   tracked: boolean;
   first_referrer: string | null;
   utm_source: string | null;
+  first_landing_path: string | null;
   created_at: Date;
   last_seen_at: Date | null;
   shelf_count: number;

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { ShelfPreviewItem } from '@/lib/types/shelf';
+import type { ShelfPreviewItem, ShelfViewSummary } from '@/lib/types/shelf';
 import { stableHash } from '@/lib/utils/imageUtils';
 import { VisibilityBadge } from '@/components/ui/VisibilityBadge';
 
@@ -24,6 +24,7 @@ export interface ShelfPreviewCardProps {
     is_public: boolean;
     item_count: number;
     preview_items: ShelfPreviewItem[];
+    views?: ShelfViewSummary;
   };
 }
 
@@ -53,6 +54,26 @@ function tileImageUrl(item: ShelfPreviewItem): string | null {
     return `https://financialmodelingprep.com/image-stock/${encodeURIComponent(item.creator)}.png`;
   }
   return item.image_url;
+}
+
+const times = (count: number) => `${count} time${count === 1 ? '' : 's'}`;
+
+/**
+ * One plain sentence telling an owner their shelf is being seen (issue #68).
+ * Returns null when there is nothing to say, so quiet shelves show no line
+ * rather than a discouraging zero.
+ */
+export function describeViews(views: ShelfViewSummary | undefined): string | null {
+  if (!views || views.views_total <= 0) return null;
+
+  const headline =
+    views.views_7d > 0
+      ? `Seen ${times(views.views_7d)} this week`
+      : `Seen ${times(views.views_total)} so far`;
+
+  return views.top_embed_host && views.top_embed_host_views > 0
+    ? `${headline}, embedded on ${views.top_embed_host}`
+    : headline;
 }
 
 function PreviewTile({ item }: { item: ShelfPreviewItem }) {
@@ -118,6 +139,7 @@ export function ShelfPreviewCard({ shelf }: ShelfPreviewCardProps) {
   const visibleCount = hasOverflow ? MAX_VISIBLE - 1 : shelf.item_count;
   const visibleItems = shelf.preview_items.slice(0, visibleCount);
   const overflowCount = shelf.item_count - visibleItems.length;
+  const viewLine = describeViews(shelf.views);
 
   return (
     <Link
@@ -174,6 +196,11 @@ export function ShelfPreviewCard({ shelf }: ShelfPreviewCardProps) {
           </span>
           <VisibilityBadge isPublic={shelf.is_public} />
         </div>
+        {viewLine && (
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate" title={viewLine}>
+            {viewLine}
+          </p>
+        )}
       </div>
     </Link>
   );

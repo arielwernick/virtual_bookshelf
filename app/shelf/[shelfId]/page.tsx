@@ -12,7 +12,9 @@ import Link from 'next/link';
 
 interface ShelfPageData {
   id: string;
-  user_id: string;
+  /** Only present for the owner */
+  user_id?: string;
+  is_owner?: boolean;
   name: string;
   description: string | null;
   items: Item[];
@@ -45,15 +47,9 @@ export default function ShelfPage() {
         const shelfJson = await shelfRes.json();
         setShelfData(shelfJson.data);
 
-        try {
-          const authRes = await fetch('/api/auth/me');
-          const authJson = await authRes.json();
-          if (authJson.authenticated) {
-            setIsOwner(String(authJson.data.userId) === String(shelfJson.data.user_id));
-          }
-        } catch {
-          // Not authenticated
-        }
+        // The server says whether the signed-in person owns this shelf, so
+        // visitors are never sent the owner's id to compare against.
+        setIsOwner(shelfJson.data.is_owner === true);
       } catch (err) {
         console.error('Error fetching shelf:', err);
         setError('Failed to load shelf');

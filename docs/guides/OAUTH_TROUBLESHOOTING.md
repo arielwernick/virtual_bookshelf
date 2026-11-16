@@ -32,7 +32,7 @@ After you see the 404, check browser console. Open browser DevTools → Network 
 Then run:
 ```bash
 # Check if session is being set
-curl http://localhost:3000/api/auth/debug
+curl http://localhost:3000/api/auth/me
 ```
 
 This should show either:
@@ -180,14 +180,13 @@ Should return:
 
 1. Check browser DevTools → Console for JavaScript errors
 2. Check terminal for Node.js errors
-3. Run: `curl http://localhost:3000/api/auth/debug` to see session status
+3. Run: `curl http://localhost:3000/api/auth/me` to see session status
 4. Check `.env.local` is in project root (not `.env`)
 5. Make sure `SESSION_SECRET` is set (can be any random string)
 6. Restart `npm run dev` after changing env variables
 
 ## Production Notes
 
-- Remove `/api/auth/debug` endpoint in production
 - Change `SESSION_SECRET` to a secure random string
 - Set `GOOGLE_REDIRECT_URI` to production URL
 - Ensure database backups before running migrations

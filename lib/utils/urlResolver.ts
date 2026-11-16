@@ -28,6 +28,9 @@ const SHORTENER_DOMAINS = new Set([
 /** LinkedIn redirect paths that wrap external URLs */
 const LINKEDIN_REDIRECT_PATHS = ['/redir/redirect', '/safety/go', '/csp/redirect'];
 
+/** Short links followed through other short links before giving up */
+const MAX_RESOLVE_DEPTH = 5;
+
 /** Default timeout for URL resolution */
 const DEFAULT_TIMEOUT_MS = 5000;
 
@@ -59,7 +62,10 @@ function parseUrl(url: string): URL | null {
  * Check if a hostname belongs to LinkedIn
  */
 function isLinkedInHost(hostname: string): boolean {
-  return hostname.includes('linkedin.com') || hostname.includes('lnkd.in');
+  // Exact host or a subdomain. A substring test would also match look-alikes
+  // such as "linkedin.com.example.org".
+  const host = hostname.toLowerCase();
+  return ['linkedin.com', 'lnkd.in'].some((domain) => host === domain || host.endsWith(`.${domain}`));
 }
 
 // =============================================================================
@@ -191,12 +197,17 @@ function extractFromInterstitialPage(html: string): string | null {
  */
 export async function resolveUrl(
   url: string,
-  timeoutMs: number = DEFAULT_TIMEOUT_MS
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+  depth: number = 0
 ): Promise<string> {
+  // Short links that point at other short links: stop after a few, so two
+  // links pointing at each other cannot loop
+  if (depth > MAX_RESOLVE_DEPTH) return url;
+
   // Check for LinkedIn redirect wrapper first (no fetch needed)
   const linkedInTarget = extractLinkedInRedirectUrl(url);
   if (linkedInTarget) {
-    return resolveUrl(linkedInTarget, timeoutMs);
+    return resolveUrl(linkedInTarget, timeoutMs, depth + 1);
   }
 
   // Skip non-shortened URLs
@@ -205,7 +216,7 @@ export async function resolveUrl(
   }
 
   try {
-    return await resolveWithFetch(url, timeoutMs);
+    return await resolveWithFetch(url, timeoutMs, depth);
   } catch (error) {
     console.warn(`Failed to resolve URL ${url}:`, error instanceof Error ? error.message : error);
     return url;
@@ -213,9 +224,55 @@ export async function resolveUrl(
 }
 
 /**
+ * The URL to request for a short link, rebuilt on the shortener's own fixed
+ * address. Returns null for anything that is not one of the known shorteners.
+ *
+ * Short links come from text a person pastes. Only the path and query are
+ * taken from it; the scheme and host are always one of the literals below,
+ * so a pasted link can never make the server request another address. The
+ * server reads where the shortener points but never requests that address.
+ */
+export function shortenerRequestUrl(url: string): string | null {
+  const parsed = parseUrl(url);
+  if (!parsed) return null;
+
+  const rest = `${parsed.pathname.replace(/^\/+/, '')}${parsed.search}`;
+  switch (parsed.hostname.toLowerCase().replace(/^www\./, '')) {
+    case 'lnkd.in':
+      return `https://lnkd.in/${rest}`;
+    case 'bit.ly':
+      return `https://bit.ly/${rest}`;
+    case 't.co':
+      return `https://t.co/${rest}`;
+    case 'tinyurl.com':
+      return `https://tinyurl.com/${rest}`;
+    case 'goo.gl':
+      return `https://goo.gl/${rest}`;
+    case 'ow.ly':
+      return `https://ow.ly/${rest}`;
+    case 'is.gd':
+      return `https://is.gd/${rest}`;
+    case 'buff.ly':
+      return `https://buff.ly/${rest}`;
+    case 'j.mp':
+      return `https://j.mp/${rest}`;
+    case 'short.link':
+      return `https://short.link/${rest}`;
+    case 'rb.gy':
+      return `https://rb.gy/${rest}`;
+    default:
+      return null;
+  }
+}
+
+/**
  * Resolve a shortened URL by fetching it
  */
-async function resolveWithFetch(url: string, timeoutMs: number): Promise<string> {
+async function resolveWithFetch(shortUrl: string, timeoutMs: number, depth: number): Promise<string> {
+  // Only a known shortener's own address is ever requested (see above)
+  const url = shortenerRequestUrl(shortUrl);
+  if (!url) return shortUrl;
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -224,19 +281,26 @@ async function resolveWithFetch(url: string, timeoutMs: number): Promise<string>
     const redirectUrl = await tryHeadRedirect(url, controller.signal);
     if (redirectUrl && redirectUrl !== url) {
       clearTimeout(timeoutId);
-      return processResolvedUrl(redirectUrl, timeoutMs);
+      return processResolvedUrl(redirectUrl, timeoutMs, depth);
     }
 
-    // Fall back to GET request and HTML extraction
+    // Fall back to a GET on the shortener itself. Redirects are read, not
+    // followed: the destination is never requested by the server.
     const response = await fetch(url, {
       method: 'GET',
-      redirect: 'follow',
+      redirect: 'manual',
       signal: controller.signal,
       headers: FETCH_HEADERS,
     });
 
     clearTimeout(timeoutId);
-    return await extractFinalUrl(response, url);
+    const location =
+      response.status >= 300 && response.status < 400 ? response.headers.get('location') : null;
+    if (location) {
+      return processResolvedUrl(new URL(location, url).href, timeoutMs, depth);
+    }
+    const resolved = await extractFinalUrl(response, url, url);
+    return resolved === url ? shortUrl : resolved;
   } catch (error) {
     clearTimeout(timeoutId);
     throw error;
@@ -247,6 +311,7 @@ async function resolveWithFetch(url: string, timeoutMs: number): Promise<string>
  * Try to get redirect URL via HEAD request
  */
 async function tryHeadRedirect(url: string, signal: AbortSignal): Promise<string | null> {
+  // Callers pass a URL from shortenerRequestUrl: a known shortener's own address
   try {
     const response = await fetch(url, {
       method: 'HEAD',
@@ -270,16 +335,16 @@ async function tryHeadRedirect(url: string, signal: AbortSignal): Promise<string
 /**
  * Process a URL that came from a redirect
  */
-async function processResolvedUrl(url: string, timeoutMs: number): Promise<string> {
+async function processResolvedUrl(url: string, timeoutMs: number, depth: number): Promise<string> {
   // Check if it's a LinkedIn redirect wrapper
   const extracted = extractLinkedInRedirectUrl(url);
   if (extracted) {
-    return resolveUrl(extracted, timeoutMs);
+    return resolveUrl(extracted, timeoutMs, depth + 1);
   }
   
   // If it's another shortener, resolve recursively
   if (isShortUrl(url)) {
-    return resolveUrl(url, timeoutMs);
+    return resolveUrl(url, timeoutMs, depth + 1);
   }
   
   return url;
@@ -288,9 +353,11 @@ async function processResolvedUrl(url: string, timeoutMs: number): Promise<strin
 /**
  * Extract the final destination URL from a fetch response
  */
-async function extractFinalUrl(response: Response, originalUrl: string): Promise<string> {
-  const finalUrl = response.url;
-  
+async function extractFinalUrl(
+  response: Response,
+  finalUrl: string,
+  originalUrl: string
+): Promise<string> {  
   // Check for LinkedIn redirect in final URL
   const extracted = extractLinkedInRedirectUrl(finalUrl);
   if (extracted) return extracted;

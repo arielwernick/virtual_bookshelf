@@ -5,6 +5,7 @@ import { detectItemType } from '@/lib/utils/itemTypeDetector';
 import { getDomain } from '@/lib/utils/urlResolver';
 import { CreateItemData } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
+import { safeHttpUrl } from '@/lib/utils/validation';
 
 const logger = createLogger('ImportCreate');
 
@@ -72,9 +73,9 @@ export async function POST(request: Request) {
 
     // Validate each item has a URL
     for (const item of items) {
-      if (!item.url || typeof item.url !== 'string') {
+      if (!item.url || typeof item.url !== 'string' || !safeHttpUrl(item.url)) {
         return NextResponse.json(
-          { success: false, error: 'Each item must have a valid URL' },
+          { success: false, error: 'Each item must have a valid http or https URL' },
           { status: 400 }
         );
       }
@@ -108,7 +109,7 @@ export async function POST(request: Request) {
           type,
           title: (item.title || domain).slice(0, 255), // DB column limit
           creator: (item.creator || domain).slice(0, 255),
-          image_url: item.imageUrl || undefined,
+          image_url: safeHttpUrl(item.imageUrl) ?? undefined,
           external_url: item.url,
           notes: item.notes?.slice(0, MAX_NOTES_LENGTH) || undefined,
           order_index: i,

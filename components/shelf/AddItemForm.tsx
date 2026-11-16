@@ -12,9 +12,35 @@ import { VideoUrlForm } from './forms/VideoUrlForm';
 import { LinkUrlForm } from './forms/LinkUrlForm';
 import { StockTickerForm } from './forms/StockTickerForm';
 
+/** The item that was just created, when the server told us which one. */
+export interface AddedItem {
+  id: string;
+  title: string;
+}
+
 interface AddItemFormProps {
   shelfId: string;
-  onItemAdded: () => void;
+  /**
+   * Called after each successful add. The created item is passed along when
+   * known, so the caller can offer to add a note to it straight away (#292).
+   */
+  onItemAdded: (item?: AddedItem) => void;
+}
+
+/** Pull the created item out of an add response, without ever throwing. */
+function toAddedItem(data: unknown): AddedItem | undefined {
+  const item = (data as { data?: { id?: unknown; title?: unknown } } | null)?.data;
+  return item && typeof item.id === 'string' && typeof item.title === 'string'
+    ? { id: item.id, title: item.title }
+    : undefined;
+}
+
+async function readAddedItem(res: Response): Promise<AddedItem | undefined> {
+  try {
+    return toAddedItem(await res.json());
+  } catch {
+    return undefined;
+  }
 }
 
 export function AddItemForm({ shelfId, onItemAdded }: AddItemFormProps) {
@@ -47,7 +73,7 @@ export function AddItemForm({ shelfId, onItemAdded }: AddItemFormProps) {
       });
 
       if (res.ok) {
-        onItemAdded();
+        onItemAdded(await readAddedItem(res));
       } else {
         const data = await res.json();
         alert(data.error || 'Failed to add item');
@@ -77,7 +103,7 @@ export function AddItemForm({ shelfId, onItemAdded }: AddItemFormProps) {
       });
 
       if (res.ok) {
-        onItemAdded();
+        onItemAdded(await readAddedItem(res));
       } else {
         const data = await res.json();
         alert(data.error || 'Failed to add episode');
@@ -111,7 +137,7 @@ export function AddItemForm({ shelfId, onItemAdded }: AddItemFormProps) {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        onItemAdded();
+        onItemAdded(toAddedItem(data));
         setVideoUrl('');
       } else {
         alert(data.error || 'Failed to fetch video details');
@@ -145,7 +171,7 @@ export function AddItemForm({ shelfId, onItemAdded }: AddItemFormProps) {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        onItemAdded();
+        onItemAdded(toAddedItem(data));
         setLinkUrl('');
         // Reset quota state on successful request
         setLinkQuotaExceeded(false);
@@ -183,7 +209,7 @@ export function AddItemForm({ shelfId, onItemAdded }: AddItemFormProps) {
       });
 
       if (res.ok) {
-        onItemAdded();
+        onItemAdded(await readAddedItem(res));
       } else {
         const data = await res.json();
         alert(data.error || 'Failed to add stock');
@@ -357,7 +383,7 @@ export function AddItemForm({ shelfId, onItemAdded }: AddItemFormProps) {
           itemType={itemType}
           manualData={manual.manualData}
           setManualData={manual.setManualData}
-          onSubmit={() => manual.handleManualAdd(shelfId, itemType, onItemAdded)}
+          onSubmit={() => manual.handleManualAdd(shelfId, itemType, () => onItemAdded())}
           adding={manual.adding}
         />
       )}

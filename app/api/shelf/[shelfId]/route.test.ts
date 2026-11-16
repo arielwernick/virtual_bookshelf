@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET, PATCH, DELETE } from './route';
-import { createMockRequest, createParams, createMockShelf } from '@/test/utils/mocks';
+import { createMockRequest, createParams, createMockShelf, createMockItem } from '@/test/utils/mocks';
 
 // Mock dependencies
 vi.mock('@/lib/utils/session', () => ({
@@ -317,6 +317,55 @@ describe('GET /api/shelf/[shelfId]', () => {
 
       expect(res.status).toBe(200);
       expect(data.success).toBe(true);
+    });
+
+    it('tells the owner they are the owner, and gives them the full rows', async () => {
+      vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
+      vi.mocked(getShelfById).mockResolvedValue(createMockShelf({ is_public: true }));
+      vi.mocked(getItemsByShelfId).mockResolvedValue([createMockItem()]);
+
+      const res = await GET(createRequest('GET'), createParams());
+      const { data } = await res.json();
+
+      expect(data.is_owner).toBe(true);
+      expect(data.user_id).toBe('user-1');
+      expect(data.items[0]).toMatchObject({ user_id: 'user-1', shelf_id: 'shelf-1' });
+    });
+
+    it.each([
+      ['a signed-in visitor', { userId: 'different-user', username: 'other' }],
+      ['a signed-out visitor', null],
+    ])('never sends the owner id to %s of a public shelf', async (_name, session) => {
+      vi.mocked(getSession).mockResolvedValue(session as never);
+      vi.mocked(getShelfById).mockResolvedValue(
+        createMockShelf({ user_id: 'owner-user', is_public: true })
+      );
+      vi.mocked(getItemsByShelfId).mockResolvedValue([
+        createMockItem({ user_id: 'owner-user', title: 'Deep Work', notes: 'A note' }),
+      ]);
+
+      const res = await GET(createRequest('GET'), createParams());
+      const body = await res.text();
+      const { data } = JSON.parse(body);
+
+      expect(res.status).toBe(200);
+      expect(data.is_owner).toBe(false);
+      expect(data.user_id).toBeUndefined();
+      expect(body).not.toContain('owner-user');
+      // What the page shows is still there
+      expect(data.items[0]).toMatchObject({ title: 'Deep Work', notes: 'A note' });
+    });
+
+    it('does not call a signed-out visitor the owner of a shelf with no owner id', async () => {
+      vi.mocked(getSession).mockResolvedValue(null);
+      vi.mocked(getShelfById).mockResolvedValue(
+        createMockShelf({ user_id: undefined as unknown as string, is_public: true })
+      );
+      vi.mocked(getItemsByShelfId).mockResolvedValue([]);
+
+      const { data } = await (await GET(createRequest('GET'), createParams())).json();
+
+      expect(data.is_owner).toBe(false);
     });
 
     it('prevents non-owner from reading private shelf', async () => {

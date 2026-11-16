@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ShelfPreviewCard, ShelfPreviewCardProps } from './ShelfPreviewCard';
+import { ShelfPreviewCard, describeViews, ShelfPreviewCardProps } from './ShelfPreviewCard';
 import type { ShelfPreviewItem } from '@/lib/types/shelf';
 
 function createMockPreviewItem(overrides: Partial<ShelfPreviewItem> = {}): ShelfPreviewItem {
@@ -152,6 +152,32 @@ describe('ShelfPreviewCard', () => {
 
       expect(screen.getAllByRole('img')).toHaveLength(5);
       expect(screen.queryByText(/^\+\d+$/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('View counts', () => {
+    const views = { views_7d: 14, views_total: 40, top_embed_host: null, top_embed_host_views: 0 };
+
+    it('tells the owner how often the shelf was seen this week', () => {
+      renderComponent({ views });
+      expect(screen.getByText('Seen 14 times this week')).toBeInTheDocument();
+    });
+
+    it('names the site that embeds the shelf most', () => {
+      renderComponent({ views: { ...views, top_embed_host: 'yoursite.com', top_embed_host_views: 9 } });
+      expect(screen.getByText('Seen 14 times this week, embedded on yoursite.com')).toBeInTheDocument();
+    });
+
+    it('falls back to the total in a quiet week', () => {
+      renderComponent({ views: { ...views, views_7d: 0, views_total: 1 } });
+      expect(screen.getByText('Seen 1 time so far')).toBeInTheDocument();
+    });
+
+    it('shows nothing for a shelf that has never been viewed', () => {
+      renderComponent({ views: undefined });
+      expect(screen.queryByText(/^Seen /)).not.toBeInTheDocument();
+
+      expect(describeViews({ ...views, views_7d: 0, views_total: 0 })).toBeNull();
     });
   });
 });

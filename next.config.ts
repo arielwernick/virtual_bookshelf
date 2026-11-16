@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { CSP_REPORT_ONLY_HEADER, buildContentSecurityPolicy } from "./lib/security/csp";
 
 // Security headers applied to all routes except /embed/* (which needs to be iframed cross-origin).
 const baseSecurityHeaders = [
@@ -8,6 +9,8 @@ const baseSecurityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
+  // Report-only: browsers log what the policy would block and block nothing.
+  { key: CSP_REPORT_ONLY_HEADER, value: buildContentSecurityPolicy() },
 ];
 
 const nextConfig: NextConfig = {

@@ -1,3 +1,5 @@
+import { isMockMode } from './mockMode';
+import { MOCK_BOOKS, wantsNoResults } from './mockFixtures';
 // Google Books API integration for book search
 
 interface GoogleBooksVolumeInfo {
@@ -25,6 +27,8 @@ export interface BookItem {
 }
 
 export async function searchBooks(query: string): Promise<BookItem[]> {
+  if (isMockMode()) return wantsNoResults(query) ? [] : MOCK_BOOKS;
+
   const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
   const url = new URL('https://www.googleapis.com/books/v1/volumes');
   url.searchParams.set('q', query);

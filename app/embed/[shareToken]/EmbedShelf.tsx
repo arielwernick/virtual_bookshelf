@@ -7,6 +7,7 @@ import { ShelfGrid } from '@/components/shelf/ShelfGrid';
 import { ItemModal } from '@/components/shelf/ItemModal';
 import { ViewBeacon } from '@/components/ViewBeacon';
 import { Item } from '@/lib/types/shelf';
+import { EMBED_BADGE_LINK } from '@/lib/utils/growthLinks';
 
 interface ShelfPayload {
   name?: string;
@@ -171,7 +172,7 @@ export function EmbedShelf() {
       />
       <div className="flex justify-end px-3 pt-1 pb-3 sm:px-4 sm:pb-4">
         <Link
-          href="/"
+          href={EMBED_BADGE_LINK}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Powered by Virtual Bookshelf"

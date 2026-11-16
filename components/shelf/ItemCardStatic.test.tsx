@@ -174,4 +174,27 @@ describe('ItemCardStatic', () => {
       expect(badge).toHaveClass('bg-green-100');
     });
   });
+
+  describe('Image loading', () => {
+    it('loads lazily by default, so off-screen covers wait', () => {
+      render(<ItemCardStatic item={createMockItem()} />);
+      const img = screen.getByAltText('The Great Gatsby');
+
+      expect(img).toHaveAttribute('loading', 'lazy');
+      expect(img).toHaveAttribute('decoding', 'async');
+    });
+
+    it('loads at once and first when the card is marked as priority', () => {
+      render(<ItemCardStatic item={createMockItem()} priority />);
+      const img = screen.getByAltText('The Great Gatsby');
+
+      expect(img).toHaveAttribute('loading', 'eager');
+      expect(img.getAttribute('fetchpriority')).toBe('high');
+    });
+
+    it('does not leak the priority prop onto the card element', () => {
+      const { container } = render(<ItemCardStatic item={createMockItem()} priority />);
+      expect(container.querySelector('article')).not.toHaveAttribute('priority');
+    });
+  });
 });

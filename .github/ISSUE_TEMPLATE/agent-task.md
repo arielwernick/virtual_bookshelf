@@ -1,6 +1,6 @@
 ---
 name: Agent Task
-about: A well-structured task for AI coding agents (GitHub Copilot, Cursor, etc.)
+about: A well-structured task for AI coding agents
 title: "[AGENT] "
 labels: agent-ready
 assignees: ''
@@ -43,15 +43,20 @@ assignees: ''
 <!-- Explicitly list what this task does NOT include -->
 - 
 
-## Testing
-<!-- Required tests or verification steps -->
-- [ ] Unit tests added/updated
-- [ ] Manual testing completed
-- [ ] Existing tests pass (`npm run test:run`)
+## How an agent verifies this
+<!-- Exact commands, and what to look at on the preview. "It works" is not a check. -->
+- [ ] `npm run verify` is green
+- [ ] 
+
+## Risk tier
+<!-- low / medium / high, as defined in docs/process/RISK_TIERS.md -->
+
+## Depends on
+<!-- Issues that must land first, and anything only a person can provide (accounts, credentials, a decision). Do not start if a dependency is still waiting on a person. -->
+- 
 
 ## Notes for Agent
 <!-- Any additional context that helps an AI understand the task -->
-- Follow existing code patterns in the codebase
-- Use TypeScript strict mode
+- Read `CLAUDE.md` first; it is the single source of project conventions
+- One branch and one PR per issue; the PR body says `Closes #N` and what was checked
 - Reference `lib/types/shelf.ts` for type definitions
-- Check `copilot-instructions.md` for project conventions

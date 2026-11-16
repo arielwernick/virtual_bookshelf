@@ -1,3 +1,5 @@
+import { isMockMode } from './mockMode';
+import { mockLinkMetadata } from './mockFixtures';
 // Microlink API integration for URL metadata extraction
 // https://microlink.io/docs/api/getting-started/overview
 
@@ -56,6 +58,9 @@ export async function fetchLinkMetadata(url: string, timeoutMs: number = 10000):
   if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
     throw new Error('URL must use http or https protocol');
   }
+
+  // After validation, so mock mode rejects the same bad input as the real thing
+  if (isMockMode()) return mockLinkMetadata(url);
 
   const apiUrl = `https://api.microlink.io?url=${encodeURIComponent(url)}`;
   

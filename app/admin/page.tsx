@@ -35,6 +35,31 @@ function summarizeChannels(rows: AdminAttributionRow[]): { channel: string; coun
     .sort((a, b) => b.count - a.count);
 }
 
+/**
+ * Where tracked signups first landed, with the channel that sent most of
+ * them there. Signups from before landing pages were recorded are left out.
+ */
+function summarizeLandingPages(
+  rows: AdminAttributionRow[]
+): { path: string; count: number; topChannel: string }[] {
+  const pages = new Map<string, { count: number; channels: Map<string, number> }>();
+  for (const row of rows) {
+    if (!row.tracked || !row.first_landing_path) continue;
+    const page = pages.get(row.first_landing_path) ?? { count: 0, channels: new Map() };
+    const channel = classifyAttribution(row.first_referrer, row.utm_source, row.tracked);
+    page.count += row.count;
+    page.channels.set(channel, (page.channels.get(channel) || 0) + row.count);
+    pages.set(row.first_landing_path, page);
+  }
+  return [...pages.entries()]
+    .map(([path, { count, channels }]) => ({
+      path,
+      count,
+      topChannel: [...channels.entries()].sort((a, b) => b[1] - a[1])[0][0],
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
 function formatDate(value: Date | string | null): string {
   if (!value) return '—';
   return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -71,6 +96,7 @@ export default async function AdminPage() {
 
   const channels = summarizeChannels(attribution);
   const channelTotal = channels.reduce((sum, c) => sum + c.count, 0);
+  const landingPages = summarizeLandingPages(attribution);
   const maxWeekly = Math.max(1, ...weekly.map((w) => w.email + w.google));
   const maxWeeklyViews = Math.max(1, ...weeklyViews.map((w) => w.shelf + w.embed));
 
@@ -150,6 +176,25 @@ export default async function AdminPage() {
                     <td className="py-1.5 w-14 text-right tabular-nums text-gray-500 dark:text-gray-400">
                       {percent(c.count, channelTotal)}
                     </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <h3 className="text-sm font-semibold mt-6 mb-2">First page they landed on</h3>
+          {landingPages.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No landing pages recorded yet. They are recorded for signups from now on.
+            </p>
+          ) : (
+            <table className="w-full text-sm">
+              <tbody>
+                {landingPages.map((page) => (
+                  <tr key={page.path} className="border-b border-gray-100 dark:border-gray-900">
+                    <td className="py-1.5 font-mono text-xs break-all">{page.path}</td>
+                    <td className="py-1.5 px-2 text-gray-500 dark:text-gray-400">{page.topChannel}</td>
+                    <td className="py-1.5 text-right tabular-nums">{page.count}</td>
                   </tr>
                 ))}
               </tbody>
@@ -308,6 +353,11 @@ export default async function AdminPage() {
                   <td className="py-2 pr-4 capitalize">{u.signup_method}</td>
                   <td className="py-2 pr-4">
                     {classifyAttribution(u.first_referrer, u.utm_source, u.tracked)}
+                    {u.first_landing_path && (
+                      <div className="font-mono text-xs text-gray-500 dark:text-gray-400 break-all">
+                        {u.first_landing_path}
+                      </div>
+                    )}
                   </td>
                   <td className="py-2 pr-4 text-right tabular-nums">{u.shelf_count}</td>
                   <td className="py-2 pr-4 text-right tabular-nums">{u.item_count}</td>

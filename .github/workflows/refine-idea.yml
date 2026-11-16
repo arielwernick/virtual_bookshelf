@@ -21,9 +21,9 @@ jobs:
         id: context
         run: |
           # Read project instructions if they exist
-          if [ -f ".github/copilot-instructions.md" ]; then
-            echo "Found copilot-instructions.md"
-            INSTRUCTIONS=$(cat .github/copilot-instructions.md | head -c 4000)
+          if [ -f "CLAUDE.md" ]; then
+            echo "Found CLAUDE.md"
+            INSTRUCTIONS=$(cat CLAUDE.md | head -c 4000)
           else
             INSTRUCTIONS=""
           fi
@@ -36,8 +36,8 @@ jobs:
           fi
           
           # List existing PRDs to show feature patterns
-          if [ -d "prds" ]; then
-            PRDS=$(ls -1 prds/ | head -20)
+          if [ -d "docs/prds" ]; then
+            PRDS=$(ls -1 docs/prds/ | head -20)
           else
             PRDS=""
           fi
@@ -78,7 +78,7 @@ jobs:
             ${readme || 'No README found'}
             
             ### Tech Stack & Conventions
-            ${instructions || 'No copilot-instructions found'}
+            ${instructions || 'No project instructions found'}
             
             ### Existing Feature PRDs
             ${prds || 'No PRDs found'}

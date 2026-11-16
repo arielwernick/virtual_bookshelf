@@ -45,6 +45,7 @@ function createMockRecentUser(overrides: Partial<AdminRecentUser> = {}): AdminRe
     tracked: true,
     first_referrer: 'https://www.google.com',
     utm_source: null,
+    first_landing_path: null,
     created_at: new Date('2026-10-20'),
     last_seen_at: new Date('2026-10-28'),
     shelf_count: 2,
@@ -75,10 +76,10 @@ describe('AdminPage', () => {
       { week: new Date('2026-10-26'), email: 2, google: 3 },
     ]);
     vi.mocked(getAdminAttribution).mockResolvedValue([
-      { tracked: true, first_referrer: 'https://www.google.com', utm_source: null, count: 5 },
-      { tracked: true, first_referrer: 'https://www.google.co.uk', utm_source: null, count: 2 },
-      { tracked: true, first_referrer: null, utm_source: null, count: 3 },
-      { tracked: false, first_referrer: null, utm_source: null, count: 30 },
+      { tracked: true, first_referrer: 'https://www.google.com', utm_source: null, first_landing_path: null, count: 5 },
+      { tracked: true, first_referrer: 'https://www.google.co.uk', utm_source: null, first_landing_path: null, count: 2 },
+      { tracked: true, first_referrer: null, utm_source: null, first_landing_path: null, count: 3 },
+      { tracked: false, first_referrer: null, utm_source: null, first_landing_path: null, count: 30 },
     ]);
     vi.mocked(getAdminRecentUsers).mockResolvedValue([
       createMockRecentUser(),
@@ -216,6 +217,39 @@ describe('AdminPage', () => {
       expect(screen.getByText('No shelf views in the last 12 weeks.')).toBeInTheDocument();
       expect(screen.getByText('No shelf views yet.')).toBeInTheDocument();
       expect(screen.getByText('No embed views yet.')).toBeInTheDocument();
+    });
+  });
+
+  describe('Landing pages', () => {
+    it('lists where tracked signups first landed, with the channel that sent them', async () => {
+      vi.mocked(getAdminAttribution).mockResolvedValue([
+        { tracked: true, first_referrer: null, utm_source: 'chatgpt.com', first_landing_path: '/goodreads-alternative', count: 3 },
+        { tracked: true, first_referrer: 'https://www.google.com', utm_source: null, first_landing_path: '/goodreads-alternative', count: 1 },
+        { tracked: true, first_referrer: 'https://search.brave.com', utm_source: null, first_landing_path: '/', count: 1 },
+        { tracked: true, first_referrer: null, utm_source: null, first_landing_path: null, count: 9 },
+      ]);
+      await renderPage();
+
+      const row = screen.getByText('/goodreads-alternative').closest('tr')!;
+      expect(row).toHaveTextContent('ChatGPT');
+      expect(row).toHaveTextContent('4');
+      expect(screen.getByText('/').closest('tr')).toHaveTextContent('Brave Search');
+    });
+
+    it('says when nothing has been recorded yet', async () => {
+      await renderPage();
+      expect(screen.getByText(/No landing pages recorded yet/)).toBeInTheDocument();
+    });
+
+    it('shows the landing page under a recent user\'s source', async () => {
+      vi.mocked(getAdminRecentUsers).mockResolvedValue([
+        createMockRecentUser({ first_referrer: null, utm_source: 'chatgpt.com', first_landing_path: '/bento-alternative' }),
+      ]);
+      await renderPage();
+
+      const cell = screen.getByText('/bento-alternative').closest('td')!;
+      expect(cell).toHaveTextContent('ChatGPT');
+      expect(cell).not.toHaveTextContent('Campaign');
     });
   });
 });

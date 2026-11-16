@@ -6,7 +6,7 @@ import { EmptyState, BookshelfIcon } from '@/components/ui/EmptyState';
 import { SkeletonShelfGrid } from '@/components/ui/SkeletonLoader';
 import { AddItemModal } from '@/components/shelf/AddItemModal';
 import { ShelfPreviewCard } from '@/components/shelf/ShelfPreviewCard';
-import type { ShelfPreviewItem } from '@/lib/types/shelf';
+import type { ShelfPreviewItem, ShelfViewSummary } from '@/lib/types/shelf';
 
 interface Shelf {
   id: string;
@@ -16,6 +16,7 @@ interface Shelf {
   is_public: boolean;
   item_count: number;
   preview_items: ShelfPreviewItem[];
+  views?: ShelfViewSummary;
   created_at: string;
   updated_at: string;
 }
@@ -264,10 +265,26 @@ export default function DashboardClient() {
             ))}
           </div>
         )}
+
+        {/* Your shelves are yours: one file with everything on them (#289) */}
+        {data.shelves.length > 0 && (
+          <p className="mt-10 text-sm text-gray-500 dark:text-gray-400">
+            Your shelves are yours.{' '}
+            <a
+              href="/api/account/export"
+              download
+              className="font-medium text-gray-700 dark:text-gray-300 underline hover:text-gray-900 dark:hover:text-gray-100"
+            >
+              Export my data
+            </a>
+          </p>
+        )}
       </div>
 
       {/* Add Item Modal */}
+      {/* Keyed by shelf, so a second new shelf starts with a clean "added" count */}
       <AddItemModal
+        key={newShelfId || 'none'}
         isOpen={showAddItemModal}
         onClose={() => {
           setShowAddItemModal(false);

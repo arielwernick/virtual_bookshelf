@@ -1,4 +1,4 @@
-import { neon, NeonQueryFunction } from '@neondatabase/serverless';
+import { neon, NeonQueryFunction, NeonQueryFunctionInTransaction, NeonQueryInTransaction } from '@neondatabase/serverless';
 import { createLogger } from '@/lib/utils/logger';
 
 const logger = createLogger('Database');
@@ -46,6 +46,20 @@ export const sql = ((strings: TemplateStringsArray, ...values: unknown[]) => {
 export function sqlQuery(queryString: string, values?: unknown[]): Promise<unknown[]> {
   const fn = getSql() as unknown as { query: (q: string, p?: unknown[]) => Promise<unknown[]> };
   return fn.query(queryString, values);
+}
+
+/**
+ * Run several statements as one transaction, in one round trip.
+ *
+ * The Neon HTTP driver has no interactive transactions: the statements are
+ * built up front and sent together. If any of them fails, none is applied.
+ *
+ *   await sqlTransaction((tx) => [tx`UPDATE ...`, tx`UPDATE ...`]);
+ */
+export function sqlTransaction(
+  build: (tx: NeonQueryFunctionInTransaction<false, false>) => NeonQueryInTransaction[]
+): Promise<unknown[]> {
+  return getSql().transaction(build);
 }
 
 // Helper function to test database connection

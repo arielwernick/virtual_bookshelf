@@ -2,9 +2,9 @@ name: Test
 
 on:
   push:
-    branches: [main, develop, feature/*]
+    branches: [main, next]
   pull_request:
-    branches: [main, develop]
+    branches: [main, next]
 
 jobs:
   test:
@@ -50,6 +50,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Run linter
         run: npm run lint
 

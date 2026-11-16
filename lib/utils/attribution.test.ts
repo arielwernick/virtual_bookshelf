@@ -4,6 +4,7 @@ import {
   buildAttributionCookieValue,
   parseAttributionCookie,
   classifyAttribution,
+  cleanLandingPath,
 } from './attribution';
 
 describe('normalizeReferrer', () => {
@@ -45,6 +46,7 @@ describe('buildAttributionCookieValue / parseAttributionCookie', () => {
       utmSource: 'newsletter',
       utmMedium: 'email',
       utmCampaign: 'launch',
+      landingPath: '/',
     });
   });
 
@@ -56,6 +58,7 @@ describe('buildAttributionCookieValue / parseAttributionCookie', () => {
       utmSource: null,
       utmMedium: null,
       utmCampaign: null,
+      landingPath: '/',
     });
   });
 
@@ -88,6 +91,7 @@ describe('parseAttributionCookie', () => {
       utmSource: null,
       utmMedium: 'x'.repeat(100),
       utmCampaign: null,
+      landingPath: null,
     });
   });
 });
@@ -99,6 +103,23 @@ describe('classifyAttribution', () => {
 
   it('prefers UTM source over referrer', () => {
     expect(classifyAttribution('https://www.google.com', 'newsletter')).toBe('Campaign: newsletter');
+  });
+
+  it('labels links a known site tagged with its own name as that site, not a campaign', () => {
+    // ChatGPT adds utm_source=chatgpt.com to the links it cites
+    expect(classifyAttribution(null, 'chatgpt.com')).toBe('ChatGPT');
+    expect(classifyAttribution('https://chatgpt.com/', 'chatgpt.com')).toBe('ChatGPT');
+    expect(classifyAttribution(null, 'ChatGPT')).toBe('ChatGPT');
+    expect(classifyAttribution(null, 'perplexity')).toBe('Perplexity');
+    expect(classifyAttribution(null, 'perplexity.ai')).toBe('Perplexity');
+    expect(classifyAttribution(null, 'linkedin')).toBe('LinkedIn');
+    expect(classifyAttribution(null, 'google')).toBe('Google');
+  });
+
+  it('keeps our own tags and unknown tags as campaigns', () => {
+    expect(classifyAttribution(null, 'embed')).toBe('Campaign: embed');
+    expect(classifyAttribution(null, 'shared_shelf')).toBe('Campaign: shared_shelf');
+    expect(classifyAttribution(null, 'newsletter-nov')).toBe('Campaign: newsletter-nov');
   });
 
   it('treats no referrer as direct', () => {
@@ -124,5 +145,41 @@ describe('classifyAttribution', () => {
 
   it('falls back to the referring host', () => {
     expect(classifyAttribution('https://www.someblog.dev/post', null)).toBe('someblog.dev');
+  });
+});
+
+describe('landing page', () => {
+  it('records the first page, without its query string', () => {
+    const cookie = buildAttributionCookieValue(
+      'https://virtualbookshelf.app/goodreads-alternative?utm_source=chatgpt.com#faq',
+      ''
+    );
+    expect(parseAttributionCookie(cookie)?.landingPath).toBe('/goodreads-alternative');
+  });
+
+  it.each([
+    ['/s/my-books-Xk9mP2vL', '/s/*'],
+    ['/embed/Xk9mP2vL', '/embed/*'],
+    ['/shelf/123e4567-e89b-12d3-a456-426614174000/edit', '/shelf/*'],
+    ['/oauth/authorize', '/oauth/*'],
+  ])('never records a share token or private id: %s', (path, expected) => {
+    expect(cleanLandingPath(path)).toBe(expected);
+  });
+
+  it('keeps ordinary pages and trims a trailing slash', () => {
+    expect(cleanLandingPath('/')).toBe('/');
+    expect(cleanLandingPath('/guides/reading-list/')).toBe('/guides/reading-list');
+    expect(cleanLandingPath('/v/dQw4w9WgXcQ')).toBe('/v/dQw4w9WgXcQ');
+  });
+
+  it('rejects anything that is not a plain path, including tampered cookies', () => {
+    expect(cleanLandingPath('https://evil.example/')).toBeNull();
+    expect(cleanLandingPath('//evil.example')).toBeNull();
+    expect(cleanLandingPath('/<script>')).toBeNull();
+    expect(cleanLandingPath(42)).toBeNull();
+    expect(cleanLandingPath(`/${'a'.repeat(500)}`)).toHaveLength(200);
+
+    const tampered = encodeURIComponent(JSON.stringify({ l: 'javascript:alert(1)' }));
+    expect(parseAttributionCookie(tampered)?.landingPath).toBeNull();
   });
 });

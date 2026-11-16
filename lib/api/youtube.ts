@@ -1,3 +1,5 @@
+import { isMockMode } from './mockMode';
+import { mockVideo } from './mockFixtures';
 // YouTube API integration for video metadata fetching
 
 import { createLogger } from '@/lib/utils/logger';
@@ -85,6 +87,8 @@ export function isValidVideoId(videoId: string): boolean {
  * This uses the Videos.list endpoint which costs 1 quota unit
  */
 export async function getVideoDetails(videoId: string): Promise<YouTubeVideo> {
+  if (isMockMode()) return mockVideo(videoId);
+
   const apiKey = process.env.YOUTUBE_API_KEY;
   
   if (!apiKey) {
