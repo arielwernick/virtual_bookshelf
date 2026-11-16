@@ -463,9 +463,6 @@ https://www.goodreads.com/book/show/40121378-atomic-habits`}
             >
               Try an example
             </button>
-            <p className="sm:ml-auto text-xs text-gray-500 dark:text-gray-400 text-center sm:text-right">
-              Each link becomes an item. Nothing is saved yet.
-            </p>
           </div>
         </div>
       )}
