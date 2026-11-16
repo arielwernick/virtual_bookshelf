@@ -155,7 +155,7 @@ export default function DashboardClient() {
               <p className="text-gray-600 dark:text-gray-400 mt-2">
                 {data.shelves.length === 0
                   ? "You don't have any shelves yet. Create one to get started!"
-                  : `You have ${data.shelves.length} shelf${data.shelves.length !== 1 ? 'es' : ''}`}
+                  : `You have ${data.shelves.length} ${data.shelves.length === 1 ? 'shelf' : 'shelves'}`}
               </p>
             </div>
             {/* Only show header button when user has shelves - empty state has its own CTA */}
