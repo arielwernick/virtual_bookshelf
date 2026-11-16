@@ -31,6 +31,12 @@ describe('sitemap', () => {
     expect(urls.some((url) => /\/(login|signup)$/.test(url))).toBe(false);
   });
 
+  it('lists the Privacy and Terms pages', async () => {
+    const urls = (await sitemap()).map((entry) => entry.url);
+    expect(urls.some((url) => url.endsWith('/privacy'))).toBe(true);
+    expect(urls.some((url) => url.endsWith('/terms'))).toBe(true);
+  });
+
   it('does not stamp the homepage with the current time', async () => {
     const [home] = await sitemap();
     expect(home.lastModified).toBeUndefined();

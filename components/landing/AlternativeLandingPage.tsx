@@ -8,6 +8,7 @@
 import Link from 'next/link';
 import { CapabilityShowcase } from '@/components/home/CapabilityShowcase';
 import { ComparisonTable, type ComparisonColumn, type ComparisonRow } from './ComparisonTable';
+import { LegalLinks } from '@/components/legal/LegalLinks';
 
 interface Reason {
   title: string;
@@ -167,6 +168,7 @@ export function AlternativeLandingPage({
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400">
             <p>© {new Date().getFullYear()} Virtual Bookshelf</p>
+            <LegalLinks />
             <Link href="/" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors font-medium">Back to home</Link>
           </div>
         </div>
