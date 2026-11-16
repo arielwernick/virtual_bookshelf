@@ -14,6 +14,7 @@ export interface ImportDraftItem {
   fetchedTitle?: string;
   fetchedImage?: string;
   fetchedPublisher?: string;
+  customTitle?: string;
   selected: boolean;
 }
 
@@ -55,6 +56,7 @@ function toDraftItem(value: unknown): ImportDraftItem | null {
     fetchedTitle: optionalString(raw.fetchedTitle),
     fetchedImage: optionalString(raw.fetchedImage),
     fetchedPublisher: optionalString(raw.fetchedPublisher),
+    customTitle: optionalString(raw.customTitle),
     selected: raw.selected !== false,
   };
 }

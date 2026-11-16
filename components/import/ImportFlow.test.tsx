@@ -1,0 +1,235 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { ImportFlow, EXAMPLE_LIST } from './ImportFlow';
+import { saveImportDraft, loadImportDraft, ImportDraftItem } from '@/lib/utils/importDraft';
+
+const push = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push, replace: vi.fn() }),
+}));
+
+vi.mock('next/image', () => ({
+  // eslint-disable-next-line @next/next/no-img-element
+  default: (props: Record<string, unknown>) => <img src={props.src as string} alt={props.alt as string} />,
+}));
+
+function createDraftItem(overrides: Partial<ImportDraftItem> = {}): ImportDraftItem {
+  return {
+    url: 'https://example.com/a',
+    parsedTitle: 'Example article',
+    selected: true,
+    ...overrides,
+  };
+}
+
+function jsonResponse(body: unknown, status = 200) {
+  return Promise.resolve({ status, json: () => Promise.resolve(body) } as unknown as Response);
+}
+
+function mockFetch({ authenticated = false }: { authenticated?: boolean } = {}) {
+  const fetchMock = vi.fn((input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url === '/api/auth/me') return jsonResponse({ authenticated });
+    if (url === '/api/import/parse') {
+      return jsonResponse({
+        success: true,
+        data: { items: [{ url: 'https://example.com/a', parsedTitle: 'Example article', order: 0 }] },
+      });
+    }
+    if (url === '/api/import/resolve') {
+      return jsonResponse({ success: true, data: { resolved: {} } });
+    }
+    if (url === '/api/import/metadata') {
+      return jsonResponse({
+        success: true,
+        data: { results: [{ url: 'https://example.com/a', metadata: { title: 'Fetched title' } }] },
+      });
+    }
+    if (url === '/api/import/create') {
+      return jsonResponse({ success: true, data: { shelf: { id: 'shelf-1' } } });
+    }
+    return Promise.reject(new Error(`Unexpected fetch: ${url}`));
+  });
+  global.fetch = fetchMock as unknown as typeof fetch;
+  return fetchMock;
+}
+
+function callsTo(fetchMock: ReturnType<typeof mockFetch>, path: string) {
+  return fetchMock.mock.calls.filter(([url]) => String(url) === path);
+}
+
+function renderComponent(props: { variant?: 'page' | 'embedded' } = {}) {
+  return render(<ImportFlow {...props} />);
+}
+
+describe('ImportFlow', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    push.mockClear();
+  });
+
+  describe('Rendering', () => {
+    it('embedded: starts at the paste box even when a preview is saved', async () => {
+      saveImportDraft({ items: [createDraftItem()], shelfTitle: 'Old list', saveAfterAuth: false });
+      const fetchMock = mockFetch({ authenticated: false });
+      renderComponent({ variant: 'embedded' });
+
+      await waitFor(() => expect(callsTo(fetchMock, '/api/auth/me')).toHaveLength(1));
+      expect(screen.getByRole('button', { name: 'Preview my shelf' })).toBeInTheDocument();
+      expect(screen.queryByLabelText('Shelf name')).not.toBeInTheDocument();
+    });
+
+    it('page: restores a saved preview', async () => {
+      saveImportDraft({ items: [createDraftItem()], shelfTitle: 'Old list', saveAfterAuth: false });
+      mockFetch({ authenticated: false });
+      renderComponent({ variant: 'page' });
+
+      expect(await screen.findByLabelText('Shelf name')).toHaveValue('Old list');
+    });
+  });
+
+  describe('Interactions', () => {
+    it('embedded: previews a pasted list and hands off to /import for sign-up', async () => {
+      mockFetch({ authenticated: false });
+      renderComponent({ variant: 'embedded' });
+
+      fireEvent.change(screen.getByLabelText('Paste text with links'), {
+        target: { value: 'Example article\nhttps://example.com/a' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Preview my shelf' }));
+
+      expect(await screen.findByText('Fetched title')).toBeInTheDocument();
+
+      fireEvent.change(screen.getByLabelText('Shelf name'), { target: { value: 'My list' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Sign up to save this shelf' }));
+
+      expect(push).toHaveBeenCalledWith('/signup?returnTo=%2Fimport');
+      const draft = loadImportDraft();
+      expect(draft?.saveAfterAuth).toBe(true);
+      expect(draft?.shelfTitle).toBe('My list');
+      expect(draft?.items[0].fetchedTitle).toBe('Fetched title');
+    });
+  });
+
+  describe('Shelf preview', () => {
+    function savedPreview() {
+      saveImportDraft({
+        items: [
+          createDraftItem({ fetchedTitle: 'First article' }),
+          createDraftItem({ url: 'https://example.com/b', parsedTitle: 'Second article' }),
+        ],
+        shelfTitle: 'My list',
+        saveAfterAuth: false,
+      });
+    }
+
+    it('loads the example list into the paste box', async () => {
+      mockFetch();
+      renderComponent({ variant: 'embedded' });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
+
+      expect(screen.getByLabelText('Paste text with links')).toHaveValue(EXAMPLE_LIST);
+      expect(screen.getByRole('button', { name: 'Preview my shelf' })).toBeEnabled();
+    });
+
+    it('takes an item off the shelf, offers it back, and leaves it out of the save', async () => {
+      savedPreview();
+      const fetchMock = mockFetch({ authenticated: true });
+      renderComponent({ variant: 'page' });
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Remove Second article' }));
+
+      expect(screen.getByText('Left off the shelf')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Put Second article back' })).toBeInTheDocument();
+      expect(screen.getByText(/^1 item ·/)).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save this shelf' }));
+      await screen.findByText('Shelf created');
+
+      const [, init] = callsTo(fetchMock, '/api/import/create')[0] as unknown as [string, RequestInit];
+      const body = JSON.parse(init.body as string);
+      expect(body.items).toHaveLength(1);
+      expect(body.items[0].title).toBe('First article');
+    });
+
+    it('puts a removed item back', async () => {
+      savedPreview();
+      mockFetch({ authenticated: false });
+      renderComponent({ variant: 'page' });
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Remove Second article' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Put Second article back' }));
+
+      expect(screen.queryByText('Left off the shelf')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Remove Second article' })).toBeInTheDocument();
+    });
+
+    it('saves an edited title and note with the shelf and keeps them in the saved preview', async () => {
+      savedPreview();
+      const fetchMock = mockFetch({ authenticated: true });
+      renderComponent({ variant: 'page' });
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Edit First article' }));
+      fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'My own title' } });
+      fireEvent.change(screen.getByLabelText("Why it's on your shelf"), {
+        target: { value: 'Changed how I work.' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      expect(await screen.findByRole('button', { name: 'Edit My own title' })).toBeInTheDocument();
+      expect(screen.getByText('Changed how I work.')).toBeInTheDocument();
+      await waitFor(() => expect(loadImportDraft()?.items[0].customTitle).toBe('My own title'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save this shelf' }));
+      await screen.findByText('Shelf created');
+
+      const [, init] = callsTo(fetchMock, '/api/import/create')[0] as unknown as [string, RequestInit];
+      const body = JSON.parse(init.body as string);
+      expect(body.items[0].title).toBe('My own title');
+      expect(body.items[0].notes).toBe('Changed how I work.');
+    });
+
+    it('asks for an item when everything has been taken off the shelf', async () => {
+      saveImportDraft({ items: [createDraftItem()], shelfTitle: 'My list', saveAfterAuth: false });
+      mockFetch({ authenticated: false });
+      renderComponent({ variant: 'page' });
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Remove Example article' }));
+
+      expect(screen.getByText('Your shelf is empty.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Sign up to save this shelf' })).toBeDisabled();
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('embedded: never saves a pending preview on load, even when signed in', async () => {
+      saveImportDraft({ items: [createDraftItem()], shelfTitle: 'Pending', saveAfterAuth: true });
+      const fetchMock = mockFetch({ authenticated: true });
+      renderComponent({ variant: 'embedded' });
+
+      await waitFor(() => expect(callsTo(fetchMock, '/api/auth/me')).toHaveLength(1));
+      expect(callsTo(fetchMock, '/api/import/create')).toHaveLength(0);
+      // The pending preview is left for /import (or the dashboard redirect) to finish
+      expect(loadImportDraft()?.saveAfterAuth).toBe(true);
+    });
+
+    it('shows an error when the text has no links', async () => {
+      const fetchMock = mockFetch();
+      fetchMock.mockImplementation((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === '/api/auth/me') return jsonResponse({ authenticated: false });
+        return jsonResponse({ success: true, data: { items: [] } });
+      });
+      renderComponent({ variant: 'embedded' });
+
+      fireEvent.change(screen.getByLabelText('Paste text with links'), {
+        target: { value: 'Dune by Frank Herbert' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Preview my shelf' }));
+
+      expect(await screen.findByText(/couldn't find any links/)).toBeInTheDocument();
+    });
+  });
+});

@@ -89,7 +89,7 @@ describe('ImportPage', () => {
       renderComponent();
 
       expect(await screen.findByRole('button', { name: 'Sign up to save this shelf' })).toBeEnabled();
-      expect(screen.queryByRole('button', { name: /Create Shelf with/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Save this shelf' })).not.toBeInTheDocument();
     });
 
     it('restores a preview for a signed-in visitor without saving it for them', async () => {
@@ -97,8 +97,8 @@ describe('ImportPage', () => {
       const fetchMock = mockFetch({ authenticated: true });
       renderComponent();
 
-      expect(await screen.findByRole('button', { name: 'Create Shelf with 1 Items' })).toBeInTheDocument();
-      expect(screen.getByLabelText('Shelf Title')).toHaveValue('My list');
+      expect(await screen.findByRole('button', { name: 'Save this shelf' })).toBeInTheDocument();
+      expect(screen.getByLabelText('Shelf name')).toHaveValue('My list');
       expect(createCalls(fetchMock)).toHaveLength(0);
     });
   });
@@ -173,7 +173,7 @@ describe('ImportPage', () => {
       mockFetch({ authenticated: true, createStatus: 401 });
       renderComponent();
 
-      fireEvent.click(await screen.findByRole('button', { name: 'Create Shelf with 1 Items' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Save this shelf' }));
 
       expect(await screen.findByRole('button', { name: 'Sign up to save this shelf' })).toBeInTheDocument();
       expect(screen.getByText(/Your preview is kept on this device/)).toBeInTheDocument();
@@ -186,7 +186,7 @@ describe('ImportPage', () => {
       renderComponent();
 
       expect(await screen.findByRole('button', { name: 'Sign up to save this shelf' })).toBeDisabled();
-      expect(screen.getByText('Give your shelf a title to continue.')).toBeInTheDocument();
+      expect(screen.getByText('Give your shelf a name to continue.')).toBeInTheDocument();
     });
   });
 });

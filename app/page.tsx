@@ -5,6 +5,7 @@ import { DemoShelf } from '@/components/home/DemoShelf';
 import { RotatingDemoShelf, ShelfPreview } from '@/components/home/RotatingDemoShelf';
 import { CapabilityShowcase } from '@/components/home/CapabilityShowcase';
 import { HOW_IT_WORKS } from '@/lib/constants/landingShowcase';
+import { ImportFlow } from '@/components/import/ImportFlow';
 
 const MAX_DEMO_SHELVES = 5;
 const MAX_ITEMS_PER_SHELF = 12;
@@ -209,6 +210,22 @@ export default async function Home() {
                 </li>
               ))}
             </ol>
+          </section>
+
+          {/* Try it: paste a list and preview the shelf, no account needed */}
+          <section aria-labelledby="try-heading" className="mb-20 sm:mb-28">
+            <div className="text-center mb-8">
+              <h2 id="try-heading" className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                Paste a list. See your shelf.
+              </h2>
+              <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Drop in a reading list, a newsletter or a LinkedIn post with links. No account
+                needed to try it.
+              </p>
+            </div>
+            <div className="max-w-3xl mx-auto rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-5 sm:p-8">
+              <ImportFlow variant="embedded" />
+            </div>
           </section>
 
           {/* Embed anywhere */}
