@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ImportPreviewList } from '@/components/import/ImportPreviewList';
 import { PreviewItem } from '@/components/import/ParsedItemPreview';
 import { ParsedItem } from '@/lib/utils/textParser';
+import { saveImportDraft, loadImportDraft, clearImportDraft } from '@/lib/utils/importDraft';
 
 type ImportState = 'input' | 'processing' | 'preview' | 'creating';
 
@@ -66,6 +67,103 @@ export default function ImportPage() {
   const [error, setError] = useState('');
   const [progress, setProgress] = useState({ current: 0, total: 0, step: '' });
   const [createdShelfId, setCreatedShelfId] = useState<string | null>(null);
+  // null while the sign-in check is in flight
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  const createShelf = useCallback(async (shelfItems: PreviewItem[], title: string) => {
+    setState('creating');
+    setError('');
+
+    try {
+      const selectedItems = shelfItems.filter((item) => item.selected);
+
+      const res = await fetch('/api/import/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          items: selectedItems.map((item) => ({
+            url: item.resolvedUrl || item.url,
+            title: item.fetchedTitle || item.parsedTitle,
+            creator: item.fetchedPublisher,
+            imageUrl: item.fetchedImage,
+            notes: item.parsedDescription,
+          })),
+        }),
+      });
+
+      const json = await res.json();
+      if (!json.success) {
+        if (res.status === 401) {
+          // The session ended; show the sign-up step instead of a dead end
+          setIsLoggedIn(false);
+          setError('Sign in to save this shelf. Your preview is kept on this device.');
+        } else {
+          setError(json.error || 'Failed to create shelf');
+        }
+        setState('preview');
+        return;
+      }
+
+      clearImportDraft();
+      setCreatedShelfId(json.data.shelf.id);
+
+      setTimeout(() => {
+        router.push(`/shelf/${json.data.shelf.id}/edit`);
+      }, 2200);
+    } catch (err) {
+      console.error('Create error:', err);
+      setError('Failed to create shelf. Please try again.');
+      setState('preview');
+    }
+  }, [router]);
+
+  // The restore below must run once per visit, so it reads the latest
+  // createShelf through a ref instead of depending on it.
+  const createShelfRef = useRef(createShelf);
+  useEffect(() => {
+    createShelfRef.current = createShelf;
+  }, [createShelf]);
+
+  // Check sign-in, then bring back a preview saved before a trip through
+  // sign-up or sign-in. If the visitor asked to save it and is now signed in,
+  // finish the save for them.
+  useEffect(() => {
+    let cancelled = false;
+
+    const start = (authenticated: boolean) => {
+      if (cancelled) return;
+      setIsLoggedIn(authenticated);
+
+      const draft = loadImportDraft();
+      if (!draft) return;
+
+      setItems(draft.items);
+      setShelfTitle(draft.shelfTitle);
+      setState('preview');
+
+      const canSave =
+        draft.shelfTitle.trim().length > 0 && draft.items.some((item) => item.selected);
+      if (authenticated && draft.saveAfterAuth && canSave) {
+        // Drop the flag first so a reload mid-request can't create the shelf twice
+        saveImportDraft({ items: draft.items, shelfTitle: draft.shelfTitle, saveAfterAuth: false });
+        createShelfRef.current(draft.items, draft.shelfTitle);
+      }
+    };
+
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => start(data.authenticated === true))
+      .catch(() => start(false));
+
+    return () => { cancelled = true; };
+  }, []);
+
+  // Keep the preview in this browser while it is on screen
+  useEffect(() => {
+    if (state !== 'preview' || items.length === 0) return;
+    saveImportDraft({ items, shelfTitle, saveAfterAuth: false });
+  }, [state, items, shelfTitle]);
 
   const handleExtract = async () => {
     if (!text.trim()) {
@@ -214,45 +312,17 @@ export default function ImportPage() {
     setItems((prev) => prev.map((item) => ({ ...item, selected: false })));
   };
 
-  const handleCreateShelf = async () => {
-    setState('creating');
-    setError('');
+  const handleCreateShelf = () => createShelf(items, shelfTitle);
 
-    try {
-      const selectedItems = items.filter((item) => item.selected);
-      
-      const res = await fetch('/api/import/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: shelfTitle,
-          items: selectedItems.map((item) => ({
-            url: item.resolvedUrl || item.url,
-            title: item.fetchedTitle || item.parsedTitle,
-            creator: item.fetchedPublisher,
-            imageUrl: item.fetchedImage,
-            notes: item.parsedDescription,
-          })),
-        }),
-      });
-
-      const json = await res.json();
-      if (!json.success) {
-        setError(json.error || 'Failed to create shelf');
-        setState('preview');
-        return;
-      }
-
-      setCreatedShelfId(json.data.shelf.id);
-
-      setTimeout(() => {
-        router.push(`/shelf/${json.data.shelf.id}/edit`);
-      }, 2200);
-    } catch (err) {
-      console.error('Create error:', err);
-      setError('Failed to create shelf. Please try again.');
-      setState('preview');
+  const handleSaveAfterAuth = (destination: 'signup' | 'login') => {
+    const saved = saveImportDraft({ items, shelfTitle, saveAfterAuth: true });
+    if (!saved) {
+      setError(
+        "This browser is blocking site storage, so the preview can't be kept through sign-up. Create your account first, then paste the list again."
+      );
+      return;
     }
+    router.push(`/${destination}?returnTo=${encodeURIComponent('/import')}`);
   };
 
   const handleReset = () => {
@@ -262,6 +332,7 @@ export default function ImportPage() {
     setError('');
     setState('input');
     setProgress({ current: 0, total: 0, step: '' });
+    clearImportDraft();
   };
 
   if (createdShelfId) {
@@ -314,7 +385,7 @@ export default function ImportPage() {
               📋 Create Shelf from Text
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Paste any text with links — reading lists, recommendations, articles to save — and we&apos;ll create a shelf for you.
+              Paste any text with links — reading lists, recommendations, articles to save — and see it as a shelf before you save it.
             </p>
           </div>
 
@@ -366,7 +437,7 @@ https://open.spotify.com/show/1234`}
                            disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed
                            transition-colors flex items-center justify-center gap-2"
               >
-                Create Shelf
+                Preview my shelf
               </button>
             </div>
           )}
@@ -420,6 +491,9 @@ https://open.spotify.com/show/1234`}
                 onDeselectAll={handleDeselectAll}
                 onCreateShelf={handleCreateShelf}
                 creating={false}
+                signedOut={isLoggedIn === false}
+                onSignUpToSave={() => handleSaveAfterAuth('signup')}
+                onSignInToSave={() => handleSaveAfterAuth('login')}
               />
 
               <button

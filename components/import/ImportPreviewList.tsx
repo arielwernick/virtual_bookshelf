@@ -11,6 +11,10 @@ interface ImportPreviewListProps {
   onDeselectAll: () => void;
   onCreateShelf: () => void;
   creating: boolean;
+  /** When true the visitor has no account yet: offer sign-up instead of create. */
+  signedOut?: boolean;
+  onSignUpToSave?: () => void;
+  onSignInToSave?: () => void;
 }
 
 export function ImportPreviewList({
@@ -22,6 +26,9 @@ export function ImportPreviewList({
   onDeselectAll,
   onCreateShelf,
   creating,
+  signedOut = false,
+  onSignUpToSave,
+  onSignInToSave,
 }: ImportPreviewListProps) {
   const selectedCount = items.filter((item) => item.selected).length;
   const totalCount = items.length;
@@ -96,27 +103,59 @@ export function ImportPreviewList({
         />
       </div>
 
-      {/* Create button */}
-      <div className="flex flex-col items-center gap-2 pt-2">
-        <button
-          type="button"
-          onClick={onCreateShelf}
-          disabled={!canCreate || creating}
-          className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium
-                     bg-amber-500 hover:bg-amber-600 text-white
-                     disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed
-                     transition-colors flex items-center justify-center gap-2"
-        >
-          {creating ? (
-            <>
-              <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-              Creating...
-            </>
-          ) : (
-            <>Create Shelf with {selectedCount} Items</>
-          )}
-        </button>
-      </div>
+      {/* Create button, or the sign-up step for visitors without an account */}
+      {signedOut ? (
+        <div className="flex flex-col items-center gap-2 pt-2 text-center">
+          <button
+            type="button"
+            onClick={onSignUpToSave}
+            disabled={!canCreate}
+            className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium
+                       bg-amber-500 hover:bg-amber-600 text-white
+                       disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed
+                       transition-colors"
+          >
+            Sign up to save this shelf
+          </button>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {canCreate
+              ? 'Free. Your shelf is saved as private until you choose to share it.'
+              : selectedCount === 0
+                ? 'Select at least one item to continue.'
+                : 'Give your shelf a title to continue.'}
+          </p>
+          <button
+            type="button"
+            onClick={onSignInToSave}
+            disabled={!canCreate}
+            className="text-sm font-medium text-amber-700 dark:text-amber-400 hover:underline
+                       disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
+          >
+            Already have an account? Sign in
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-2 pt-2">
+          <button
+            type="button"
+            onClick={onCreateShelf}
+            disabled={!canCreate || creating}
+            className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium
+                       bg-amber-500 hover:bg-amber-600 text-white
+                       disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed
+                       transition-colors flex items-center justify-center gap-2"
+          >
+            {creating ? (
+              <>
+                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                Creating...
+              </>
+            ) : (
+              <>Create Shelf with {selectedCount} Items</>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

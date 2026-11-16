@@ -7,6 +7,7 @@ import { SkeletonShelfGrid } from '@/components/ui/SkeletonLoader';
 import { AddItemModal } from '@/components/shelf/AddItemModal';
 import { ShelfPreviewCard } from '@/components/shelf/ShelfPreviewCard';
 import type { ShelfPreviewItem, ShelfViewSummary } from '@/lib/types/shelf';
+import { hasPendingImportDraft } from '@/lib/utils/importDraft';
 
 interface Shelf {
   id: string;
@@ -51,6 +52,13 @@ export default function DashboardClient() {
           console.error('Dashboard API error:', json.error);
           // Not authenticated, redirect to login
           router.push('/login');
+          return;
+        }
+
+        // A visitor who previewed a pasted list and then signed in (Google
+        // sign-in always lands here) goes back to finish saving that shelf.
+        if (hasPendingImportDraft()) {
+          router.replace('/import');
           return;
         }
 
