@@ -71,6 +71,7 @@ export function ImportPreviewList({
           id="shelf-title"
           value={shelfTitle}
           onChange={(e) => onShelfTitleChange(e.target.value)}
+          onFocus={(e) => e.target.select()}
           placeholder="Name your shelf"
           maxLength={100}
           className="mt-1 w-full bg-transparent text-2xl sm:text-3xl font-bold tracking-tight
