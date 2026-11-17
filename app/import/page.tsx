@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'Paste a list, get a shelf',
   description:
     'Paste any text with links (a reading list, a newsletter, a LinkedIn post) and see it as a shelf before you sign up.',
+  alternates: { canonical: '/import' },
 };
 
 export default function ImportPage() {

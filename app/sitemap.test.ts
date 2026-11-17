@@ -15,6 +15,11 @@ describe('sitemap', () => {
     expect(urls.some((url) => url.endsWith('/s/favorite-books-Xk9mP2vL'))).toBe(true);
   });
 
+  it('lists the paste-a-list page, which works without an account', async () => {
+    const urls = (await sitemap()).map((entry) => entry.url);
+    expect(urls.some((url) => url.endsWith('/import'))).toBe(true);
+  });
+
   it('leaves out sign-in pages, which are not search destinations', async () => {
     const urls = (await sitemap()).map((entry) => entry.url);
     expect(urls.some((url) => /\/(login|signup)$/.test(url))).toBe(false);

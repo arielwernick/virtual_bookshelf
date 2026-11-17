@@ -65,6 +65,7 @@ Virtual Bookshelf has a connector (a Model Context Protocol server) so that sign
 ## Key pages
 
 - [Home](${baseUrl}/): Create and share a shelf.
+- [Paste a list](${baseUrl}/import): Paste a reading list, a newsletter or a post with links and see it as a shelf. No account is needed to try it.
 - [Embed anywhere](${baseUrl}/embed-anywhere): Embed a live, clickable shelf on a website or in a newsletter with one snippet.
 - [Curate conference resources](${baseUrl}/curate-conference-resources): Turn a talk's reading list into a shareable shelf.
 - [Goodreads alternative](${baseUrl}/goodreads-alternative): For curating and sharing a shelf, not for tracking or reviews.
