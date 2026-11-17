@@ -112,6 +112,35 @@ describe('ImportFlow', () => {
     });
   });
 
+  describe('Shelf name', () => {
+    async function previewPastedText(value: string) {
+      mockFetch({ authenticated: false });
+      renderComponent();
+      fireEvent.change(screen.getByLabelText('Paste text with links'), { target: { value } });
+      fireEvent.click(screen.getByRole('button', { name: 'Preview my shelf' }));
+      await screen.findByText('Fetched title');
+    }
+
+    it('starts with a name, so the shelf can be saved without typing', async () => {
+      await previewPastedText('Example article\nhttps://example.com/a');
+
+      expect(screen.getByLabelText('Shelf name')).toHaveValue('My shelf');
+      fireEvent.click(screen.getByRole('button', { name: 'Sign up to save this shelf' }));
+
+      expect(push).toHaveBeenCalledWith('/signup?returnTo=%2Fimport');
+      expect(loadImportDraft()?.shelfTitle).toBe('My shelf');
+    });
+
+    it('still asks for a name when the visitor clears it', async () => {
+      await previewPastedText('Example article\nhttps://example.com/a');
+
+      fireEvent.change(screen.getByLabelText('Shelf name'), { target: { value: '' } });
+
+      expect(screen.getByRole('button', { name: 'Sign up to save this shelf' })).toBeDisabled();
+      expect(screen.getByText('Give your shelf a name to continue.')).toBeInTheDocument();
+    });
+  });
+
   describe('Shelf preview', () => {
     function savedPreview() {
       saveImportDraft({

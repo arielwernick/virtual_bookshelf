@@ -11,6 +11,9 @@ import { saveImportDraft, loadImportDraft, clearImportDraft } from '@/lib/utils/
 
 type ImportState = 'input' | 'processing' | 'preview' | 'creating';
 
+/** The name a new preview starts with; the visitor can change it before or after saving. */
+export const DEFAULT_SHELF_TITLE = 'My shelf';
+
 /** A short list a visitor can load to see the flow without hunting for text to paste. */
 export const EXAMPLE_LIST = `Atomic Habits
 The clearest book on why small changes stick.
@@ -224,6 +227,9 @@ export function ImportFlow({ variant = 'page' }: ImportFlowProps) {
         setState('input');
         return;
       }
+
+      // Start with a name so the shelf can be saved in one click
+      setShelfTitle((current) => (current.trim() ? current : DEFAULT_SHELF_TITLE));
 
       // Initialize preview items
       let previewItems: PreviewItem[] = parsedItems.map((item) => ({
