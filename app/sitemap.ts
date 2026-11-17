@@ -42,6 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // No lastModified here: stamping "now" on every request tells crawlers
     // nothing and teaches them to ignore the field on the other entries.
     { url: baseUrl, changeFrequency: 'weekly', priority: 1 },
+    { url: `${baseUrl}/import`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/bento-alternative`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/linktree-alternative`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/goodreads-alternative`, changeFrequency: 'monthly', priority: 0.9 },

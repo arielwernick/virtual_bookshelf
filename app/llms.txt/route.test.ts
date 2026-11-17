@@ -32,6 +32,10 @@ describe('buildLlmsTxt', () => {
     expect(text).toContain('Shelves start private');
   });
 
+  it('lists the paste-a-list page under key pages', () => {
+    expect(buildLlmsTxt(BASE, [])).toContain(`- [Paste a list](${BASE}/import):`);
+  });
+
   it('caps the list', () => {
     const many = Array.from({ length: 150 }, (_, i) => ({ ...shelf, share_token: `tok${i}` }));
     expect(buildLlmsTxt(BASE, many).match(/shelf\.md\)/g)).toHaveLength(100);

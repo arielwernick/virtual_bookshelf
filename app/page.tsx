@@ -226,6 +226,11 @@ export default async function Home() {
             <div className="max-w-3xl mx-auto rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-5 sm:p-8">
               <ImportFlow variant="embedded" />
             </div>
+            <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+              <Link href="/import" className="hover:text-gray-900 dark:hover:text-gray-100 hover:underline">
+                Open the paste-a-list page
+              </Link>
+            </p>
           </section>
 
           {/* Embed anywhere */}
