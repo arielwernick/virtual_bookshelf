@@ -48,6 +48,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/goodreads-alternative`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/curate-conference-resources`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/embed-anywhere`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${baseUrl}/books-and-podcasts`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${baseUrl}/best-virtual-bookshelf-apps`, changeFrequency: 'monthly', priority: 0.9 },
     ...shelfUrls,
     ...videoUrls,
   ]

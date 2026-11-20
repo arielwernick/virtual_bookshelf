@@ -20,6 +20,12 @@ describe('sitemap', () => {
     expect(urls.some((url) => url.endsWith('/import'))).toBe(true);
   });
 
+  it('lists the books-and-podcasts and app comparison pages', async () => {
+    const urls = (await sitemap()).map((entry) => entry.url);
+    expect(urls.some((url) => url.endsWith('/books-and-podcasts'))).toBe(true);
+    expect(urls.some((url) => url.endsWith('/best-virtual-bookshelf-apps'))).toBe(true);
+  });
+
   it('leaves out sign-in pages, which are not search destinations', async () => {
     const urls = (await sitemap()).map((entry) => entry.url);
     expect(urls.some((url) => /\/(login|signup)$/.test(url))).toBe(false);
