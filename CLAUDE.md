@@ -60,6 +60,7 @@ Run `npm run setup` first in any new checkout or worktree. Worktrees often have 
 - `lib/db/client.ts` — Neon client with lazy initialization (avoids build-time errors)
 - `lib/auth/config.ts` — Better Auth configuration, mounted at `/api/auth/[...all]`; `lib/auth/session.ts` has `getCurrentUser()` for server code; `lib/auth/client.ts` is the browser client
 - `lib/contexts/ShelfContext.tsx` — React context to reduce prop drilling in shelf components
+- `lib/email/send.ts` — `sendEmail` / `sendEmailInBackground`, the only way to send email (Resend)
 - `lib/utils/` — validation, password (bcrypt), logger, rateLimit, env
 - `lib/constants/errors.ts` — Centralized error message strings
 - `lib/shelf/publicShelf.ts` — The public shelf document. **Every** public, machine-readable view of a shelf is built from it through a field allowlist (`docs/spec/SHELF_FORMAT.md`)
@@ -100,7 +101,7 @@ The `test/setup.ts` polyfills `TextEncoder/TextDecoder` for jose and mocks `next
 
 ### Environment Variables
 
-Required: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `YOUTUBE_API_KEY`, `NEXT_PUBLIC_BASE_URL`. `SESSION_SECRET` and `GOOGLE_REDIRECT_URI` are no longer read by sign-in since #267 and go in #269. The Google callback is `<base URL>/api/auth/callback/google`.
+Required: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `RESEND_API_KEY` (production; elsewhere optional, and email only goes to `EMAIL_ALLOWLIST`), `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `YOUTUBE_API_KEY`, `NEXT_PUBLIC_BASE_URL`. `SESSION_SECRET` and `GOOGLE_REDIRECT_URI` are no longer read by sign-in since #267 and go in #269. The Google callback is `<base URL>/api/auth/callback/google`.
 
 Coming with the Better Auth cutover (#267): `BETTER_AUTH_SECRET` (32+ random characters). Better Auth's Google callback is `<NEXT_PUBLIC_BASE_URL>/api/auth/callback/google`.
 
