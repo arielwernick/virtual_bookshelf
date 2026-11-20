@@ -9,6 +9,7 @@ import {
   MIN_PASSWORD_LENGTH,
   SESSION_MAX_AGE_SECONDS,
   buildAuthOptions,
+  signupSourceForPath,
 } from './config';
 
 const ENV = {
@@ -27,7 +28,10 @@ function createTestAuth() {
     [AUTH_TABLES.account]: [],
     [AUTH_TABLES.verification]: [],
   };
-  const options = buildAuthOptions(memoryAdapter(db), ENV);
+  const options = buildAuthOptions(memoryAdapter(db), ENV, {
+    isUsernameTaken: async (username) =>
+      db[AUTH_TABLES.user].some((row) => row.username === username),
+  });
   // The memory adapter has no gen_random_uuid(), so let Better Auth make ids.
   const auth = betterAuth({
     ...options,
@@ -65,11 +69,12 @@ describe('buildAuthOptions', () => {
       expect(options.advanced.database.generateId).toBe('uuid');
     });
 
-    it('keeps username read-only for clients', () => {
-      const options = buildAuthOptions(undefined, ENV);
-      expect(options.user.additionalFields.username).toMatchObject({
-        required: false,
+    it('keeps signup source and attribution read-only for clients', () => {
+      const { additionalFields } = buildAuthOptions(undefined, ENV).user;
+      expect(additionalFields.signupSource).toMatchObject({ input: false, fieldName: 'signup_source' });
+      expect(additionalFields.firstLandingPath).toMatchObject({
         input: false,
+        fieldName: 'first_landing_path',
       });
     });
   });
@@ -164,6 +169,101 @@ describe('buildAuthOptions', () => {
           body: { email: 'short@example.com', password: '12345', name: 'Short' },
         })
       ).rejects.toThrow();
+    });
+  });
+
+  describe('Usernames and signup details (#267)', () => {
+    it('signs up with a chosen username, lowercased, and records the source', async () => {
+      const { auth, db } = createTestAuth();
+      await auth.api.signUpEmail({
+        body: { email: 'reader@example.com', password: 'hunter22', name: '', username: 'Reader_1' },
+      });
+      const user = db[AUTH_TABLES.user][0];
+      expect(user.username).toBe('reader_1');
+      expect(user.signup_source).toBe('email');
+    });
+
+    it('rejects usernames the old rules rejected', async () => {
+      const { auth } = createTestAuth();
+      await expect(
+        auth.api.signUpEmail({
+          body: { email: 'dot@example.com', password: 'hunter22', name: '', username: 'has.dot' },
+        })
+      ).rejects.toThrow();
+    });
+
+    it('rejects a username that is already taken', async () => {
+      const { auth } = createTestAuth();
+      await auth.api.signUpEmail({
+        body: { email: 'a@example.com', password: 'hunter22', name: '', username: 'taken' },
+      });
+      await expect(
+        auth.api.signUpEmail({
+          body: { email: 'b@example.com', password: 'hunter22', name: '', username: 'taken' },
+        })
+      ).rejects.toThrow();
+    });
+
+    it('makes a username from the email when none is given', async () => {
+      const { auth, db } = createTestAuth();
+      await auth.api.signUpEmail({
+        body: { email: 'Jane.Doe@example.com', password: 'hunter22', name: '' },
+      });
+      expect(db[AUTH_TABLES.user][0].username).toBe('janedoe');
+    });
+
+    it('signs in by username with an existing password', async () => {
+      const { auth } = createTestAuth();
+      await auth.api.signUpEmail({
+        body: { email: 'login@example.com', password: 'hunter22', name: '', username: 'loginuser' },
+      });
+      const result = await auth.api.signInUsername({
+        body: { username: 'LoginUser', password: 'hunter22' },
+      });
+      expect(result?.user.email).toBe('login@example.com');
+    });
+
+    it('stores signup attribution from the vb_attribution cookie', async () => {
+      const { auth, db } = createTestAuth();
+      const cookie = encodeURIComponent(
+        JSON.stringify({ r: 'https://chatgpt.com/c/123', us: 'newsletter', l: '/import' })
+      );
+      await auth.api.signUpEmail({
+        body: { email: 'utm@example.com', password: 'hunter22', name: '', username: 'utmuser' },
+        headers: new Headers({ cookie: `other=1; vb_attribution=${cookie}` }),
+      });
+      const user = db[AUTH_TABLES.user][0];
+      expect(user.first_referrer).toBe('https://chatgpt.com/c/123');
+      expect(user.utm_source).toBe('newsletter');
+      expect(user.first_landing_path).toBe('/import');
+    });
+
+    it('labels callback signups as Google and form signups as email', () => {
+      expect(signupSourceForPath('/sign-up/email')).toBe('email');
+      expect(signupSourceForPath('/callback/:id')).toBe('google');
+      expect(signupSourceForPath(undefined)).toBe('google');
+    });
+  });
+
+  describe('Vercel previews', () => {
+    it('reads the base URL from the request and trusts the preview URLs', () => {
+      const options = buildAuthOptions(undefined, {
+        ...ENV,
+        VERCEL_ENV: 'preview',
+        VERCEL_URL: 'vb-abc123.vercel.app',
+        VERCEL_BRANCH_URL: 'vb-git-branch.vercel.app',
+      });
+      expect(options.baseURL).toBeUndefined();
+      expect(options.trustedOrigins).toEqual([
+        'https://vb-abc123.vercel.app',
+        'https://vb-git-branch.vercel.app',
+      ]);
+    });
+
+    it('uses NEXT_PUBLIC_BASE_URL in production', () => {
+      const options = buildAuthOptions(undefined, { ...ENV, VERCEL_ENV: 'production' });
+      expect(options.baseURL).toBe('http://localhost:3000');
+      expect(options.trustedOrigins).toEqual([]);
     });
   });
 });

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { GoogleIcon } from '@/components/ui/GoogleIcon';
+import { authClient, friendlyAuthError } from '@/lib/auth/client';
 
 export default function LoginClient() {
   const router = useRouter();
@@ -35,19 +36,20 @@ export default function LoginClient() {
     return '/dashboard';
   };
 
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setError('');
 
-    // Include returnTo in Google OAuth flow
-    let googleAuthUrl = '/api/auth/google';
-    if (returnTo) {
-      const encodedReturnTo = encodeURIComponent(returnTo);
-      googleAuthUrl += `?returnTo=${encodedReturnTo}`;
+    // Better Auth redirects to Google, then back to the return URL.
+    const { error: googleError } = await authClient.signIn.social({
+      provider: 'google',
+      callbackURL: getValidatedReturnUrl(returnTo),
+      errorCallbackURL: '/login',
+    });
+    if (googleError) {
+      setError(friendlyAuthError(googleError, 'Could not start Google sign-in'));
+      setGoogleLoading(false);
     }
-
-    // Redirect to Google OAuth flow
-    window.location.href = googleAuthUrl;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,19 +73,14 @@ export default function LoginClient() {
     }
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: formData.username.toLowerCase().trim(),
-          password: formData.password,
-        }),
-      });
+      const login = formData.username.toLowerCase().trim();
+      // Usernames can't contain @, so anything with one is an email address.
+      const { error: signInError } = login.includes('@')
+        ? await authClient.signIn.email({ email: login, password: formData.password })
+        : await authClient.signIn.username({ username: login, password: formData.password });
 
-      const json = await res.json();
-
-      if (!res.ok || !json.success) {
-        setError(json.error || 'Invalid credentials');
+      if (signInError) {
+        setError(friendlyAuthError(signInError, 'Invalid credentials'));
         setLoading(false);
         return;
       }
@@ -148,7 +145,7 @@ export default function LoginClient() {
                 value={formData.username}
                 onChange={handleChange}
                 disabled={loading}
-                placeholder="Enter your username"
+                placeholder="Username or email"
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                 required
               />

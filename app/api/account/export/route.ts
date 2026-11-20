@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { getShelfsByUserId, getItemsForUserShelves } from '@/lib/db/queries';
 import { createLogger } from '@/lib/utils/logger';
 import { AUTH_ERRORS } from '@/lib/constants/errors';
@@ -20,7 +20,7 @@ const logger = createLogger('AccountExport');
  */
 export async function GET() {
   try {
-    const session = await getSession();
+    const session = await getCurrentUser();
     if (!session || !session.userId) {
       return NextResponse.json(
         { success: false, error: AUTH_ERRORS.UNAUTHORIZED },

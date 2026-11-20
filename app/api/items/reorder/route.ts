@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { updateItemOrder, getShelfById, getItemsByShelfId } from '@/lib/db/queries';
 import { createLogger } from '@/lib/utils/logger';
 import { revalidateSharedShelf } from '@/lib/utils/revalidateShelf';
@@ -17,7 +17,7 @@ const MAX_REORDER_ITEMS = 500;
 export async function POST(request: Request) {
   try {
     // Check authentication
-    const session = await getSession();
+    const session = await getCurrentUser();
     if (!session || !session.userId) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },

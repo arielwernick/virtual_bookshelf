@@ -1,22 +1,26 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { createLogger } from '@/lib/utils/logger';
 
 const logger = createLogger('AuthMe');
 
+/**
+ * Who is signed in. Kept for the app's own pages (navigation, edit page,
+ * import flow); Better Auth's equivalent is /api/auth/get-session.
+ */
 export async function GET() {
   try {
-    const session = await getSession();
-    
-    if (!session) {
+    const user = await getCurrentUser();
+
+    if (!user) {
       return NextResponse.json({ authenticated: false });
     }
 
     return NextResponse.json({
       authenticated: true,
       data: {
-        userId: session.userId,
-        username: session.username,
+        userId: user.userId,
+        username: user.username,
       },
     });
   } catch (error) {

@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/utils/session', () => ({ getSession: vi.fn() }));
+vi.mock('@/lib/auth/session', () => ({ getCurrentUser: vi.fn() }));
 vi.mock('@/lib/db/queries', () => ({
   getShelfsByUserId: vi.fn(),
   getItemsForUserShelves: vi.fn(),
 }));
 
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { getShelfsByUserId, getItemsForUserShelves } from '@/lib/db/queries';
 import { GET } from './route';
 import { Item, Shelf } from '@/lib/types/shelf';
@@ -46,13 +46,13 @@ function createMockItem(overrides: Partial<Item> = {}): Item {
 
 describe('GET /api/account/export', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockReset();
+    vi.mocked(getCurrentUser).mockReset();
     vi.mocked(getShelfsByUserId).mockReset();
     vi.mocked(getItemsForUserShelves).mockReset();
   });
 
   it('answers 401 when signed out, without reading any data', async () => {
-    vi.mocked(getSession).mockResolvedValue(null);
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
 
     const res = await GET();
 
@@ -61,7 +61,7 @@ describe('GET /api/account/export', () => {
   });
 
   it('exports only the signed-in user\'s shelves, private ones included', async () => {
-    vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'u', email: 'e' } as never);
+    vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'u', email: 'e' } as never);
     vi.mocked(getShelfsByUserId).mockResolvedValue([
       createMockShelf(),
       createMockShelf({ id: 'shelf-2', name: 'Drafts', share_token: 'Pq7', is_public: false }),
@@ -84,7 +84,7 @@ describe('GET /api/account/export', () => {
   });
 
   it('is a download that is never cached', async () => {
-    vi.mocked(getSession).mockResolvedValue({ userId: 'user-1' } as never);
+    vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1' } as never);
     vi.mocked(getShelfsByUserId).mockResolvedValue([]);
     vi.mocked(getItemsForUserShelves).mockResolvedValue([]);
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { createShelf, createItem } from '@/lib/db/queries';
 import { detectItemType } from '@/lib/utils/itemTypeDetector';
 import { getDomain } from '@/lib/utils/urlResolver';
@@ -30,7 +30,7 @@ interface CreateShelfWithItemsRequest {
 export async function POST(request: Request) {
   try {
     // Require authentication
-    const session = await getSession();
+    const session = await getCurrentUser();
     if (!session || !session.userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - please log in first' },

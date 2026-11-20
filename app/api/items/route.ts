@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { createItem, getNextOrderIndex, getShelfById } from '@/lib/db/queries';
 import { validateItemType, validateText, validateUrl, validateNotes, validateRating } from '@/lib/utils/validation';
 import { CreateItemData } from '@/lib/types/shelf';
@@ -16,7 +16,7 @@ const logger = createLogger('ItemsCreate');
 export async function POST(request: Request) {
   try {
     // Check authentication
-    const session = await getSession();
+    const session = await getCurrentUser();
     if (!session || !session.userId) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },

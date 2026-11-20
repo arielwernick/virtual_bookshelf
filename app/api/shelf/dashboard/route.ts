@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { getShelvesForDashboard, getShelfViewsForOwner, touchUserLastSeen } from '@/lib/db/queries';
 import type { ShelfViewSummary } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
@@ -14,7 +14,7 @@ const logger = createLogger('ShelfDashboard');
 export async function GET(_request: Request) {
   try {
     // Check for valid session
-    const session = await getSession();
+    const session = await getCurrentUser();
     if (!session || !session.userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - please log in first' },

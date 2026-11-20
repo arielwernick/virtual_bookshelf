@@ -6,8 +6,8 @@ import { POST } from './route';
 import { createRequest, createMockShelf } from '@/test/utils/mocks';
 
 // Mock dependencies
-vi.mock('@/lib/utils/session', () => ({
-  getSession: vi.fn(),
+vi.mock('@/lib/auth/session', () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock('@/lib/db/queries', () => ({
@@ -17,12 +17,12 @@ vi.mock('@/lib/db/queries', () => ({
   getItemsByShelfId: vi.fn(),
 }));
 
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { getShelfById, createItem, getNextOrderIndex, getItemsByShelfId } from '@/lib/db/queries';
 
 describe('POST /api/items', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockReset();
+    vi.mocked(getCurrentUser).mockReset();
     vi.mocked(getShelfById).mockReset();
     vi.mocked(createItem).mockReset();
     vi.mocked(getNextOrderIndex).mockReset();
@@ -31,7 +31,7 @@ describe('POST /api/items', () => {
 
   describe('Authentication', () => {
     it('returns 401 when not authenticated', async () => {
-      vi.mocked(getSession).mockResolvedValue(null);
+      vi.mocked(getCurrentUser).mockResolvedValue(null);
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -49,7 +49,7 @@ describe('POST /api/items', () => {
     });
 
     it('returns 401 when session has no userId', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: '', username: 'test' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: '', username: 'test' });
 
       const req = createRequest({
         shelf_id: 'shelf-1',
@@ -66,7 +66,7 @@ describe('POST /api/items', () => {
 
   describe('Validation', () => {
     beforeEach(() => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
     });
 
     it('returns 400 when shelf_id is missing', async () => {
@@ -271,7 +271,7 @@ describe('POST /api/items', () => {
 
   describe('Authorization', () => {
     beforeEach(() => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
     });
 
     it('returns 404 when shelf not found', async () => {
@@ -311,7 +311,7 @@ describe('POST /api/items', () => {
 
   describe('Success Cases', () => {
     beforeEach(() => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
       vi.mocked(getNextOrderIndex).mockResolvedValue(0);
     });

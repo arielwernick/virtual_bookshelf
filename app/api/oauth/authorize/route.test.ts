@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/utils/session', () => ({ getSession: vi.fn() }));
+vi.mock('@/lib/auth/session', () => ({ getCurrentUser: vi.fn() }));
 vi.mock('@/lib/db/queries', () => ({
   createOAuthAuthorizationCode: vi.fn(),
   getOAuthClientByClientId: vi.fn(),
 }));
 
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { createOAuthAuthorizationCode, getOAuthClientByClientId } from '@/lib/db/queries';
 import { hashToken } from '@/lib/utils/oauth';
 import { POST } from './route';
@@ -23,7 +23,7 @@ const validFields = { client_id: 'client-1', redirect_uri: REDIRECT, code_challe
 
 describe('POST /api/oauth/authorize', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockReset().mockResolvedValue({ userId: 'user-1' } as never);
+    vi.mocked(getCurrentUser).mockReset().mockResolvedValue({ userId: 'user-1' } as never);
     vi.mocked(getOAuthClientByClientId).mockReset().mockResolvedValue({
       id: 'row-1',
       client_id: 'client-1',
@@ -35,7 +35,7 @@ describe('POST /api/oauth/authorize', () => {
   });
 
   it('answers 401 when signed out, and issues no code', async () => {
-    vi.mocked(getSession).mockResolvedValue(null);
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
 
     const res = await POST(authorizeRequest(validFields));
 

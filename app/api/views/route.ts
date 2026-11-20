@@ -1,5 +1,5 @@
 import { getShelfByShareToken, recordShelfView } from '@/lib/db/queries';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import {
   getViewRateLimiter,
   getClientIP,
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
 
     // Only logged-in visitors can be the owner, so anonymous views skip the
     // lookup; recordShelfView itself ignores private and unknown shelves.
-    const session = await getSession();
+    const session = await getCurrentUser();
     if (session?.userId) {
       const shelf = await getShelfByShareToken(shareToken);
       if (!shelf || !shelf.is_public || shelf.user_id === session.userId) {
