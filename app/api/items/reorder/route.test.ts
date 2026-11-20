@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/utils/session', () => ({ getSession: vi.fn() }));
+vi.mock('@/lib/auth/session', () => ({ getCurrentUser: vi.fn() }));
 vi.mock('@/lib/db/queries', () => ({
   updateItemOrder: vi.fn(),
   getShelfById: vi.fn(),
@@ -8,7 +8,7 @@ vi.mock('@/lib/db/queries', () => ({
 }));
 vi.mock('@/lib/utils/revalidateShelf', () => ({ revalidateSharedShelf: vi.fn() }));
 
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { updateItemOrder, getShelfById, getItemsByShelfId } from '@/lib/db/queries';
 import { POST } from './route';
 import { Item, Shelf } from '@/lib/types/shelf';
@@ -38,7 +38,7 @@ function reorderRequest(body: unknown) {
 
 describe('POST /api/items/reorder', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockReset().mockResolvedValue({ userId: 'user-1' } as never);
+    vi.mocked(getCurrentUser).mockReset().mockResolvedValue({ userId: 'user-1' } as never);
     vi.mocked(getShelfById).mockReset().mockResolvedValue(createMockShelf());
     vi.mocked(getItemsByShelfId).mockReset().mockResolvedValue([item('a'), item('b'), item('c')]);
     vi.mocked(updateItemOrder).mockReset().mockResolvedValue();
@@ -53,7 +53,7 @@ describe('POST /api/items/reorder', () => {
   });
 
   it('answers 401 when signed out', async () => {
-    vi.mocked(getSession).mockResolvedValue(null);
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
     expect((await POST(reorderRequest({ shelf_id: 'shelf-1', item_ids: [] }))).status).toBe(401);
   });
 

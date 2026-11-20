@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { resolveUrls } from '@/lib/utils/urlResolver';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { createLogger } from '@/lib/utils/logger';
 
 const logger = createLogger('ImportResolve');
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     // Check if user is authenticated (for logging purposes)
-    const session = await getSession();
+    const session = await getCurrentUser();
     const isAuthenticated = !!session;
 
     logger.info(`Resolving ${urls.length} URLs (authenticated: ${isAuthenticated})`);

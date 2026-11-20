@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { getItemById, updateItem, deleteItem, getShelfById } from '@/lib/db/queries';
 import { validateText, validateUrl, validateNotes, validateRating } from '@/lib/utils/validation';
 import { UpdateItemData } from '@/lib/types/shelf';
@@ -18,7 +18,7 @@ export async function PATCH(
 ) {
   try {
     // Check authentication
-    const session = await getSession();
+    const session = await getCurrentUser();
     if (!session || !session.userId) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },
@@ -162,7 +162,7 @@ export async function DELETE(
 ) {
   try {
     // Check authentication
-    const session = await getSession();
+    const session = await getCurrentUser();
     if (!session || !session.userId) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },

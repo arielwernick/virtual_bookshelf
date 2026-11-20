@@ -3,15 +3,15 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-vi.mock('./session', () => ({
-  getSession: vi.fn(),
+vi.mock('@/lib/auth/session', () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock('@/lib/db/queries', () => ({
   getUserById: vi.fn(),
 }));
 
-import { getSession } from './session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { getUserById } from '@/lib/db/queries';
 import { getAdminEmails, isAdminEmail, getAdminUser } from './admin';
 import { createMockUser } from '@/test/utils/mocks';
@@ -21,7 +21,7 @@ describe('admin access', () => {
 
   beforeEach(() => {
     process.env.ADMIN_EMAILS = ' Owner@Example.com, second@example.com ,';
-    vi.mocked(getSession).mockReset();
+    vi.mocked(getCurrentUser).mockReset();
     vi.mocked(getUserById).mockReset();
   });
 
@@ -59,21 +59,21 @@ describe('admin access', () => {
 
   describe('getAdminUser', () => {
     it('returns null without a session', async () => {
-      vi.mocked(getSession).mockResolvedValue(null);
+      vi.mocked(getCurrentUser).mockResolvedValue(null);
 
       expect(await getAdminUser()).toBeNull();
       expect(getUserById).not.toHaveBeenCalled();
     });
 
     it('returns null for a non-admin user', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'someone' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'someone' });
       vi.mocked(getUserById).mockResolvedValue(createMockUser({ email: 'someone@example.com' }));
 
       expect(await getAdminUser()).toBeNull();
     });
 
     it('checks the database email, not the session email', async () => {
-      vi.mocked(getSession).mockResolvedValue({
+      vi.mocked(getCurrentUser).mockResolvedValue({
         userId: 'user-1',
         username: 'someone',
         email: 'owner@example.com',
@@ -85,14 +85,14 @@ describe('admin access', () => {
 
     it('returns the user when their email is an admin email', async () => {
       const owner = createMockUser({ email: 'owner@example.com' });
-      vi.mocked(getSession).mockResolvedValue({ userId: owner.id, username: owner.username });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: owner.id, username: owner.username });
       vi.mocked(getUserById).mockResolvedValue(owner);
 
       expect(await getAdminUser()).toEqual(owner);
     });
 
     it('returns null when the session user no longer exists', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'deleted', username: null });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'deleted', username: null });
       vi.mocked(getUserById).mockResolvedValue(null);
 
       expect(await getAdminUser()).toBeNull();

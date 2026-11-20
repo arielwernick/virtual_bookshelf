@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/utils/session', () => ({ getSession: vi.fn() }));
+vi.mock('@/lib/auth/session', () => ({ getCurrentUser: vi.fn() }));
 vi.mock('@/lib/db/client', () => ({ sql: vi.fn() }));
 vi.mock('@/lib/db/queries', () => ({ createItem: vi.fn() }));
 vi.mock('@/lib/utils/revalidateShelf', () => ({ revalidateSharedShelf: vi.fn() }));
@@ -13,7 +13,7 @@ vi.mock('@/lib/api/microlink', async (importOriginal) => ({
   fetchLinkMetadata: vi.fn(),
 }));
 
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { sql } from '@/lib/db/client';
 import { createItem } from '@/lib/db/queries';
 import { getVideoDetails } from '@/lib/api/youtube';
@@ -39,7 +39,7 @@ const savedItem = () => vi.mocked(createItem).mock.calls[0][1];
 
 describe('POST /api/items/from-url', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockReset().mockResolvedValue({ userId: 'user-1' } as never);
+    vi.mocked(getCurrentUser).mockReset().mockResolvedValue({ userId: 'user-1' } as never);
     vi.mocked(sql).mockReset();
     vi.mocked(createItem).mockReset().mockResolvedValue({ id: 'item-1', title: 'T' } as never);
     vi.mocked(getVideoDetails).mockReset();
@@ -47,7 +47,7 @@ describe('POST /api/items/from-url', () => {
   });
 
   it('answers 401 when signed out, before touching the database', async () => {
-    vi.mocked(getSession).mockResolvedValue(null);
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
 
     const res = await POST(fromUrlRequest({ url: 'https://example.com', shelf_id: 'shelf-1' }));
 

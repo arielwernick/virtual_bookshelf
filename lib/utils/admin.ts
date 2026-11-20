@@ -1,4 +1,4 @@
-import { getSession } from './session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { getUserById } from '@/lib/db/queries';
 import type { User } from '@/lib/types/shelf';
 
@@ -22,7 +22,7 @@ export function isAdminEmail(email: string | null | undefined): boolean {
  * Checks the email stored in the database rather than trusting the session.
  */
 export async function getAdminUser(): Promise<User | null> {
-  const session = await getSession();
+  const session = await getCurrentUser();
   if (!session?.userId) return null;
 
   const user = await getUserById(session.userId);

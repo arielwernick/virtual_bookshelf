@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/utils/session', () => ({ getSession: vi.fn() }));
+vi.mock('@/lib/auth/session', () => ({ getCurrentUser: vi.fn() }));
 vi.mock('@/lib/db/queries', () => ({ createShelf: vi.fn(), createItem: vi.fn() }));
 
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { createShelf, createItem } from '@/lib/db/queries';
 import { POST } from './route';
 import { Shelf } from '@/lib/types/shelf';
@@ -37,13 +37,13 @@ const item = (overrides: Record<string, unknown> = {}) => ({
 
 describe('POST /api/import/create', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockReset().mockResolvedValue({ userId: 'user-1' } as never);
+    vi.mocked(getCurrentUser).mockReset().mockResolvedValue({ userId: 'user-1' } as never);
     vi.mocked(createShelf).mockReset().mockResolvedValue(createMockShelf());
     vi.mocked(createItem).mockReset().mockResolvedValue({ id: 'item-1' } as never);
   });
 
   it('answers 401 when signed out, and creates nothing', async () => {
-    vi.mocked(getSession).mockResolvedValue(null);
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
 
     const res = await POST(importRequest({ title: 'Reading list', items: [item()] }));
 

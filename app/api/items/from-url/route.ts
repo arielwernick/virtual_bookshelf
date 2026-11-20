@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { extractVideoId, getVideoDetails } from '@/lib/api/youtube';
 import { fetchLinkMetadata, isYouTubeUrl, MicrolinkQuotaExceededError } from '@/lib/api/microlink';
 import { sql } from '@/lib/db/client';
@@ -19,7 +19,7 @@ export const runtime = 'edge';
 export async function POST(request: Request) {
   try {
     // Check authentication
-    const session = await getSession();
+    const session = await getCurrentUser();
     if (!session) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },

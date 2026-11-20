@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { updateUserDescription } from '@/lib/db/queries';
 import { createLogger } from '@/lib/utils/logger';
 
@@ -9,7 +9,7 @@ const MAX_DESCRIPTION_LENGTH = 500;
 export async function POST(request: Request) {
   try {
     // Check authentication
-    const session = await getSession();
+    const session = await getCurrentUser();
     if (!session) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },

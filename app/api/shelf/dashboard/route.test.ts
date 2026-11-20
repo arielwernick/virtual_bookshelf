@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/utils/session', () => ({ getSession: vi.fn() }));
+vi.mock('@/lib/auth/session', () => ({ getCurrentUser: vi.fn() }));
 vi.mock('@/lib/db/queries', () => ({
   getShelvesForDashboard: vi.fn(),
   getShelfViewsForOwner: vi.fn(),
   touchUserLastSeen: vi.fn(),
 }));
 
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { getShelvesForDashboard, getShelfViewsForOwner, touchUserLastSeen } from '@/lib/db/queries';
 import { GET } from './route';
 import type { DashboardShelf } from '@/lib/types/shelf';
@@ -33,14 +33,14 @@ const views = { views_7d: 14, views_total: 40, top_embed_host: 'yoursite.com', t
 
 describe('GET /api/shelf/dashboard', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockReset().mockResolvedValue({ userId: 'user-1', username: 'u', email: 'e' } as never);
+    vi.mocked(getCurrentUser).mockReset().mockResolvedValue({ userId: 'user-1', username: 'u', email: 'e' } as never);
     vi.mocked(getShelvesForDashboard).mockReset().mockResolvedValue([createMockDashboardShelf()]);
     vi.mocked(getShelfViewsForOwner).mockReset().mockResolvedValue(new Map([['shelf-1', views]]));
     vi.mocked(touchUserLastSeen).mockReset().mockResolvedValue();
   });
 
   it('answers 401 when signed out', async () => {
-    vi.mocked(getSession).mockResolvedValue(null);
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
     expect((await GET(request)).status).toBe(401);
   });
 

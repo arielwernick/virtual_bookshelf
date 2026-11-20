@@ -6,8 +6,8 @@ import { GET, PATCH, DELETE } from './route';
 import { createMockRequest, createParams, createMockShelf, createMockItem } from '@/test/utils/mocks';
 
 // Mock dependencies
-vi.mock('@/lib/utils/session', () => ({
-  getSession: vi.fn(),
+vi.mock('@/lib/auth/session', () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock('@/lib/db/queries', () => ({
@@ -17,7 +17,7 @@ vi.mock('@/lib/db/queries', () => ({
   deleteShelf: vi.fn(),
 }));
 
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { getShelfById, getItemsByShelfId, updateShelf, deleteShelf } from '@/lib/db/queries';
 
 // Helper to create a mock request
@@ -27,14 +27,14 @@ function createRequest(method: string, body?: object): Request {
 
 describe('PATCH /api/shelf/[shelfId]', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockReset();
+    vi.mocked(getCurrentUser).mockReset();
     vi.mocked(getShelfById).mockReset();
     vi.mocked(updateShelf).mockReset();
   });
 
   describe('Authentication', () => {
     it('returns 401 when not authenticated', async () => {
-      vi.mocked(getSession).mockResolvedValue(null);
+      vi.mocked(getCurrentUser).mockResolvedValue(null);
 
       const req = createRequest('PATCH', { name: 'New Name' });
       const res = await PATCH(req, createParams());
@@ -46,7 +46,7 @@ describe('PATCH /api/shelf/[shelfId]', () => {
     });
 
     it('returns 401 when session has no userId', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: '', username: 'test' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: '', username: 'test' });
 
       const req = createRequest('PATCH', { name: 'New Name' });
       const res = await PATCH(req, createParams());
@@ -57,7 +57,7 @@ describe('PATCH /api/shelf/[shelfId]', () => {
 
   describe('Authorization - Ownership Validation', () => {
     beforeEach(() => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
     });
 
     it('returns 404 when shelf not found', async () => {
@@ -87,7 +87,7 @@ describe('PATCH /api/shelf/[shelfId]', () => {
         user_id: 'owner-user',
         is_public: true 
       }));
-      vi.mocked(getSession).mockResolvedValue({ userId: 'attacker-user', username: 'attacker' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'attacker-user', username: 'attacker' });
 
       const req = createRequest('PATCH', { is_public: false });
       const res = await PATCH(req, createParams());
@@ -103,7 +103,7 @@ describe('PATCH /api/shelf/[shelfId]', () => {
         user_id: 'owner-user',
         is_public: false 
       }));
-      vi.mocked(getSession).mockResolvedValue({ userId: 'attacker-user', username: 'attacker' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'attacker-user', username: 'attacker' });
 
       const req = createRequest('PATCH', { is_public: true });
       const res = await PATCH(req, createParams());
@@ -116,7 +116,7 @@ describe('PATCH /api/shelf/[shelfId]', () => {
 
     it('prevents non-owner from changing shelf name', async () => {
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf({ user_id: 'owner-user' }));
-      vi.mocked(getSession).mockResolvedValue({ userId: 'attacker-user', username: 'attacker' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'attacker-user', username: 'attacker' });
 
       const req = createRequest('PATCH', { name: 'Malicious Name' });
       const res = await PATCH(req, createParams());
@@ -129,7 +129,7 @@ describe('PATCH /api/shelf/[shelfId]', () => {
 
     it('prevents non-owner from changing shelf description', async () => {
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf({ user_id: 'owner-user' }));
-      vi.mocked(getSession).mockResolvedValue({ userId: 'attacker-user', username: 'attacker' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'attacker-user', username: 'attacker' });
 
       const req = createRequest('PATCH', { description: 'Spam description' });
       const res = await PATCH(req, createParams());
@@ -143,7 +143,7 @@ describe('PATCH /api/shelf/[shelfId]', () => {
 
   describe('Validation', () => {
     beforeEach(() => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
     });
 
@@ -186,7 +186,7 @@ describe('PATCH /api/shelf/[shelfId]', () => {
 
   describe('Success Cases', () => {
     beforeEach(() => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
     });
 
@@ -236,14 +236,14 @@ describe('PATCH /api/shelf/[shelfId]', () => {
 
 describe('DELETE /api/shelf/[shelfId]', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockReset();
+    vi.mocked(getCurrentUser).mockReset();
     vi.mocked(getShelfById).mockReset();
     vi.mocked(deleteShelf).mockReset();
   });
 
   describe('Authorization - Ownership Validation', () => {
     it('returns 401 when not authenticated', async () => {
-      vi.mocked(getSession).mockResolvedValue(null);
+      vi.mocked(getCurrentUser).mockResolvedValue(null);
 
       const req = createRequest('DELETE');
       const res = await DELETE(req, createParams());
@@ -254,7 +254,7 @@ describe('DELETE /api/shelf/[shelfId]', () => {
     });
 
     it('returns 403 when user does not own the shelf', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf({ user_id: 'different-user' }));
 
       const req = createRequest('DELETE');
@@ -267,7 +267,7 @@ describe('DELETE /api/shelf/[shelfId]', () => {
     });
 
     it('allows owner to delete their own shelf', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
       vi.mocked(deleteShelf).mockResolvedValue(true);
 
@@ -284,14 +284,14 @@ describe('DELETE /api/shelf/[shelfId]', () => {
 
 describe('GET /api/shelf/[shelfId]', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockReset();
+    vi.mocked(getCurrentUser).mockReset();
     vi.mocked(getShelfById).mockReset();
     vi.mocked(getItemsByShelfId).mockReset();
   });
 
   describe('Authorization - Read Access', () => {
     it('allows owner to read their own shelf', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf());
       vi.mocked(getItemsByShelfId).mockResolvedValue([]);
 
@@ -304,7 +304,7 @@ describe('GET /api/shelf/[shelfId]', () => {
     });
 
     it('allows anyone to read public shelf', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'different-user', username: 'other' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'different-user', username: 'other' });
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf({ 
         user_id: 'owner-user',
         is_public: true 
@@ -320,7 +320,7 @@ describe('GET /api/shelf/[shelfId]', () => {
     });
 
     it('tells the owner they are the owner, and gives them the full rows', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf({ is_public: true }));
       vi.mocked(getItemsByShelfId).mockResolvedValue([createMockItem()]);
 
@@ -336,7 +336,7 @@ describe('GET /api/shelf/[shelfId]', () => {
       ['a signed-in visitor', { userId: 'different-user', username: 'other' }],
       ['a signed-out visitor', null],
     ])('never sends the owner id to %s of a public shelf', async (_name, session) => {
-      vi.mocked(getSession).mockResolvedValue(session as never);
+      vi.mocked(getCurrentUser).mockResolvedValue(session as never);
       vi.mocked(getShelfById).mockResolvedValue(
         createMockShelf({ user_id: 'owner-user', is_public: true })
       );
@@ -357,7 +357,7 @@ describe('GET /api/shelf/[shelfId]', () => {
     });
 
     it('does not call a signed-out visitor the owner of a shelf with no owner id', async () => {
-      vi.mocked(getSession).mockResolvedValue(null);
+      vi.mocked(getCurrentUser).mockResolvedValue(null);
       vi.mocked(getShelfById).mockResolvedValue(
         createMockShelf({ user_id: undefined as unknown as string, is_public: true })
       );
@@ -369,7 +369,7 @@ describe('GET /api/shelf/[shelfId]', () => {
     });
 
     it('prevents non-owner from reading private shelf', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'different-user', username: 'other' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'different-user', username: 'other' });
       vi.mocked(getShelfById).mockResolvedValue(createMockShelf({ 
         user_id: 'owner-user',
         is_public: false 

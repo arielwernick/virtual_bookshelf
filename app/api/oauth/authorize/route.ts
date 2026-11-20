@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import {
   createOAuthAuthorizationCode,
   getOAuthClientByClientId,
@@ -23,7 +23,7 @@ const logger = createLogger('OAuthAuthorize');
  */
 export async function POST(request: Request) {
   try {
-    const session = await getSession();
+    const session = await getCurrentUser();
     if (!session || !session.userId) {
       return NextResponse.json(
         { success: false, error: AUTH_ERRORS.NOT_AUTHENTICATED },

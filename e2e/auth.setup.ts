@@ -30,7 +30,7 @@ setup('authenticate and seed', async ({ request, baseURL }) => {
     { action: 'e2e seeding', allowVar: 'E2E_ALLOW_PROD' }
   );
 
-  await authenticate(request);
+  await authenticate(request, baseURL);
   const seed = await ensureSeededShelf(request);
 
   await mkdir(path.dirname(STORAGE_STATE), { recursive: true });

@@ -10,8 +10,8 @@ vi.mock('@/lib/db/queries', () => ({
   recordShelfView: vi.fn(),
 }));
 
-vi.mock('@/lib/utils/session', () => ({
-  getSession: vi.fn(),
+vi.mock('@/lib/auth/session', () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock('@/lib/utils/rateLimit', () => ({
@@ -22,7 +22,7 @@ vi.mock('@/lib/utils/rateLimit', () => ({
 }));
 
 import { getShelfByShareToken, recordShelfView } from '@/lib/db/queries';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { isRateLimitingEnabled, checkRateLimit, getClientIP } from '@/lib/utils/rateLimit';
 
 const BROWSER_UA =
@@ -52,7 +52,7 @@ describe('POST /api/views', () => {
   beforeEach(() => {
     vi.mocked(getShelfByShareToken).mockReset();
     vi.mocked(recordShelfView).mockReset().mockResolvedValue();
-    vi.mocked(getSession).mockReset().mockResolvedValue(null);
+    vi.mocked(getCurrentUser).mockReset().mockResolvedValue(null);
     vi.mocked(isRateLimitingEnabled).mockReset().mockReturnValue(false);
     vi.mocked(checkRateLimit).mockReset().mockResolvedValue({ success: true });
   });
@@ -78,7 +78,7 @@ describe('POST /api/views', () => {
     });
 
     it('records a logged-in view of someone else’s public shelf', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'visitor', username: 'visitor' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'visitor', username: 'visitor' });
       vi.mocked(getShelfByShareToken).mockResolvedValue(
         createMockShelf({ user_id: 'owner', is_public: true })
       );
@@ -141,7 +141,7 @@ describe('POST /api/views', () => {
     });
 
     it('ignores views by the shelf owner', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'owner', username: 'owner' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'owner', username: 'owner' });
       vi.mocked(getShelfByShareToken).mockResolvedValue(
         createMockShelf({ user_id: 'owner', is_public: true })
       );
@@ -152,7 +152,7 @@ describe('POST /api/views', () => {
     });
 
     it('ignores private shelves for logged-in visitors', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'visitor', username: 'visitor' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'visitor', username: 'visitor' });
       vi.mocked(getShelfByShareToken).mockResolvedValue(
         createMockShelf({ user_id: 'owner', is_public: false })
       );
@@ -163,7 +163,7 @@ describe('POST /api/views', () => {
     });
 
     it('ignores unknown shelves for logged-in visitors', async () => {
-      vi.mocked(getSession).mockResolvedValue({ userId: 'visitor', username: 'visitor' });
+      vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'visitor', username: 'visitor' });
       vi.mocked(getShelfByShareToken).mockResolvedValue(null);
 
       await postView({ shareToken: 'tok12345', surface: 'shelf' });

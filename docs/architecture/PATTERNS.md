@@ -28,7 +28,7 @@ Every API route handler should follow this structure:
 ```typescript
 // app/api/[resource]/route.ts
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { createLogger } from '@/lib/utils/logger';
 import { validateInput } from '@/lib/utils/validation';
 
@@ -37,7 +37,7 @@ const logger = createLogger('ResourceName');
 export async function POST(request: Request) {
   try {
     // 1. AUTHENTICATION (if required)
-    const session = await getSession();
+    const session = await getCurrentUser();
     if (!session?.userId) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { getShelfById, getItemsByShelfId, updateShelf, deleteShelf } from '@/lib/db/queries';
 import type { Shelf } from '@/lib/types/shelf';
 import { createLogger } from '@/lib/utils/logger';
@@ -19,7 +19,7 @@ export async function GET(
 ) {
     try {
         const { shelfId } = await params;
-        const session = await getSession();
+        const session = await getCurrentUser();
 
         // Get shelf
         const shelf = await getShelfById(shelfId);
@@ -79,7 +79,7 @@ export async function PATCH(
     { params }: { params: Promise<{ shelfId: string }> }
 ) {
     try {
-        const session = await getSession();
+        const session = await getCurrentUser();
         if (!session || !session.userId) {
             return NextResponse.json(
                 { success: false, error: 'Not authenticated' },
@@ -194,7 +194,7 @@ export async function DELETE(
     { params }: { params: Promise<{ shelfId: string }> }
 ) {
     try {
-        const session = await getSession();
+        const session = await getCurrentUser();
         if (!session || !session.userId) {
             return NextResponse.json(
                 { success: false, error: 'Not authenticated' },

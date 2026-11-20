@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { updateUserTitle } from '@/lib/db/queries';
 import { createLogger } from '@/lib/utils/logger';
 
@@ -9,7 +9,7 @@ const MAX_TITLE_LENGTH = 100;
 export async function PATCH(request: Request) {
     try {
         // Check authentication
-        const session = await getSession();
+        const session = await getCurrentUser();
         if (!session) {
             return NextResponse.json(
                 { success: false, error: 'Not authenticated' },

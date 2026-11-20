@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { GoogleIcon } from '@/components/ui/GoogleIcon';
+import { authClient, friendlyAuthError } from '@/lib/auth/client';
 
 export default function SignupClient() {
   const router = useRouter();
@@ -37,19 +38,20 @@ export default function SignupClient() {
     return '/dashboard';
   };
 
-  const handleGoogleSignUp = () => {
+  const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
     setError('');
 
-    // Include returnTo in Google OAuth flow
-    let googleAuthUrl = '/api/auth/google';
-    if (returnTo) {
-      const encodedReturnTo = encodeURIComponent(returnTo);
-      googleAuthUrl += `?returnTo=${encodedReturnTo}`;
+    // Same flow as sign-in: Better Auth creates the account on first use.
+    const { error: googleError } = await authClient.signIn.social({
+      provider: 'google',
+      callbackURL: getValidatedReturnUrl(returnTo),
+      errorCallbackURL: '/signup',
+    });
+    if (googleError) {
+      setError(friendlyAuthError(googleError, 'Could not start Google sign-up'));
+      setGoogleLoading(false);
     }
-
-    // Redirect to Google OAuth flow (same endpoint - it handles both login and signup)
-    window.location.href = googleAuthUrl;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,20 +105,17 @@ export default function SignupClient() {
     }
 
     try {
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: formData.username.toLowerCase().trim(),
-          email: formData.email.toLowerCase().trim(),
-          password: formData.password,
-        }),
+      const { error: signUpError } = await authClient.signUp.email({
+        username: formData.username.toLowerCase().trim(),
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+        // Better Auth requires a name. The form doesn't ask for one, and
+        // display names stay private for now.
+        name: '',
       });
 
-      const json = await res.json();
-
-      if (!res.ok || !json.success) {
-        setError(json.error || 'Failed to create account');
+      if (signUpError) {
+        setError(friendlyAuthError(signUpError, 'Failed to create account'));
         setLoading(false);
         return;
       }

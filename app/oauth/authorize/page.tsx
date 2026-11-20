@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { getOAuthClientByClientId } from '@/lib/db/queries';
 import { OAUTH_SCOPE } from '@/lib/utils/oauth';
 
@@ -79,7 +79,7 @@ export default async function AuthorizePage({
     errorRedirect('invalid_request');
   }
 
-  const session = await getSession();
+  const session = await getCurrentUser();
   if (!session || !session.userId) {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined) as [string, string][]

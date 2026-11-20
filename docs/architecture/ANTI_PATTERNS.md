@@ -640,7 +640,7 @@ catch (error) {
 ```typescript
 // ❌ BAD: Only checks authentication
 export async function DELETE(request: Request) {
-  const session = await getSession();
+  const session = await getCurrentUser();
   if (!session) return unauthorized();
   
   const { itemId } = await request.json();
@@ -653,7 +653,7 @@ export async function DELETE(request: Request) {
 ```typescript
 // ✅ GOOD: Checks both auth and authorization
 export async function DELETE(request: Request) {
-  const session = await getSession();
+  const session = await getCurrentUser();
   if (!session) return unauthorized();
   
   const { itemId } = await request.json();

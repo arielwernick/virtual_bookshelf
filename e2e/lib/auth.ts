@@ -35,23 +35,23 @@ export type SeedState = { shelfId: string; shareToken: string | null };
 
 /**
  * Ensure the test user exists and is authenticated on `request`.
- * Idempotent: signup first, fall back to login if the account already exists.
+ * Idempotent: log in first, sign up if the account doesn't exist yet.
+ * Better Auth checks the Origin header, so it is sent explicitly.
  */
-export async function authenticate(request: APIRequestContext): Promise<void> {
-  const signup = await request.post('/api/auth/signup', { data: TEST_USER });
+export async function authenticate(request: APIRequestContext, baseURL?: string): Promise<void> {
+  const headers = baseURL ? { Origin: new URL(baseURL).origin } : undefined;
 
-  if (signup.ok()) return;
-
-  // 409 = already registered; anything else is unexpected.
-  expect(
-    signup.status(),
-    `Unexpected signup failure: ${signup.status()} ${await signup.text()}`,
-  ).toBe(409);
-
-  const login = await request.post('/api/auth/login', {
+  const login = await request.post('/api/auth/sign-in/username', {
     data: { username: TEST_USER.username, password: TEST_USER.password },
+    headers,
   });
-  expect(login.ok(), `Login failed: ${login.status()} ${await login.text()}`).toBeTruthy();
+  if (login.ok()) return;
+
+  const signup = await request.post('/api/auth/sign-up/email', {
+    data: { ...TEST_USER, name: '' },
+    headers,
+  });
+  expect(signup.ok(), `Signup failed: ${signup.status()} ${await signup.text()}`).toBeTruthy();
 }
 
 /**

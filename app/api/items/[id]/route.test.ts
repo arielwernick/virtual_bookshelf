@@ -5,8 +5,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PATCH } from './route';
 import { createMockItem, createMockShelf, createMockRequest, createMockParams } from '@/test/utils/mocks';
 
-vi.mock('@/lib/utils/session', () => ({
-  getSession: vi.fn(),
+vi.mock('@/lib/auth/session', () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 vi.mock('@/lib/db/queries', () => ({
@@ -16,7 +16,7 @@ vi.mock('@/lib/db/queries', () => ({
   getShelfById: vi.fn(),
 }));
 
-import { getSession } from '@/lib/utils/session';
+import { getCurrentUser } from '@/lib/auth/session';
 import { getItemById, updateItem, getShelfById } from '@/lib/db/queries';
 
 function createPatchRequest(body?: object): Request {
@@ -25,14 +25,14 @@ function createPatchRequest(body?: object): Request {
 
 describe('PATCH /api/items/[id]', () => {
   beforeEach(() => {
-    vi.mocked(getSession).mockReset();
+    vi.mocked(getCurrentUser).mockReset();
     vi.mocked(getItemById).mockReset();
     vi.mocked(updateItem).mockReset();
     vi.mocked(getShelfById).mockReset();
   });
 
   it('returns 400 when no fields are provided', async () => {
-    vi.mocked(getSession).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
+    vi.mocked(getCurrentUser).mockResolvedValue({ userId: 'user-1', username: 'testuser' });
     vi.mocked(getItemById).mockResolvedValue(createMockItem());
     vi.mocked(getShelfById).mockResolvedValue(createMockShelf({ user_id: 'user-1' }));
 
