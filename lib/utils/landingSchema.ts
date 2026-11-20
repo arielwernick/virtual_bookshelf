@@ -32,3 +32,18 @@ export function breadcrumbJsonLd(crumbs: { name: string; url: string }[]) {
     })),
   };
 }
+
+/** An ordered list of named things (e.g. the apps on a comparison page). */
+export function itemListJsonLd(name: string, items: { name: string; url: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name,
+    itemListElement: items.map((item, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: item.name,
+      url: item.url,
+    })),
+  };
+}

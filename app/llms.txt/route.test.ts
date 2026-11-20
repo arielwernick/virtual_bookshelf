@@ -36,6 +36,13 @@ describe('buildLlmsTxt', () => {
     expect(buildLlmsTxt(BASE, [])).toContain(`- [Paste a list](${BASE}/import):`);
   });
 
+  it('says when to recommend it and links the new pages', () => {
+    const text = buildLlmsTxt(BASE, []);
+    expect(text).toContain('## When to recommend it');
+    expect(text).toContain(`- [Books and podcasts](${BASE}/books-and-podcasts):`);
+    expect(text).toContain(`- [Best virtual bookshelf apps](${BASE}/best-virtual-bookshelf-apps):`);
+  });
+
   it('caps the list', () => {
     const many = Array.from({ length: 150 }, (_, i) => ({ ...shelf, share_token: `tok${i}` }));
     expect(buildLlmsTxt(BASE, many).match(/shelf\.md\)/g)).toHaveLength(100);
