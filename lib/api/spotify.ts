@@ -196,6 +196,40 @@ export async function searchPodcasts(query: string): Promise<SpotifyItem[]> {
 }
 
 /**
+ * Look up one podcast show by id. Used for pasted show links, whose page
+ * metadata describes the latest episode rather than the show itself.
+ */
+export async function getShow(showId: string): Promise<SpotifyItem | null> {
+  if (isMockMode()) return MOCK_PODCASTS.find((show) => show.id === showId) ?? null;
+
+  const token = await getAccessToken();
+
+  const response = await fetch(
+    `https://api.spotify.com/v1/shows/${encodeURIComponent(showId)}?market=US`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error('Failed to fetch Spotify show');
+  }
+
+  const show: SpotifySearchResult = await response.json();
+  return {
+    id: show.id,
+    title: show.name,
+    creator: show.publisher || 'Unknown Publisher',
+    imageUrl: show.images?.[0]?.url || '',
+    externalUrl: show.external_urls.spotify,
+    type: 'podcast' as const,
+  };
+}
+
+/**
  * Get episodes for a specific podcast show
  */
 export async function getShowEpisodes(

@@ -85,7 +85,7 @@ describe('ImportFlow', () => {
       mockFetch({ authenticated: false });
       renderComponent({ variant: 'page' });
 
-      expect(await screen.findByLabelText('Shelf name')).toHaveValue('Old list');
+      expect(await screen.findByRole('heading', { name: 'Old list' })).toBeInTheDocument();
     });
   });
 
@@ -99,8 +99,9 @@ describe('ImportFlow', () => {
       });
       fireEvent.click(screen.getByRole('button', { name: 'Preview my shelf' }));
 
-      expect(await screen.findByText('Fetched title')).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: 'View details for Fetched title' })).toBeInTheDocument();
 
+      fireEvent.click(screen.getByRole('button', { name: 'Edit shelf' }));
       fireEvent.change(screen.getByLabelText('Shelf name'), { target: { value: 'My list' } });
       fireEvent.click(screen.getByRole('button', { name: 'Sign up to save this shelf' }));
 
@@ -118,13 +119,13 @@ describe('ImportFlow', () => {
       renderComponent();
       fireEvent.change(screen.getByLabelText('Paste text with links'), { target: { value } });
       fireEvent.click(screen.getByRole('button', { name: 'Preview my shelf' }));
-      await screen.findByText('Fetched title');
+      await screen.findByRole('button', { name: 'View details for Fetched title' });
     }
 
     it('starts with a name, so the shelf can be saved without typing', async () => {
       await previewPastedText('Example article\nhttps://example.com/a');
 
-      expect(screen.getByLabelText('Shelf name')).toHaveValue('My shelf');
+      expect(screen.getByRole('heading', { name: 'My shelf' })).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Sign up to save this shelf' }));
 
       expect(push).toHaveBeenCalledWith('/signup?returnTo=%2Fimport');
@@ -134,6 +135,7 @@ describe('ImportFlow', () => {
     it('still asks for a name when the visitor clears it', async () => {
       await previewPastedText('Example article\nhttps://example.com/a');
 
+      fireEvent.click(screen.getByRole('button', { name: 'Edit shelf' }));
       fireEvent.change(screen.getByLabelText('Shelf name'), { target: { value: '' } });
 
       expect(screen.getByRole('button', { name: 'Sign up to save this shelf' })).toBeDisabled();
@@ -153,6 +155,50 @@ describe('ImportFlow', () => {
       });
     }
 
+    async function startEditing() {
+      fireEvent.click(await screen.findByRole('button', { name: 'Edit shelf' }));
+    }
+
+    it('opens as a read-only shelf with an Edit button', async () => {
+      savedPreview();
+      mockFetch({ authenticated: false });
+      renderComponent({ variant: 'page' });
+
+      expect(await screen.findByRole('heading', { name: 'My list' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'View details for First article' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Remove First article' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Edit First article' })).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Shelf name')).not.toBeInTheDocument();
+      expect(screen.queryByText('Add a note')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Sign up to save this shelf' })).toBeEnabled();
+    });
+
+    it('opens an item window when an item is clicked, like a saved shelf', async () => {
+      savedPreview();
+      mockFetch({ authenticated: false });
+      renderComponent({ variant: 'page' });
+
+      fireEvent.click(await screen.findByRole('button', { name: 'View details for First article' }));
+
+      expect(await screen.findByRole('dialog')).toHaveTextContent('First article');
+    });
+
+    it('switches to edit mode and back', async () => {
+      savedPreview();
+      mockFetch({ authenticated: false });
+      renderComponent({ variant: 'page' });
+
+      await startEditing();
+      expect(screen.getByLabelText('Shelf name')).toHaveValue('My list');
+      expect(screen.getByRole('button', { name: 'Remove First article' })).toBeInTheDocument();
+
+      fireEvent.change(screen.getByLabelText('Shelf name'), { target: { value: 'Renamed' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+
+      expect(screen.getByRole('heading', { name: 'Renamed' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Remove First article' })).not.toBeInTheDocument();
+    });
+
     it('loads the example list into the paste box', async () => {
       mockFetch();
       renderComponent({ variant: 'embedded' });
@@ -168,7 +214,8 @@ describe('ImportFlow', () => {
       const fetchMock = mockFetch({ authenticated: true });
       renderComponent({ variant: 'page' });
 
-      fireEvent.click(await screen.findByRole('button', { name: 'Remove Second article' }));
+      await startEditing();
+      fireEvent.click(screen.getByRole('button', { name: 'Remove Second article' }));
 
       expect(screen.getByText('Left off the shelf')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Put Second article back' })).toBeInTheDocument();
@@ -188,7 +235,8 @@ describe('ImportFlow', () => {
       mockFetch({ authenticated: false });
       renderComponent({ variant: 'page' });
 
-      fireEvent.click(await screen.findByRole('button', { name: 'Remove Second article' }));
+      await startEditing();
+      fireEvent.click(screen.getByRole('button', { name: 'Remove Second article' }));
       fireEvent.click(screen.getByRole('button', { name: 'Put Second article back' }));
 
       expect(screen.queryByText('Left off the shelf')).not.toBeInTheDocument();
@@ -200,7 +248,8 @@ describe('ImportFlow', () => {
       const fetchMock = mockFetch({ authenticated: true });
       renderComponent({ variant: 'page' });
 
-      fireEvent.click(await screen.findByRole('button', { name: 'Edit First article' }));
+      await startEditing();
+      fireEvent.click(screen.getByRole('button', { name: 'Edit First article' }));
       fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'My own title' } });
       fireEvent.change(screen.getByLabelText("Why it's on your shelf"), {
         target: { value: 'Changed how I work.' },
@@ -225,7 +274,8 @@ describe('ImportFlow', () => {
       mockFetch({ authenticated: false });
       renderComponent({ variant: 'page' });
 
-      fireEvent.click(await screen.findByRole('button', { name: 'Remove Example article' }));
+      await startEditing();
+      fireEvent.click(screen.getByRole('button', { name: 'Remove Example article' }));
 
       expect(screen.getByText('Your shelf is empty.')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Sign up to save this shelf' })).toBeDisabled();

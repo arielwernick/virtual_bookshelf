@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { fetchLinkMetadata, MicrolinkQuotaExceededError, MicrolinkData, isYouTubeUrl } from '@/lib/api/microlink';
 import { extractVideoId, getVideoDetails } from '@/lib/api/youtube';
+import { getShow } from '@/lib/api/spotify';
+import { getGoogleBooksCoverUrl, getSpotifyShowId } from '@/lib/utils/importLinks';
 import { createLogger } from '@/lib/utils/logger';
 
 const logger = createLogger('ImportMetadata');
@@ -12,7 +14,35 @@ interface MetadataResult {
   url: string;
   metadata?: MicrolinkData;
   error?: string;
-  source?: 'youtube' | 'microlink';
+  source?: 'youtube' | 'spotify' | 'microlink';
+}
+
+/**
+ * Fetch metadata for a Spotify show from the Spotify API. Microlink reads the
+ * show page as its latest episode (that episode's title and art), so shows
+ * need the API to come out right.
+ */
+async function fetchSpotifyShowMetadata(url: string): Promise<MicrolinkData | null> {
+  const showId = getSpotifyShowId(url);
+  if (!showId) return null;
+
+  try {
+    const show = await getShow(showId);
+    if (!show) return null;
+    return {
+      title: show.title,
+      description: `Podcast by ${show.creator}`,
+      image: show.imageUrl || null,
+      url: show.externalUrl,
+      publisher: show.creator,
+    };
+  } catch (error) {
+    logger.warn('Spotify API failed, will fall back to Microlink', {
+      url,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
 }
 
 /**
@@ -101,7 +131,19 @@ export async function POST(request: Request) {
             // Fall through to Microlink if YouTube API fails
           }
 
+          if (getSpotifyShowId(url)) {
+            const showMetadata = await fetchSpotifyShowMetadata(url);
+            if (showMetadata) {
+              return { url, metadata: showMetadata, source: 'spotify' };
+            }
+            // Fall through to Microlink if the Spotify API fails
+          }
+
           const metadata = await fetchLinkMetadata(url);
+          if (!metadata.image) {
+            const cover = getGoogleBooksCoverUrl(url);
+            if (cover) metadata.image = cover;
+          }
           return { url, metadata, source: 'microlink' };
         } catch (error) {
           if (error instanceof MicrolinkQuotaExceededError) {
