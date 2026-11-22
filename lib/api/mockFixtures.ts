@@ -8,6 +8,7 @@
  */
 
 import type { BookItem } from './googleBooks';
+import type { BookDetails } from './bookDetails';
 import type { Episode, SpotifyItem } from './spotify';
 import type { YouTubeVideo } from './youtube';
 import type { MicrolinkData } from './microlink';
@@ -32,6 +33,19 @@ export const MOCK_BOOKS: BookItem[] = [
     type: 'book',
   },
 ];
+
+/** Details for any book in mock mode. The preview is of whichever volume was asked for. */
+export const MOCK_BOOK_DETAILS: BookDetails = {
+  description:
+    'Since its immediate success in 1813, Pride and Prejudice has remained one of the most popular novels in the English language.\n\nElizabeth Bennet, the second of five daughters, meets the proud Mr. Darcy, and first impressions on both sides prove hard to shake.',
+  year: 1813,
+  pageCount: 279,
+  publisher: 'Penguin',
+  categories: ['Classics'],
+  isbn13: '9780141439518',
+  isbn10: '0141439513',
+  rating: { average: 4.2, count: 1812, source: 'Open Library' },
+};
 
 export const MOCK_ALBUMS: SpotifyItem[] = [
   {

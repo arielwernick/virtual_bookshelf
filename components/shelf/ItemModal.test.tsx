@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { useState } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ItemModal, stepItem } from './ItemModal';
@@ -221,5 +221,88 @@ describe('ItemModal Spotify player', () => {
   it('does not embed a player for non-Spotify items', () => {
     renderComponent(spotifyItem({ type: 'book', external_url: 'https://books.google.com/books?id=abc123' }));
     expect(screen.queryByTestId('spotify-embed')).not.toBeInTheDocument();
+  });
+});
+
+describe('ItemModal book details', () => {
+  const book = (overrides: Partial<Item> = {}) =>
+    createMockItem({
+      id: 'book-1',
+      type: 'book',
+      title: 'Dune',
+      creator: 'Frank Herbert',
+      external_url: 'https://books.google.com/books?id=B1hSG45JCX4C',
+      notes: null,
+      rating: null,
+      ...overrides,
+    });
+
+  function mockDetails(data: unknown) {
+    const fetchMock = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async () => new Response(JSON.stringify({ success: true, data }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('loads and shows year, pages, category, reader rating and blurb', async () => {
+    const fetchMock = mockDetails({
+      year: 1965,
+      pageCount: 605,
+      categories: ['Science Fiction'],
+      rating: { average: 4.3, count: 464, source: 'Open Library' },
+      description: 'Set on the desert planet Arrakis.',
+    });
+    render(<ItemModal item={book()} isOpen onClose={() => {}} />);
+
+    expect(screen.getByTestId('book-facts-loading')).toBeInTheDocument();
+    expect(await screen.findByText('1965 · 605 pages · Science Fiction')).toBeInTheDocument();
+    expect(screen.getByText('(464 on Open Library)')).toBeInTheDocument();
+    expect(screen.getByTestId('book-description')).toHaveTextContent('Set on the desert planet Arrakis.');
+
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain('/api/books/details?');
+    expect(url).toContain('googleId=B1hSG45JCX4C');
+    expect(url).toContain('author=Frank+Herbert');
+  });
+
+  it('collapses long blurbs behind Read more', async () => {
+    mockDetails({ description: 'A long blurb. '.repeat(40) });
+    render(<ItemModal item={book()} isOpen onClose={() => {}} />);
+
+    const toggle = await screen.findByRole('button', { name: 'Read more' });
+    expect(screen.getByTestId('book-description')).toHaveClass('line-clamp-4');
+    fireEvent.click(toggle);
+    expect(screen.getByTestId('book-description')).not.toHaveClass('line-clamp-4');
+    expect(screen.getByRole('button', { name: 'Show less' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('offers the Google preview only when one exists, and opens it on request', async () => {
+    mockDetails({ previewVolumeId: 'B1hSG45JCX4C' });
+    render(<ItemModal item={book()} isOpen onClose={() => {}} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Preview the book' }));
+    expect(screen.getByTestId('book-preview')).toHaveAttribute(
+      'src',
+      'https://books.google.com/books?id=B1hSG45JCX4C&pg=PP1&output=embed'
+    );
+    expect(screen.queryByRole('button', { name: 'Preview the book' })).not.toBeInTheDocument();
+  });
+
+  it('shows no preview button or facts when nothing is known', async () => {
+    const fetchMock = mockDetails({});
+    render(<ItemModal item={book()} isOpen onClose={() => {}} />);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    await vi.waitFor(() => expect(screen.queryByTestId('book-facts-loading')).not.toBeInTheDocument());
+    expect(screen.queryByTestId('book-facts')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Preview the book' })).not.toBeInTheDocument();
+  });
+
+  it('does not fetch book details for other item types', () => {
+    const fetchMock = mockDetails({});
+    render(<ItemModal item={book({ type: 'link', external_url: 'https://example.com' })} isOpen onClose={() => {}} />);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
