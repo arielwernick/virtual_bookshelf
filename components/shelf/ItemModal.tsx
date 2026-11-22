@@ -40,7 +40,7 @@ function NoteSection({ notes, className = 'mb-4' }: NoteSectionProps) {
         Curator&apos;s note
       </figcaption>
       <blockquote className="border-l-2 border-gray-900 dark:border-gray-100 pl-4">
-        <p className="font-serif text-base sm:text-lg text-gray-900 dark:text-gray-100 whitespace-pre-wrap leading-relaxed" data-testid="notes-content">
+        <p className="font-serif text-[12px] sm:text-[13.5px] text-gray-900 dark:text-gray-100 whitespace-pre-wrap leading-relaxed" data-testid="notes-content">
           {notes}
         </p>
       </blockquote>
