@@ -1,20 +1,33 @@
 import { neon, NeonQueryFunction, NeonQueryFunctionInTransaction, NeonQueryInTransaction } from '@neondatabase/serverless';
 import { createLogger } from '@/lib/utils/logger';
+import { isProductionDatabaseUrl } from './prodGuard';
 
 const logger = createLogger('Database');
 
 /**
  * Pick the database URL for this environment.
  *
- * On Vercel preview deployments, the Neon integration creates a database
- * branch per preview and exposes it as BOOKSHELF_DATABASE_URL (the
- * integration's variable prefix). DATABASE_URL on Preview is the production
- * database, so previews must prefer the branch URL or they read and write
- * production data. Production and local development use DATABASE_URL.
+ * Vercel previews read BOOKSHELF_DATABASE_URL: the shared Neon `dev` branch
+ * for most pull requests, or a pull request's own branch when it is marked as
+ * a database change (`.github/workflows/preview-db.yml`). DATABASE_URL on
+ * Preview is the production database, so a preview without
+ * BOOKSHELF_DATABASE_URL, or with one that points at production, fails
+ * instead of reading and writing production data.
+ *
+ * Production and local development use DATABASE_URL.
  */
 export function resolveDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string | undefined {
-  if (env.VERCEL_ENV === 'preview' && env.BOOKSHELF_DATABASE_URL) {
-    return env.BOOKSHELF_DATABASE_URL;
+  if (env.VERCEL_ENV === 'preview') {
+    const previewUrl = env.BOOKSHELF_DATABASE_URL;
+    if (!previewUrl) {
+      throw new Error(
+        'BOOKSHELF_DATABASE_URL is not set for this preview. Set it on Vercel\'s Preview environment to the Neon dev branch.'
+      );
+    }
+    if (isProductionDatabaseUrl(previewUrl, env)) {
+      throw new Error('BOOKSHELF_DATABASE_URL points at the production database. Previews must use the dev branch or their own branch.');
+    }
+    return previewUrl;
   }
   return env.DATABASE_URL;
 }

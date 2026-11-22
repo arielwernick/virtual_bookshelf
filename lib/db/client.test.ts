@@ -15,8 +15,17 @@ describe('resolveDatabaseUrl', () => {
     ).toBe(BRANCH);
   });
 
-  it('falls back to DATABASE_URL on a preview without a branch URL', () => {
-    expect(resolveDatabaseUrl(env({ VERCEL_ENV: 'preview', DATABASE_URL: PROD }))).toBe(PROD);
+  it('refuses a preview without BOOKSHELF_DATABASE_URL instead of using production', () => {
+    expect(() => resolveDatabaseUrl(env({ VERCEL_ENV: 'preview', DATABASE_URL: PROD }))).toThrow(
+      /BOOKSHELF_DATABASE_URL is not set/
+    );
+  });
+
+  it('refuses a preview whose BOOKSHELF_DATABASE_URL is the production database', () => {
+    const prodEndpoint = 'postgresql://user:pw@ep-broad-resonance-ahfg834z-pooler.example.neon.tech/neondb';
+    expect(() =>
+      resolveDatabaseUrl(env({ VERCEL_ENV: 'preview', DATABASE_URL: PROD, BOOKSHELF_DATABASE_URL: prodEndpoint }))
+    ).toThrow(/production database/);
   });
 
   it('uses DATABASE_URL in production, even when the integration URL is set', () => {

@@ -2,8 +2,8 @@ name: E2E smoke (preview)
 
 # Runs the public Playwright smoke tests against each PR's Vercel preview once
 # it is deployed (issue #273). Vercel reports deployments to GitHub, which
-# fires deployment_status. The preview uses its own Neon branch (#276), so
-# nothing here touches production.
+# fires deployment_status. The preview uses the Neon dev branch or its own
+# branch (docs/process/PREVIEW_DATABASES.md), never production.
 on:
   deployment_status:
 

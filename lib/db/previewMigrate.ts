@@ -3,8 +3,9 @@
  * database. See issue #277.
  *
  * Only preview builds migrate, and only against the preview's own Neon branch
- * (BOOKSHELF_DATABASE_URL_UNPOOLED, the direct connection the Neon integration
- * provides). Production builds never migrate. Anything that looks like the
+ * (BOOKSHELF_DATABASE_URL_UNPOOLED, set per git branch by
+ * .github/workflows/preview-db.yml for pull requests marked as database
+ * changes). Previews on the shared dev branch don't have it, so they skip. Production builds never migrate. Anything that looks like the
  * production database is skipped.
  */
 import { isProductionDatabaseUrl } from './prodGuard';

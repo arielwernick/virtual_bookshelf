@@ -1,0 +1,203 @@
+name: Preview database
+
+# Previews share the Neon `dev` branch (BOOKSHELF_DATABASE_URL on Vercel's
+# Preview environment). A pull request whose template box "Database change"
+# is ticked gets its own Neon branch instead, set as branch-scoped Preview
+# variables in Vercel, and loses it when the pull request closes.
+# See docs/process/PREVIEW_DATABASES.md.
+#
+# Secrets: NEON_API_KEY, VERCEL_TOKEN, DEV_DATABASE_URL_UNPOOLED
+# Variables: NEON_PROJECT_ID, VERCEL_PROJECT_ID, VERCEL_TEAM_ID (optional),
+#   NEON_PREVIEW_PARENT (default dev), NEON_DATABASE (default neondb),
+#   NEON_ROLE (default neondb_owner)
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited, closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-db-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+env:
+  NEON_API: https://console.neon.tech/api/v2
+  VERCEL_API: https://api.vercel.com
+  NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+  VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+  VERCEL_TEAM_QS: ${{ vars.VERCEL_TEAM_ID && format('teamId={0}', vars.VERCEL_TEAM_ID) || '' }}
+  NEON_BRANCH: preview/pr-${{ github.event.pull_request.number }}
+  GIT_BRANCH: ${{ github.event.pull_request.head.ref }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      isolated: ${{ steps.plan.outputs.isolated }}
+      schema_changed: ${{ steps.plan.outputs.schema_changed }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: plan
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if printf '%s\n' "$PR_BODY" | grep -qiE '^[[:space:]]*[-*][[:space:]]+\[x\][[:space:]]+Database change'; then
+            echo "isolated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "isolated=false" >> "$GITHUB_OUTPUT"
+          fi
+          if git diff --name-only "$BASE_SHA...$HEAD_SHA" | grep -qE '^(migrations/|lib/db/schema\.sql$)'; then
+            echo "schema_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "schema_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # A schema change must not run against the shared dev branch.
+  require-checkbox:
+    needs: plan
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Database changes need the box ticked
+        if: needs.plan.outputs.schema_changed == 'true' && needs.plan.outputs.isolated != 'true'
+        run: |
+          echo "::error::This PR changes migrations/ or lib/db/schema.sql. Tick 'Database change' in the PR description so its preview gets its own Neon branch instead of changing the shared dev branch."
+          exit 1
+      - run: echo "OK"
+
+  create:
+    needs: plan
+    if: >-
+      github.event.action != 'closed' &&
+      needs.plan.outputs.isolated == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      PARENT: ${{ vars.NEON_PREVIEW_PARENT || 'dev' }}
+      DB_NAME: ${{ vars.NEON_DATABASE || 'neondb' }}
+      DB_ROLE: ${{ vars.NEON_ROLE || 'neondb_owner' }}
+    steps:
+      - name: Create the Neon branch (once)
+        id: neon
+        run: |
+          set -euo pipefail
+          if [ -z "$NEON_API_KEY" ] || [ -z "$VERCEL_TOKEN" ] || [ -z "$NEON_PROJECT_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::error::Preview database setup is incomplete: set the NEON_API_KEY and VERCEL_TOKEN secrets and the NEON_PROJECT_ID and VERCEL_PROJECT_ID variables (docs/process/PREVIEW_DATABASES.md)."
+            exit 1
+          fi
+          neon() { curl -fsS -H "Authorization: Bearer $NEON_API_KEY" -H 'Content-Type: application/json' "$@"; }
+          branches=$(neon "$NEON_API/projects/$NEON_PROJECT_ID/branches")
+          branch_id=$(jq -r --arg n "$NEON_BRANCH" '.branches[] | select(.name == $n) | .id' <<<"$branches")
+          if [ -n "$branch_id" ]; then
+            echo "Neon branch $NEON_BRANCH already exists."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+          else
+            parent_id=$(jq -r --arg n "$PARENT" '.branches[] | select(.name == $n) | .id' <<<"$branches")
+            [ -n "$parent_id" ] || { echo "::error::Parent Neon branch '$PARENT' not found."; exit 1; }
+            body=$(jq -n --arg n "$NEON_BRANCH" --arg p "$parent_id" '{branch: {name: $n, parent_id: $p}, endpoints: [{type: "read_write"}]}')
+            branch_id=$(neon -X POST "$NEON_API/projects/$NEON_PROJECT_ID/branches" -d "$body" | jq -r '.branch.id')
+            echo "Created Neon branch $NEON_BRANCH ($branch_id) from $PARENT."
+            echo "created=true" >> "$GITHUB_OUTPUT"
+          fi
+          uri() { neon -G "$NEON_API/projects/$NEON_PROJECT_ID/connection_uri" \
+            --data-urlencode "branch_id=$branch_id" --data-urlencode "database_name=$DB_NAME" \
+            --data-urlencode "role_name=$DB_ROLE" --data-urlencode "pooled=$1" | jq -r '.uri'; }
+          pooled=$(uri true); direct=$(uri false)
+          echo "::add-mask::$pooled"; echo "::add-mask::$direct"
+          echo "pooled=$pooled" >> "$GITHUB_OUTPUT"
+          echo "direct=$direct" >> "$GITHUB_OUTPUT"
+
+      - name: Point this branch's previews at it
+        env:
+          POOLED: ${{ steps.neon.outputs.pooled }}
+          DIRECT: ${{ steps.neon.outputs.direct }}
+        run: |
+          set -euo pipefail
+          for pair in "BOOKSHELF_DATABASE_URL=$POOLED" "BOOKSHELF_DATABASE_URL_UNPOOLED=$DIRECT"; do
+            key=${pair%%=*}; value=${pair#*=}
+            body=$(jq -n --arg k "$key" --arg v "$value" --arg b "$GIT_BRANCH" \
+              '{key: $k, value: $v, type: "encrypted", target: ["preview"], gitBranch: $b}')
+            curl -fsS -X POST -H "Authorization: Bearer $VERCEL_TOKEN" -H 'Content-Type: application/json' \
+              "$VERCEL_API/v10/projects/$VERCEL_PROJECT_ID/env?upsert=true&$VERCEL_TEAM_QS" -d "$body" > /dev/null
+            echo "Set $key for previews of $GIT_BRANCH."
+          done
+
+      - name: Redeploy the preview so it picks the branch up
+        if: steps.neon.outputs.created == 'true'
+        run: |
+          set -euo pipefail
+          vercel() { curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" -H 'Content-Type: application/json' "$@"; }
+          latest=$(vercel "$VERCEL_API/v6/deployments?projectId=$VERCEL_PROJECT_ID&target=preview&limit=50&$VERCEL_TEAM_QS" \
+            | jq -c --arg b "$GIT_BRANCH" '[.deployments[] | select(.meta.githubCommitRef == $b)][0] // empty')
+          if [ -z "$latest" ]; then
+            echo "No preview deployment for $GIT_BRANCH yet; the next one will use the new branch."
+            exit 0
+          fi
+          body=$(jq -n --argjson d "$latest" '{name: $d.name, deploymentId: $d.uid}')
+          vercel -X POST "$VERCEL_API/v13/deployments?forceNew=1&$VERCEL_TEAM_QS" -d "$body" > /dev/null
+          echo "Redeployed $(jq -r .url <<<"$latest") with its own database."
+
+  cleanup:
+    needs: plan
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Delete the Neon branch and its Vercel variables
+        run: |
+          set -euo pipefail
+          if [ -z "$NEON_API_KEY" ] || [ -z "$VERCEL_TOKEN" ]; then
+            echo "Preview database secrets are not set; nothing to clean up."
+            exit 0
+          fi
+          branch_id=$(curl -fsS -H "Authorization: Bearer $NEON_API_KEY" "$NEON_API/projects/$NEON_PROJECT_ID/branches" \
+            | jq -r --arg n "$NEON_BRANCH" '.branches[] | select(.name == $n) | .id')
+          if [ -n "$branch_id" ]; then
+            curl -fsS -X DELETE -H "Authorization: Bearer $NEON_API_KEY" "$NEON_API/projects/$NEON_PROJECT_ID/branches/$branch_id" > /dev/null
+            echo "Deleted Neon branch $NEON_BRANCH."
+          fi
+          curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "$VERCEL_API/v9/projects/$VERCEL_PROJECT_ID/env?$VERCEL_TEAM_QS" \
+            | jq -r --arg b "$GIT_BRANCH" '.envs[] | select(.gitBranch == $b and (.key | startswith("BOOKSHELF_DATABASE_URL"))) | .id' \
+            | while read -r id; do
+                curl -fsS -X DELETE -H "Authorization: Bearer $VERCEL_TOKEN" "$VERCEL_API/v9/projects/$VERCEL_PROJECT_ID/env/$id?$VERCEL_TEAM_QS" > /dev/null
+                echo "Deleted Vercel variable $id for $GIT_BRANCH."
+              done
+
+  # Keep the shared dev branch's schema current once a database change merges,
+  # so other previews running the new code find the new columns.
+  migrate-dev:
+    needs: plan
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      needs.plan.outputs.schema_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - name: Apply migrations to dev
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL_UNPOOLED }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DEV_DATABASE_URL_UNPOOLED is not set; run npm run migrate:up against dev by hand."
+            exit 1
+          fi
+          npm run migrate:up

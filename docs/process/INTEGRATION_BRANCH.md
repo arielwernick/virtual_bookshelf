@@ -14,13 +14,8 @@ says `Closes #N`. `npm run verify` is green and its output is in the PR
 (`.github/pull_request_template.md`). The risk tier
 (`docs/process/RISK_TIERS.md`) says who merges.
 
-## Previews and Neon branches
+## Previews
 
-Every pushed branch gets a Vercel preview with its own Neon database branch,
-and Neon allows ten. When they run out, a new preview fails within seconds,
-before the build starts.
-
-- Delete the Neon branch for a pull request once it is merged or closed.
-- Don't push a branch you aren't opening a pull request for.
-- If a preview fails right away, check the Neon branch count before looking
-  at the code.
+Previews use the shared Neon `dev` branch. A pull request with migrations or
+schema changes ticks **Database change** and gets its own branch, deleted
+when it closes. See `docs/process/PREVIEW_DATABASES.md`.

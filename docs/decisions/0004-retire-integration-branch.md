@@ -22,7 +22,8 @@ risk tiers in `docs/process/RISK_TIERS.md` decide who merges.
 
 ## Consequences
 
-- Each open pull request holds a Vercel preview and one of ten Neon branches,
-  so merged and closed pull requests' Neon branches must be deleted.
+- Every pull request gets a Vercel preview. To stay under Neon's ten
+  branches, previews share the `dev` branch and only pull requests marked as
+  database changes get their own (`docs/process/PREVIEW_DATABASES.md`).
 - `docs/process/HANDOFF.md` is kept as a record of the `next` work, not as
   instructions.
