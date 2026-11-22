@@ -6,7 +6,7 @@
 export function SpotifyPlayBadge() {
   return (
     <div
-      className="pointer-events-none absolute bottom-1 right-1 sm:bottom-2 sm:right-2 z-20 flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-[#1DB954] text-black shadow-md transition-transform group-hover:scale-110"
+      className="pointer-events-none absolute bottom-1 left-1 sm:bottom-2 sm:left-2 z-20 flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-[#1DB954] text-black shadow-md transition-transform group-hover:scale-110"
       data-testid="spotify-play-badge"
       aria-hidden="true"
     >

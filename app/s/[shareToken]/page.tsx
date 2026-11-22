@@ -8,7 +8,6 @@ import { ShelfGridStatic } from '@/components/shelf/ShelfGridStatic';
 import { SharedShelfInteractive } from './SharedShelfInteractive';
 import { generateShelfSchemaJson } from '@/lib/utils/schemaMarkup';
 import { ViewBeacon } from '@/components/ViewBeacon';
-import { ShelfNotesStatic } from '@/components/shelf/ShelfNotesStatic';
 import { describeShelfForSearch, formatShelfDate } from '@/lib/utils/shelfSummary';
 import { SHARED_SHELF_CTA_LINK } from '@/lib/utils/growthLinks';
 import { buildShelfUrls, redactItemForPublic } from '@/lib/shelf/publicShelf';
@@ -216,9 +215,6 @@ export default async function SharedShelfPage({ params }: PageProps) {
           <SharedShelfInteractive items={shelfData.items}>
             <ShelfGridStatic items={shelfData.items} />
           </SharedShelfInteractive>
-
-          {/* Every note in full, in the HTML, so it can be read and quoted (#293) */}
-          <ShelfNotesStatic items={shelfData.items} />
         </main>
 
         {/* CTA Section - Server Rendered */}

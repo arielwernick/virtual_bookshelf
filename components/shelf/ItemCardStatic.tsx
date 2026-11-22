@@ -13,23 +13,12 @@ import { Item } from '@/lib/types/shelf';
 import { getAspectRatio, getAspectRatioNumeric } from '@/lib/constants/aspectRatios';
 import { StarDisplayStatic } from '@/components/ui/StarDisplayStatic';
 import { ItemCardImage } from './ItemCardImage';
+import { CoverPlaceholder } from './CoverPlaceholder';
+import { NoteMarker } from './NoteMarker';
 import { calculateJitter } from '@/lib/utils/imageUtils';
 import { extractVideoId } from '@/lib/api/youtube';
 import { getSpotifyEmbed } from '@/lib/utils/spotifyEmbed';
 import { SpotifyPlayBadge } from './SpotifyPlayBadge';
-
-const fallbackIcon = (
-  <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500">
-    <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-      />
-    </svg>
-  </div>
-);
 
 interface ItemCardStaticProps {
   item: Item;
@@ -48,13 +37,14 @@ export function ItemCardStatic({ item, priority = false, ...props }: ItemCardSta
     : item.image_url;
   const adjustedRatioNum = baseRatioNum * (1 + jitter);
   const hasNotes = Boolean(item.notes);
+  const isPlayable = getSpotifyEmbed(item) !== null;
+  const fallbackCover = <CoverPlaceholder item={item} clearNoteMarker={hasNotes || isPlayable} />;
 
   // Video items get a crawlable link to their dedicated /v/[videoId] watch
   // page. A plain click still opens the modal (SharedShelfInteractive calls
   // preventDefault); the href exists for crawlers and cmd/middle-click.
   const videoId = item.type === 'video' && item.external_url ? extractVideoId(item.external_url) : null;
   const watchHref = videoId ? `/v/${videoId}` : null;
-  const isPlayable = getSpotifyEmbed(item) !== null;
 
   const badgeColor = {
     book: 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200',
@@ -78,19 +68,21 @@ export function ItemCardStatic({ item, priority = false, ...props }: ItemCardSta
         className={`relative ${item.type === 'stock' ? 'bg-white dark:bg-gray-100' : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700'}`}
         style={{ aspectRatio: adjustedRatioNum || baseRatioStr }}
       >
-        {/* Item Image, or the fallback icon when it's missing or fails to load */}
+        {/* Item Image, or a placeholder cover when it's missing or fails to load */}
         {effectiveImageUrl ? (
           <ItemCardImage
             src={effectiveImageUrl}
             alt={item.title}
             className={`w-full h-full object-center ${item.type === 'stock' ? 'object-contain' : 'object-cover'}`}
             style={item.type === 'stock' ? { padding: '8%' } : undefined}
-            fallback={fallbackIcon}
+            fallback={fallbackCover}
             priority={priority}
           />
         ) : (
-          fallbackIcon
+          fallbackCover
         )}
+
+        {hasNotes && <NoteMarker />}
 
         {/* Type Badge */}
         <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
@@ -132,16 +124,11 @@ export function ItemCardStatic({ item, priority = false, ...props }: ItemCardSta
           </div>
         )}
 
-        {/* Note preview - clean, minimal styling */}
+        {/* Note teaser - the full note is in the HTML; the popup shows it in full */}
         {hasNotes && (
-          <div className="flex items-start gap-1.5 mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-gray-100 dark:border-gray-800">
-            <svg className="w-3 h-3 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-              {item.notes}
-            </p>
-          </div>
+          <p className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-gray-100 dark:border-gray-800 font-serif italic text-[9px] sm:text-[9.75px] text-gray-700 dark:text-gray-300 line-clamp-2 leading-snug" data-testid="note-preview">
+            {item.notes}
+          </p>
         )}
       </div>
     </article>

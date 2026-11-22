@@ -36,13 +36,13 @@ describe('ItemCard', () => {
     it('renders item title', () => {
       renderWithProvider(<ItemCard item={createMockItem({ title: 'Test Book Title' })} />);
 
-      expect(screen.getByText('Test Book Title')).toBeInTheDocument();
+      expect(screen.getByText('Test Book Title', { selector: 'h3' })).toBeInTheDocument();
     });
 
     it('renders item creator', () => {
       renderWithProvider(<ItemCard item={createMockItem({ creator: 'Test Author' })} />);
 
-      expect(screen.getByText('Test Author')).toBeInTheDocument();
+      expect(screen.getByText('Test Author', { selector: 'p' })).toBeInTheDocument();
     });
 
     it('renders item type badge', () => {
@@ -89,12 +89,15 @@ describe('ItemCard', () => {
       expect(img).toHaveAttribute('alt', 'Book with Image');
     });
 
-    it('renders fallback icon when no image', () => {
-      renderWithProvider(<ItemCard item={createMockItem({ image_url: null })} />);
+    it('renders a placeholder cover with the title when there is no image', () => {
+      renderWithProvider(
+        <ItemCard item={createMockItem({ image_url: null, title: 'No Cover Book', creator: 'Some Author' })} />
+      );
 
-      // Check for SVG fallback icon
-      const svg = document.querySelector('svg');
-      expect(svg).toBeInTheDocument();
+      const cover = screen.getByTestId('cover-placeholder');
+      expect(cover).toHaveTextContent('No Cover Book');
+      expect(cover).toHaveTextContent('Some Author');
+      expect(cover).toHaveAttribute('aria-hidden', 'true');
     });
 
     it('has lazy loading on image', () => {
@@ -117,7 +120,7 @@ describe('ItemCard', () => {
         { onItemClick }
       );
 
-      fireEvent.click(screen.getByText('The Great Gatsby'));
+      fireEvent.click(screen.getByText('The Great Gatsby', { selector: 'h3' }));
 
       expect(onItemClick).toHaveBeenCalledTimes(1);
     });
@@ -128,7 +131,7 @@ describe('ItemCard', () => {
         { onItemClick: () => {} }
       );
 
-      const card = screen.getByText('The Great Gatsby').closest('div[class*="cursor-pointer"]');
+      const card = screen.getByText('The Great Gatsby', { selector: 'h3' }).closest('div[class*="cursor-pointer"]');
       expect(card).toBeInTheDocument();
     });
 
@@ -139,7 +142,7 @@ describe('ItemCard', () => {
         { onItemClick, editMode: true }
       );
 
-      fireEvent.click(screen.getByText('The Great Gatsby'));
+      fireEvent.click(screen.getByText('The Great Gatsby', { selector: 'h3' }));
 
       expect(onItemClick).not.toHaveBeenCalled();
     });
@@ -147,7 +150,7 @@ describe('ItemCard', () => {
     it('does not have cursor-pointer when not clickable', () => {
       renderWithProvider(<ItemCard item={createMockItem()} />);
 
-      const card = screen.getByText('The Great Gatsby').parentElement?.parentElement;
+      const card = screen.getByText('The Great Gatsby', { selector: 'h3' }).parentElement?.parentElement;
       expect(card?.className).not.toContain('cursor-pointer');
     });
   });
@@ -228,6 +231,21 @@ describe('ItemCard', () => {
   });
 
   describe('Note Preview', () => {
+    it('marks the cover when the item has a note', () => {
+      renderWithProvider(<ItemCard item={createMockItem({ notes: 'Worth it' })} />);
+
+      expect(screen.getByTestId('note-marker')).toBeInTheDocument();
+    });
+
+    it('has no note marker without a note, or in edit mode', () => {
+      const { unmount } = renderWithProvider(<ItemCard item={createMockItem({ notes: null })} />);
+      expect(screen.queryByTestId('note-marker')).not.toBeInTheDocument();
+      unmount();
+
+      renderWithProvider(<ItemCard item={createMockItem({ notes: 'Worth it' })} />, { editMode: true });
+      expect(screen.queryByTestId('note-marker')).not.toBeInTheDocument();
+    });
+
     it('renders note preview when item has notes in non-edit mode', () => {
       renderWithProvider(<ItemCard item={createMockItem({ notes: 'Some notes here' })} />);
 
@@ -356,7 +374,7 @@ describe('ItemCard', () => {
     it('is not focusable when not clickable', () => {
       renderWithProvider(<ItemCard item={createMockItem()} />);
 
-      const card = screen.getByText('The Great Gatsby').closest('div');
+      const card = screen.getByText('The Great Gatsby', { selector: 'h3' }).closest('div');
       expect(card).not.toHaveAttribute('tabIndex');
       expect(card).not.toHaveAttribute('role', 'button');
     });
@@ -408,7 +426,7 @@ describe('ItemCard', () => {
         { onItemClick, editMode: true }
       );
 
-      const card = screen.getByText('The Great Gatsby').closest('div');
+      const card = screen.getByText('The Great Gatsby', { selector: 'h3' }).closest('div');
       fireEvent.keyDown(card!, { key: 'Enter' });
 
       expect(onItemClick).not.toHaveBeenCalled();

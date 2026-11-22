@@ -62,6 +62,23 @@ describe('ItemCardStatic', () => {
     });
   });
 
+  describe('Notes', () => {
+    it('marks the cover and keeps the full note in the HTML', () => {
+      const note = 'A long note that the card only shows the start of, but crawlers can read in full.';
+      render(<ItemCardStatic item={createMockItem({ notes: note })} />);
+
+      expect(screen.getByTestId('note-marker')).toBeInTheDocument();
+      expect(screen.getByTestId('note-preview')).toHaveTextContent(note);
+    });
+
+    it('has no marker or teaser without a note', () => {
+      render(<ItemCardStatic item={createMockItem({ notes: null })} />);
+
+      expect(screen.queryByTestId('note-marker')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('note-preview')).not.toBeInTheDocument();
+    });
+  });
+
   describe('Data Attributes', () => {
     it('includes data-item-id attribute', () => {
       render(<ItemCardStatic item={createMockItem({ id: 'test-item-123' })} />);
@@ -95,22 +112,26 @@ describe('ItemCardStatic', () => {
       expect(img).toHaveAttribute('src', 'https://example.com/cover.jpg');
     });
 
-    it('renders fallback icon when no image_url', () => {
+    it('renders a placeholder cover when there is no image_url', () => {
       render(<ItemCardStatic item={createMockItem({ image_url: null, rating: null })} />);
       // Should not have an actual img element
       expect(screen.queryByRole('img', { name: /gatsby/i })).not.toBeInTheDocument();
-      // Check for SVG fallback icon in the image container
-      const article = screen.getByRole('article');
-      expect(article.querySelector('svg')).toBeInTheDocument();
+      expect(screen.getByTestId('cover-placeholder')).toHaveTextContent('The Great Gatsby');
     });
 
-    it('swaps in the fallback icon when the image fails to load', () => {
+    it('renders the placeholder cover in server HTML', () => {
+      const html = renderToString(<ItemCardStatic item={createMockItem({ image_url: null })} />);
+
+      expect(html).toContain('data-testid="cover-placeholder"');
+    });
+
+    it('swaps in the placeholder cover when the image fails to load', () => {
       render(<ItemCardStatic item={createMockItem({ rating: null, notes: null })} />);
 
       fireEvent.error(screen.getByRole('img', { name: /gatsby/i }));
 
       expect(screen.queryByRole('img', { name: /gatsby/i })).not.toBeInTheDocument();
-      expect(screen.getByRole('article').querySelector('svg')).toBeInTheDocument();
+      expect(screen.getByTestId('cover-placeholder')).toBeInTheDocument();
     });
 
     it('catches an image that failed before hydration', () => {
@@ -120,7 +141,7 @@ describe('ItemCardStatic', () => {
       render(<ItemCardStatic item={createMockItem({ rating: null, notes: null })} />);
 
       expect(screen.queryByRole('img', { name: /gatsby/i })).not.toBeInTheDocument();
-      expect(screen.getByRole('article').querySelector('svg')).toBeInTheDocument();
+      expect(screen.getByTestId('cover-placeholder')).toBeInTheDocument();
 
       complete.mockRestore();
       naturalWidth.mockRestore();
@@ -138,14 +159,14 @@ describe('ItemCardStatic', () => {
       naturalWidth.mockRestore();
     });
 
-    it('does not cover a stock logo with the fallback icon', () => {
+    it('does not cover a stock logo with the placeholder', () => {
       render(<ItemCardStatic item={createMockItem({ type: 'stock', creator: 'AAPL', image_url: null, rating: null, notes: null })} />);
 
       expect(screen.getByRole('img', { name: /gatsby/i })).toHaveAttribute(
         'src',
         'https://financialmodelingprep.com/image-stock/AAPL.png'
       );
-      expect(screen.getByRole('article').querySelector('svg')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('cover-placeholder')).not.toBeInTheDocument();
     });
 
     it('includes the image in server-rendered HTML', () => {

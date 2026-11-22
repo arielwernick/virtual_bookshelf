@@ -156,7 +156,13 @@ export default function ShelfPage() {
         )}
       </main>
 
-      <ItemModal item={selectedItem} isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} />
+      <ItemModal
+        item={selectedItem}
+        isOpen={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+        items={shelfData.items}
+        onNavigate={setSelectedItem}
+      />
 
       <ShareModal
         isOpen={showShareModal}
