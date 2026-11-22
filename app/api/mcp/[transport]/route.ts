@@ -17,7 +17,8 @@ import {
 import { buildSharePath } from '@/lib/utils/slug';
 import { revalidateSharedShelf } from '@/lib/utils/revalidateShelf';
 import { searchBooks } from '@/lib/api/googleBooks';
-import { searchMusic, searchPodcasts } from '@/lib/api/spotify';
+import { searchEpisodes, searchMusic, searchPodcasts } from '@/lib/api/spotify';
+import { spotifyLinkProblem } from '@/lib/mcp/itemLinkCheck';
 import { extractVideoId, getVideoDetails } from '@/lib/api/youtube';
 import { fetchLinkMetadata, isYouTubeUrl } from '@/lib/api/microlink';
 import { getOAuthIssuer, hashToken } from '@/lib/utils/oauth';
@@ -204,7 +205,7 @@ const handler = createMcpHandler(
       'add_item',
       'Add an item (book, podcast, music, video, link…) to a shelf. ' +
         'Two ways to get accurate metadata and artwork — pick one, never invent your own: ' +
-        '(1) for books, music, and podcasts, call search_catalog first and pass its result fields through verbatim; ' +
+        '(1) for books, music, podcasts, and podcast episodes, call search_catalog first and pass its result fields through verbatim; ' +
         '(2) for videos and links, just pass the page URL as external_url — the site fetches artwork ' +
         'and metadata from the URL automatically. ' +
         'Example: add_item(type: "video", title: "How I Built This", external_url: "https://youtube.com/watch?v=...") — no image_url needed.',
@@ -251,6 +252,10 @@ const handler = createMcpHandler(
         { shelf_id, type, title, creator, image_url, external_url, notes, rating },
         extra
       ) => {
+        const linkProblem = spotifyLinkProblem(type, external_url);
+        if (linkProblem) {
+          return errorResult(linkProblem);
+        }
         const userId = getUserId(extra);
         const shelf = await getOwnedShelf(shelf_id, userId);
         if (!shelf) {
@@ -344,13 +349,17 @@ const handler = createMcpHandler(
 
     server.tool(
       'search_catalog',
-      'Search for books (Google Books), music albums, or podcasts (Spotify) to get ' +
-        'accurate metadata before adding an item with add_item. Pass the returned fields ' +
+      'Search for books (Google Books), music albums, podcasts, or single podcast episodes ' +
+        '(Spotify) to get accurate metadata before adding an item with add_item. Use ' +
+        '"podcast_episode" for one episode, with the show name and topic in the query ' +
+        '(e.g. "Acquired Costco"); "podcast" finds whole shows. Pass the returned fields ' +
         '(including image_url and external_url) to add_item verbatim — never substitute ' +
         'your own image URLs.',
       {
         query: z.string().min(1).describe('Search query, e.g. a title or author'),
-        type: z.enum(['book', 'music', 'podcast']).describe('What to search for'),
+        type: z
+          .enum(['book', 'music', 'podcast', 'podcast_episode'])
+          .describe('What to search for: a book, an album, a podcast show, or one podcast episode'),
       },
       async ({ query, type }) => {
         const results =
@@ -358,7 +367,9 @@ const handler = createMcpHandler(
             ? await searchBooks(query)
             : type === 'music'
               ? await searchMusic(query)
-              : await searchPodcasts(query);
+              : type === 'podcast_episode'
+                ? await searchEpisodes(query)
+                : await searchPodcasts(query);
         return jsonResult(
           results.slice(0, 5).map((result) => ({
             type,
@@ -372,11 +383,12 @@ const handler = createMcpHandler(
     );
   },
   {
-    serverInfo: { name: 'virtual-bookshelf', version: '1.1.0' },
+    serverInfo: { name: 'virtual-bookshelf', version: '1.2.0' },
     instructions:
       'Virtual Bookshelf curates shareable shelves of books, podcasts, music, videos, and links. ' +
       'Never supply your own image URLs — the site provides artwork itself. There are exactly two ' +
-      'ways to get item metadata: (1) search_catalog for books, music, and podcasts (pass its ' +
+      'ways to get item metadata: (1) search_catalog for books, music, podcasts, and podcast ' +
+      'episodes (pass its ' +
       'results to add_item verbatim), or (2) a direct link in external_url for videos and web ' +
       'pages (the site fetches artwork from the URL automatically). Items without artwork ' +
       'get a styled placeholder, which is always better than a wrong or dead image link. ' +
