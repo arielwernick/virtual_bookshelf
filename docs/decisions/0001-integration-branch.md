@@ -1,6 +1,6 @@
 # 0001. Agents land ticketed work on `next`; the owner promotes to `main`
 
-Date: Nov 11, 2026. Status: proposed, in use on the `next` branch.
+Date: Nov 11, 2026. Status: replaced by [0004](0004-retire-integration-branch.md). `next` was merged into `main` in #297.
 
 ## Context
 

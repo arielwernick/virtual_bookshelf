@@ -1,6 +1,6 @@
 # 0002. One public shelf document, many formats, built from a field allowlist
 
-Date: Nov 11, 2026. Status: proposed, on the `next` branch (issue #285).
+Date: Nov 11, 2026. Status: proposed, merged into `main` in #297 (issue #285).
 
 ## Context
 

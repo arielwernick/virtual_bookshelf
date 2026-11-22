@@ -198,8 +198,7 @@ lib/
 
 ## For AI agents
 
-Read [CLAUDE.md](CLAUDE.md) before changing anything. To continue the `next`
-branch, follow [docs/process/HANDOFF.md](docs/process/HANDOFF.md).
+Read [CLAUDE.md](CLAUDE.md) before changing anything.
 
 ## Deployment
 

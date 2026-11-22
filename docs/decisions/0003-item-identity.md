@@ -1,6 +1,6 @@
 # 0003. Items carry a canonical identifier; matching is by identifier only
 
-Date: Nov 11, 2026. Status: proposed, on the `next` branch (issue #288).
+Date: Nov 11, 2026. Status: proposed, merged into `main` in #297 (issue #288).
 
 ## Context
 
