@@ -66,19 +66,21 @@ describe('TermsPage', () => {
   });
 
   describe('Edge Cases', () => {
-    it('marks governing law and the contact address as placeholders', () => {
+    it('marks governing law as the only placeholder', () => {
       renderComponent();
       const texts = screen.getAllByTestId('legal-placeholder').map((el) => el.textContent);
-      expect(texts).toEqual([
-        '[governing law and location to be added]',
-        '[contact address to be added]',
-      ]);
+      expect(texts).toEqual(['[governing law and location to be added]']);
     });
 
-    it('names no company and publishes no email address', () => {
+    it('names no company and gives only the project contact address', () => {
       const { container } = renderComponent();
       expect(container.textContent).not.toMatch(/\b(Inc|LLC|Ltd|GmbH)\b/);
-      expect(container.textContent).not.toMatch(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i);
+      expect(screen.getByRole('link', { name: 'hello@virtualbookshelf.app' })).toHaveAttribute(
+        'href',
+        'mailto:hello@virtualbookshelf.app'
+      );
+      const rest = (container.textContent ?? '').replaceAll('hello@virtualbookshelf.app', '');
+      expect(rest).not.toMatch(/[\w.+-]+@[\w-]+\.[a-z]/i);
     });
   });
 });

@@ -21,6 +21,20 @@ export function LegalLink({ href, children }: { href: string; children: ReactNod
 }
 
 /**
+ * Where questions and account deletion requests go. Forwarded by Cloudflare
+ * Email Routing on the virtualbookshelf.app zone to the project inbox.
+ */
+export const CONTACT_EMAIL = 'hello@virtualbookshelf.app';
+
+export function ContactEmail() {
+  return (
+    <a href={`mailto:${CONTACT_EMAIL}`} className={linkClass}>
+      {CONTACT_EMAIL}
+    </a>
+  );
+}
+
+/**
  * A detail that has not been decided yet (issue #305). Deliberately loud so
  * it cannot ship unnoticed: replace every one before the pages go live.
  */

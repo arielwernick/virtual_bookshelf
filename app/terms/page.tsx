@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { LegalLink, LegalPage, LegalSection, Placeholder } from '@/components/legal/LegalPage';
+import { ContactEmail, LegalLink, LegalPage, LegalSection, Placeholder } from '@/components/legal/LegalPage';
 
 export const metadata: Metadata = {
   title: 'Terms',
@@ -110,7 +110,7 @@ export default function TermsPage() {
 
       <LegalSection id="contact" title="Contact">
         <p>
-          Questions about these terms: <Placeholder>contact address to be added</Placeholder>
+          Questions about these terms: <ContactEmail />
         </p>
       </LegalSection>
     </LegalPage>

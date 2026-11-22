@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { LegalLink, LegalPage, LegalSection, Placeholder } from '@/components/legal/LegalPage';
+import { ContactEmail, LegalLink, LegalPage, LegalSection } from '@/components/legal/LegalPage';
 
 export const metadata: Metadata = {
   title: 'Privacy',
@@ -245,7 +245,7 @@ export default function PrivacyPage() {
 
       <LegalSection id="contact" title="Contact">
         <p>
-          Questions, or a request to delete your account: <Placeholder>contact address to be added</Placeholder>
+          Questions, or a request to delete your account: <ContactEmail />
         </p>
         <p>
           See also the <LegalLink href="/terms">Terms</LegalLink>.

@@ -82,17 +82,19 @@ describe('PrivacyPage', () => {
   });
 
   describe('Edge Cases', () => {
-    it('marks the undecided contact address as a placeholder', () => {
+    it('has no placeholders left', () => {
       renderComponent();
-      const placeholders = screen.getAllByTestId('legal-placeholder');
-      expect(placeholders).toHaveLength(1);
-      expect(placeholders[0]).toHaveTextContent('[contact address to be added]');
+      expect(screen.queryAllByTestId('legal-placeholder')).toHaveLength(0);
     });
 
-    it('publishes no email address', () => {
+    it('gives the project contact address and no other email address', () => {
       const { container } = renderComponent();
-      expect(container.textContent).not.toMatch(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i);
-      expect(container.querySelector('a[href^="mailto:"]')).toBeNull();
+      expect(screen.getByRole('link', { name: 'hello@virtualbookshelf.app' })).toHaveAttribute(
+        'href',
+        'mailto:hello@virtualbookshelf.app'
+      );
+      const rest = (container.textContent ?? '').replaceAll('hello@virtualbookshelf.app', '');
+      expect(rest).not.toMatch(/[\w.+-]+@[\w-]+\.[a-z]/i);
     });
 
     it('says plainly that there is no account delete button', () => {
