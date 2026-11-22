@@ -98,7 +98,7 @@ describe('ImportPage', () => {
       renderComponent();
 
       expect(await screen.findByRole('button', { name: 'Save this shelf' })).toBeInTheDocument();
-      expect(screen.getByLabelText('Shelf name')).toHaveValue('My list');
+      expect(screen.getByRole('heading', { name: 'My list' })).toBeInTheDocument();
       expect(createCalls(fetchMock)).toHaveLength(0);
     });
   });

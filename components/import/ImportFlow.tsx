@@ -15,17 +15,25 @@ type ImportState = 'input' | 'processing' | 'preview' | 'creating';
 export const DEFAULT_SHELF_TITLE = 'My shelf';
 
 /** A short list a visitor can load to see the flow without hunting for text to paste. */
-export const EXAMPLE_LIST = `Atomic Habits
-The clearest book on why small changes stick.
-https://www.goodreads.com/book/show/40121378-atomic-habits
+export const EXAMPLE_LIST = `Harry Potter and the Sorcerer's Stone
+The book that made me a reader.
+https://books.google.com/books?id=wrOQLV6xB-wC
 
 Steve Jobs at Stanford
 Fifteen minutes I rewatch every year.
 https://www.youtube.com/watch?v=UF8uR6Z6KLc
 
-How to Do Great Work
-Long, and worth it.
-https://paulgraham.com/greatwork.html`;
+Kind of Blue — Miles Davis
+On repeat every Sunday morning.
+https://open.spotify.com/album/1weenld61qoidwYuZ1GESA
+
+Acquired
+The best long-form stories about how great companies were built.
+https://open.spotify.com/show/7Fj0XEuUQLUqoMZQdsLXqp
+
+Your Life in Weeks
+A short read that changes how you plan.
+https://waitbutwhy.com/2014/05/life-weeks.html`;
 
 const importCelebrationStyles = `
 @keyframes import-celebration-card-in {
@@ -436,9 +444,9 @@ export function ImportFlow({ variant = 'page' }: ImportFlowProps) {
               rows={embedded ? 7 : 11}
               placeholder={`Paste a reading list, a newsletter, a LinkedIn post…
 
-Atomic Habits
-The clearest book on why small changes stick.
-https://www.goodreads.com/book/show/40121378-atomic-habits`}
+Harry Potter and the Sorcerer's Stone
+The book that made me a reader.
+https://books.google.com/books?id=wrOQLV6xB-wC`}
               className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700
                          bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100
                          placeholder:text-gray-400 dark:placeholder:text-gray-500
