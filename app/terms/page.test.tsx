@@ -66,10 +66,11 @@ describe('TermsPage', () => {
   });
 
   describe('Edge Cases', () => {
-    it('marks governing law as the only placeholder', () => {
+    it('has no placeholders left and names New York law', () => {
       renderComponent();
-      const texts = screen.getAllByTestId('legal-placeholder').map((el) => el.textContent);
-      expect(texts).toEqual(['[governing law and location to be added]']);
+      expect(screen.queryAllByTestId('legal-placeholder')).toHaveLength(0);
+      const section = screen.getByRole('heading', { name: 'Governing law' }).closest('section') as HTMLElement;
+      expect(section).toHaveTextContent('laws of the State of New York');
     });
 
     it('names no company and gives only the project contact address', () => {

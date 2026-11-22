@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ContactEmail, LegalLink, LegalPage, LegalSection, Placeholder } from '@/components/legal/LegalPage';
+import { ContactEmail, LegalLink, LegalPage, LegalSection } from '@/components/legal/LegalPage';
 
 export const metadata: Metadata = {
   title: 'Terms',
@@ -104,7 +104,9 @@ export default function TermsPage() {
 
       <LegalSection id="law" title="Governing law">
         <p>
-          <Placeholder>governing law and location to be added</Placeholder>
+          These terms are governed by the laws of the State of New York, United States, without regard to its
+          conflict-of-law rules. Any dispute about them will be handled by the state or federal courts located
+          in New York.
         </p>
       </LegalSection>
 
