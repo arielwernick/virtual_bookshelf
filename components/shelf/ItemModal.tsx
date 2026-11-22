@@ -8,6 +8,7 @@ import { StarDisplay } from '@/components/ui/StarDisplay';
 import { getAspectRatio, getAspectRatioNumeric } from '@/lib/constants/aspectRatios';
 import { getImageFitMode, isAmazonHostedImage } from '@/lib/utils/imageUtils';
 import { StockDrawer } from '@/components/shelf/StockDrawer';
+import { getSpotifyEmbed } from '@/lib/utils/spotifyEmbed';
 
 interface ItemModalProps {
   item: Item | null;
@@ -114,6 +115,7 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
   const isVideo = item.type === 'video';
   const videoId = isVideo && item.external_url ? extractVideoId(item.external_url) : null;
   const isStock = item.type === 'stock';
+  const spotifyEmbed = getSpotifyEmbed(item);
 
   return (
     <div
@@ -232,99 +234,112 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
             </div>
           ) : (
             /* Standard Layout - Side by side for non-video items */
-            <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
-              {/* Cover Image */}
-              <div className="w-32 sm:w-48 md:w-64 flex-shrink-0 mx-auto md:mx-0">
-                {(() => {
-                  const baseRatioStr = getAspectRatio(item.type);
-                  const baseRatioNum = getAspectRatioNumeric(item.type);
-                  const containerStyle = { aspectRatio: baseRatioNum || baseRatioStr } as React.CSSProperties;
-                  return (
-                    <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-lg overflow-hidden shadow-lg" style={containerStyle}>
-                      {item.image_url && !imageError ? (
-                        <Image
-                          src={item.image_url}
-                          alt={item.title}
-                          fill
-                          className={`w-full h-full ${fitMode === 'cover' ? 'object-cover' : 'object-contain'} object-center`}
-                          sizes="(max-width: 640px) 128px, (max-width: 768px) 192px, 256px"
-                          onLoad={(e) => {
-                            try {
-                              const containerRatio = baseRatioNum;
-                              const isAmazon = isAmazonHostedImage(item.image_url || '');
-                              if (isAmazon) {
-                                setFitMode('contain');
-                                return;
+            <div>
+              {spotifyEmbed && (
+                <iframe
+                  src={spotifyEmbed.src}
+                  title={`Spotify player: ${item.title}`}
+                  height={spotifyEmbed.height}
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                  className="w-full rounded-xl border-0 mb-4 sm:mb-6"
+                  data-testid="spotify-embed"
+                />
+              )}
+              <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
+                {/* Cover Image */}
+                <div className="w-32 sm:w-48 md:w-64 flex-shrink-0 mx-auto md:mx-0">
+                  {(() => {
+                    const baseRatioStr = getAspectRatio(item.type);
+                    const baseRatioNum = getAspectRatioNumeric(item.type);
+                    const containerStyle = { aspectRatio: baseRatioNum || baseRatioStr } as React.CSSProperties;
+                    return (
+                      <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-lg overflow-hidden shadow-lg" style={containerStyle}>
+                        {item.image_url && !imageError ? (
+                          <Image
+                            src={item.image_url}
+                            alt={item.title}
+                            fill
+                            className={`w-full h-full ${fitMode === 'cover' ? 'object-cover' : 'object-contain'} object-center`}
+                            sizes="(max-width: 640px) 128px, (max-width: 768px) 192px, 256px"
+                            onLoad={(e) => {
+                              try {
+                                const containerRatio = baseRatioNum;
+                                const isAmazon = isAmazonHostedImage(item.image_url || '');
+                                if (isAmazon) {
+                                  setFitMode('contain');
+                                  return;
+                                }
+                                setFitMode(getImageFitMode(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight, containerRatio));
+                              } catch {
+                                setFitMode('cover');
                               }
-                              setFitMode(getImageFitMode(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight, containerRatio));
-                            } catch {
-                              setFitMode('cover');
-                            }
-                          }}
-                          onError={() => setImageError(true)}
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500">
-                          <svg className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Item Details */}
-              <div className="flex-1">
-                <div className="mb-3 sm:mb-4">
-                  <span className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full ${
-                    item.type === 'book' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200' :
-                    item.type === 'podcast' ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200' :
-                    item.type === 'music' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200' :
-                    item.type === 'podcast_episode' ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200' :
-                    'bg-gray-100 dark:bg-gray-900/50 text-gray-800 dark:text-gray-200'
-                  }`}>
-                    {item.type}
-                  </span>
+                            }}
+                            onError={() => setImageError(true)}
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500">
+                            <svg className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                  {item.title}
-                </h3>
-
-                <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
-                  by {item.creator}
-                </p>
-
-                {/* Rating display */}
-                {item.rating && (
-                  <div className="mb-4 sm:mb-6">
-                    <StarDisplay rating={item.rating} size="md" />
+                {/* Item Details */}
+                <div className="flex-1">
+                  <div className="mb-3 sm:mb-4">
+                    <span className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full ${
+                      item.type === 'book' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200' :
+                      item.type === 'podcast' ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200' :
+                      item.type === 'music' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200' :
+                      item.type === 'podcast_episode' ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200' :
+                      'bg-gray-100 dark:bg-gray-900/50 text-gray-800 dark:text-gray-200'
+                    }`}>
+                      {item.type}
+                    </span>
                   </div>
-                )}
 
-                {/* Notes Section */}
-                {item.notes && <NoteSection notes={item.notes} className="mb-4 sm:mb-6" />}
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                    {item.title}
+                  </h3>
 
-                {item.external_url && (
-                  <a
-                    href={item.external_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium text-sm sm:text-base"
-                  >
-                    <span>View on {
-                      item.external_url.includes('spotify') ? 'Spotify' :
-                      item.external_url.includes('google') ? 'Google Books' :
-                      'External Site'
-                    }</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                )}
+                  <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
+                    by {item.creator}
+                  </p>
+
+                  {/* Rating display */}
+                  {item.rating && (
+                    <div className="mb-4 sm:mb-6">
+                      <StarDisplay rating={item.rating} size="md" />
+                    </div>
+                  )}
+
+                  {/* Notes Section */}
+                  {item.notes && <NoteSection notes={item.notes} className="mb-4 sm:mb-6" />}
+
+                  {item.external_url && (
+                    <a
+                      href={item.external_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium text-sm sm:text-base"
+                    >
+                      <span>View on {
+                        item.external_url.includes('spotify') ? 'Spotify' :
+                        item.external_url.includes('google') ? 'Google Books' :
+                        'External Site'
+                      }</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           )}

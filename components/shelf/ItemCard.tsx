@@ -7,6 +7,8 @@ import { StarDisplay } from '@/components/ui/StarDisplay';
 import { calculateJitter, getImageFitMode, isAmazonHostedImage } from '@/lib/utils/imageUtils';
 import { useState } from 'react';
 import { useShelf } from '@/lib/contexts/ShelfContext';
+import { getSpotifyEmbed } from '@/lib/utils/spotifyEmbed';
+import { SpotifyPlayBadge } from './SpotifyPlayBadge';
 
 interface ItemCardProps {
   item: Item;
@@ -66,6 +68,7 @@ export function ItemCard({ item }: ItemCardProps) {
   const adjustedRatioNum = baseRatioNum * (1 + jitter);
   const isClickable = handleItemClick && !editMode;
   const hasNotes = Boolean(item.notes);
+  const isPlayable = getSpotifyEmbed(item) !== null;
 
   const badgeColor = {
     book: 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200',
@@ -141,6 +144,9 @@ export function ItemCard({ item }: ItemCardProps) {
             {item.type}
           </span>
         </div>
+
+        {/* Spotify ▶ - clicking the card opens the item window with the player */}
+        {isPlayable && !editMode && <SpotifyPlayBadge />}
 
         {/* Delete Button - Always visible in edit mode for better discoverability */}
         {editMode && handleDelete && (

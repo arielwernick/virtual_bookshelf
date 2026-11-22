@@ -437,4 +437,23 @@ describe('ItemCard', () => {
       expect(card.className).toContain('focus-within:ring-gray-500');
     });
   });
+
+  describe('Spotify play badge', () => {
+    const spotifyItem = { type: 'music' as const, external_url: 'https://open.spotify.com/album/4uLU6hMCjMI75M1A2tKUQC' };
+
+    it('shows the play badge on Spotify items', () => {
+      renderWithProvider(<ItemCard item={createMockItem(spotifyItem)} />);
+      expect(screen.getByTestId('spotify-play-badge')).toBeInTheDocument();
+    });
+
+    it('hides the play badge in edit mode', () => {
+      renderWithProvider(<ItemCard item={createMockItem(spotifyItem)} />, { editMode: true });
+      expect(screen.queryByTestId('spotify-play-badge')).not.toBeInTheDocument();
+    });
+
+    it('does not show the play badge on non-Spotify items', () => {
+      renderWithProvider(<ItemCard item={createMockItem({ type: 'book', external_url: 'https://example.com' })} />);
+      expect(screen.queryByTestId('spotify-play-badge')).not.toBeInTheDocument();
+    });
+  });
 });

@@ -197,4 +197,16 @@ describe('ItemCardStatic', () => {
       expect(container.querySelector('article')).not.toHaveAttribute('priority');
     });
   });
+
+  describe('Spotify play badge', () => {
+    it('shows the play badge on Spotify items', () => {
+      render(<ItemCardStatic item={createMockItem({ type: 'podcast', external_url: 'https://open.spotify.com/show/4uLU6hMCjMI75M1A2tKUQC' })} />);
+      expect(screen.getByTestId('spotify-play-badge')).toBeInTheDocument();
+    });
+
+    it('does not show the play badge on non-Spotify items', () => {
+      render(<ItemCardStatic item={createMockItem()} />);
+      expect(screen.queryByTestId('spotify-play-badge')).not.toBeInTheDocument();
+    });
+  });
 });

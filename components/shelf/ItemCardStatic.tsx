@@ -15,6 +15,8 @@ import { StarDisplayStatic } from '@/components/ui/StarDisplayStatic';
 import { ItemCardImage } from './ItemCardImage';
 import { calculateJitter } from '@/lib/utils/imageUtils';
 import { extractVideoId } from '@/lib/api/youtube';
+import { getSpotifyEmbed } from '@/lib/utils/spotifyEmbed';
+import { SpotifyPlayBadge } from './SpotifyPlayBadge';
 
 const fallbackIcon = (
   <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500">
@@ -52,6 +54,7 @@ export function ItemCardStatic({ item, priority = false, ...props }: ItemCardSta
   // preventDefault); the href exists for crawlers and cmd/middle-click.
   const videoId = item.type === 'video' && item.external_url ? extractVideoId(item.external_url) : null;
   const watchHref = videoId ? `/v/${videoId}` : null;
+  const isPlayable = getSpotifyEmbed(item) !== null;
 
   const badgeColor = {
     book: 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200',
@@ -97,6 +100,9 @@ export function ItemCardStatic({ item, priority = false, ...props }: ItemCardSta
             {item.type}
           </span>
         </div>
+
+        {/* Spotify ▶ - a click opens the item window with the player */}
+        {isPlayable && <SpotifyPlayBadge />}
 
         {/* Crawlable link to the dedicated watch page for video items.
             Overlay so it doesn't disturb card layout; a plain click is
