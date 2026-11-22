@@ -60,6 +60,12 @@ describe('htmlToText', () => {
     );
   });
 
+  it('leaves no markup behind, even from nested or encoded tags', () => {
+    expect(htmlToText('a<scr<script>ipt>alert(1)</script>b')).toBe('aalert(1)b');
+    expect(htmlToText('x &lt;script&gt;y&#60;img&#62; 3 > 2')).toBe('x scriptyimg 3 2');
+    expect(htmlToText('Unclosed <b tag')).toBe('Unclosed b tag');
+  });
+
   it('handles line breaks and numeric entities', () => {
     expect(htmlToText('One<br>Two&#x2014;Three&nbsp;Four')).toBe('One\nTwo—Three Four');
   });

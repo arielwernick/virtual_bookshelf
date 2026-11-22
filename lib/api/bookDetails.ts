@@ -79,12 +79,23 @@ const ENTITIES: Record<string, string> = {
   hellip: '…', mdash: '—', ndash: '–', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”',
 };
 
-/** Google descriptions are HTML. Turn them into plain paragraphs. */
+/**
+ * Google descriptions are HTML. Turn them into plain paragraphs.
+ *
+ * The result is rendered as React text (escaped), but it's still made free of
+ * markup on its own: tags are stripped until none are left (so nested ones
+ * like "<scr<script>ipt>" can't survive one pass), and any angle bracket
+ * left over or decoded from an entity is dropped.
+ */
 export function htmlToText(html: string): string {
-  return html
-    .replace(/<\s*br\s*\/?>/gi, '\n')
-    .replace(/<\/\s*(p|div|li|h[1-6])\s*>/gi, '\n\n')
-    .replace(/<[^>]*>/g, '')
+  let text = html.replace(/<\s*br\s*\/?>/gi, '\n').replace(/<\/\s*(p|div|li|h[1-6])\s*>/gi, '\n\n');
+  let previous;
+  do {
+    previous = text;
+    text = text.replace(/<[^<>]*>/g, '');
+  } while (text !== previous);
+
+  return text
     .replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (match, code: string) => {
       if (code[0] === '#') {
         const n = code[1].toLowerCase() === 'x' ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
@@ -92,6 +103,7 @@ export function htmlToText(html: string): string {
       }
       return ENTITIES[code.toLowerCase()] ?? match;
     })
+    .replace(/[<>]/g, '')
     .replace(/[ \t]+/g, ' ')
     .replace(/ *\n */g, '\n')
     .replace(/\n{3,}/g, '\n\n')
