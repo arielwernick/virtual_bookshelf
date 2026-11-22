@@ -1,5 +1,6 @@
 'use client';
 import Image from 'next/image';
+import { CoverPlaceholder } from './CoverPlaceholder';
 
 import { Item } from '@/lib/types/shelf';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -13,6 +14,10 @@ interface ItemModalProps {
   item: Item | null;
   isOpen: boolean;
   onClose: () => void;
+  /** The shelf's items in display order. With onNavigate, enables previous/next. */
+  items?: Item[];
+  /** Called with the item to show when the visitor steps to the previous or next one. */
+  onNavigate?: (item: Item) => void;
 }
 
 interface NoteSectionProps {
@@ -22,28 +27,48 @@ interface NoteSectionProps {
 
 function NoteSection({ notes, className = 'mb-4' }: NoteSectionProps) {
   return (
-    <div className={className} data-testid="notes-section">
-      <div className="flex items-center gap-1.5 mb-2">
-        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <figure className={className} data-testid="notes-section">
+      <figcaption className="flex items-center gap-1.5 mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            strokeWidth={1.75}
+            d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"
           />
         </svg>
-        <span className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Note</span>
-      </div>
-      <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-lg p-3 sm:p-4">
-        <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed" data-testid="notes-content">
+        Curator&apos;s note
+      </figcaption>
+      <blockquote className="border-l-2 border-gray-900 dark:border-gray-100 pl-4">
+        <p className="font-serif text-[12px] sm:text-[13.5px] text-gray-900 dark:text-gray-100 whitespace-pre-wrap leading-relaxed" data-testid="notes-content">
           {notes}
         </p>
-      </div>
-    </div>
+      </blockquote>
+    </figure>
   );
 }
 
-export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
+/**
+ * The item `dir` steps away from `current` in `items`, wrapping at the ends.
+ * With `notesOnly`, items without a note are skipped. Returns null when there
+ * is nowhere else to go.
+ */
+export function stepItem(items: Item[], current: Item, dir: 1 | -1, notesOnly: boolean): Item | null {
+  const start = items.findIndex((i) => i.id === current.id);
+  if (start === -1) return null;
+  for (let n = 1; n < items.length; n++) {
+    const candidate = items[(start + dir * n + items.length * n) % items.length];
+    if (!notesOnly || candidate.notes?.trim()) return candidate;
+  }
+  return null;
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+}
+
+export function ItemModal({ item, isOpen, onClose, items, onNavigate }: ItemModalProps) {
   // Track whether we pushed a history entry so we know whether to pop it on close
   const pushedHistoryEntry = useRef(false);
   // Stable ref so effects don't re-run when the parent passes a new inline arrow function
@@ -64,19 +89,46 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
     };
   }, [isOpen]);
 
+  // Previous / next through the shelf, optionally skipping items without a note
+  const [notesOnly, setNotesOnly] = useState(false);
+  const canNavigate = Boolean(onNavigate && items && items.length > 1);
+  const noteCount = items ? items.filter((i) => i.notes?.trim()).length : 0;
+  // Offer "Notes only" when it would actually skip something
+  const showNotesOnly = canNavigate && noteCount > 0 && noteCount < (items?.length ?? 0);
+  const effectiveNotesOnly = showNotesOnly && notesOnly;
+
+  const go = (dir: 1 | -1) => {
+    if (!canNavigate || !item || !items || !onNavigate) return;
+    const next = stepItem(items, item, dir, effectiveNotesOnly);
+    if (next) onNavigate(next);
+  };
+  const goRef = useRef(go);
+  useLayoutEffect(() => {
+    goRef.current = go;
+  });
+
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onCloseRef.current();
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey || isTypingTarget(e.target)) return;
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goRef.current(1);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goRef.current(-1);
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleKeyDown);
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
 
@@ -108,12 +160,27 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
   const [imageError, setImageError] = useState(false);
   const [fitMode, setFitMode] = useState<'cover' | 'contain'>('cover');
 
+  // Stepping to another item starts it fresh: its own image, scrolled to the top
+  const [shownItemId, setShownItemId] = useState(item?.id);
+  if (item?.id !== shownItemId) {
+    setShownItemId(item?.id);
+    setImageError(false);
+    setFitMode('cover');
+  }
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    panelRef.current?.scrollTo?.({ top: 0 });
+  }, [item?.id]);
+
   if (!isOpen || !item) return null;
 
   // Check if this is a video item and extract video ID for embedding
   const isVideo = item.type === 'video';
   const videoId = isVideo && item.external_url ? extractVideoId(item.external_url) : null;
   const isStock = item.type === 'stock';
+
+  const navList = items && effectiveNotesOnly ? items.filter((i) => i.notes?.trim()) : items;
+  const position = navList ? navList.findIndex((i) => i.id === item.id) : -1;
 
   return (
     <div
@@ -124,23 +191,66 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
       aria-labelledby="item-modal-title"
     >
       <div
+        ref={panelRef}
         className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header with close button */}
-        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between z-10 rounded-t-lg">
-          <h2 id="item-modal-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate pr-4">
-            {item.title}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex-shrink-0"
-            aria-label="Close dialog"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+        {/* Header: title, close, and previous / next through the shelf */}
+        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 z-10 rounded-t-lg">
+          <div className="flex items-center justify-between">
+            <h2 id="item-modal-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate pr-4">
+              {item.title}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex-shrink-0"
+              aria-label="Close dialog"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          {canNavigate && (
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                onClick={() => go(-1)}
+                className="p-1.5 rounded-md border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label={effectiveNotesOnly ? 'Previous note' : 'Previous item'}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => go(1)}
+                className="p-1.5 rounded-md border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label={effectiveNotesOnly ? 'Next note' : 'Next item'}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              {navList && position >= 0 && (
+                <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums" data-testid="item-position">
+                  {position + 1} of {navList.length}{effectiveNotesOnly ? ' notes' : ''}
+                </span>
+              )}
+              {showNotesOnly && (
+                <button
+                  onClick={() => setNotesOnly((v) => !v)}
+                  aria-pressed={effectiveNotesOnly}
+                  className={`ml-auto px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    effectiveNotesOnly
+                      ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 border-gray-900 dark:border-gray-100'
+                      : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  Notes only
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Content */}
@@ -205,15 +315,15 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
                   by {item.creator}
                 </p>
 
+                {/* The curator's note comes first: it's why the item is here */}
+                {item.notes && <NoteSection notes={item.notes} />}
+
                 {/* Rating display */}
                 {item.rating && (
                   <div className="mb-4">
                     <StarDisplay rating={item.rating} size="md" />
                   </div>
                 )}
-
-                {/* Notes Section */}
-                {item.notes && <NoteSection notes={item.notes} />}
 
                 {item.external_url && (
                   <a
@@ -265,11 +375,7 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
                           unoptimized
                         />
                       ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500">
-                          <svg className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                          </svg>
-                        </div>
+                        <CoverPlaceholder item={item} />
                       )}
                     </div>
                   );
@@ -298,15 +404,15 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
                   by {item.creator}
                 </p>
 
+                {/* The curator's note comes first: it's why the item is here */}
+                {item.notes && <NoteSection notes={item.notes} className="mb-4 sm:mb-6" />}
+
                 {/* Rating display */}
                 {item.rating && (
                   <div className="mb-4 sm:mb-6">
                     <StarDisplay rating={item.rating} size="md" />
                   </div>
                 )}
-
-                {/* Notes Section */}
-                {item.notes && <NoteSection notes={item.notes} className="mb-4 sm:mb-6" />}
 
                 {item.external_url && (
                   <a
