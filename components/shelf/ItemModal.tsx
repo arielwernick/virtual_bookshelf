@@ -9,6 +9,8 @@ import { StarDisplay } from '@/components/ui/StarDisplay';
 import { getAspectRatio, getAspectRatioNumeric } from '@/lib/constants/aspectRatios';
 import { getImageFitMode, isAmazonHostedImage } from '@/lib/utils/imageUtils';
 import { StockDrawer } from '@/components/shelf/StockDrawer';
+import { getSpotifyEmbed } from '@/lib/utils/spotifyEmbed';
+import { SpotifyPlayer } from '@/components/shelf/SpotifyPlayer';
 
 interface ItemModalProps {
   item: Item | null;
@@ -178,6 +180,7 @@ export function ItemModal({ item, isOpen, onClose, items, onNavigate }: ItemModa
   const isVideo = item.type === 'video';
   const videoId = isVideo && item.external_url ? extractVideoId(item.external_url) : null;
   const isStock = item.type === 'stock';
+  const spotifyEmbed = isStock || videoId ? null : getSpotifyEmbed(item);
 
   const navList = items && effectiveNotesOnly ? items.filter((i) => i.notes?.trim()) : items;
   const position = navList ? navList.findIndex((i) => i.id === item.id) : -1;
@@ -339,6 +342,47 @@ export function ItemModal({ item, isOpen, onClose, items, onNavigate }: ItemModa
                   </a>
                 )}
               </div>
+            </div>
+          ) : spotifyEmbed ? (
+            /* Spotify Layout - the player already shows cover, title and creator,
+               so only what Spotify doesn't know goes below it */
+            <div className="space-y-4" data-testid="spotify-layout">
+              <SpotifyPlayer
+                key={spotifyEmbed.src}
+                embed={spotifyEmbed}
+                title={item.title}
+                creator={item.creator}
+                imageUrl={item.image_url}
+                externalUrl={item.external_url}
+              />
+
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full ${
+                    item.type === 'podcast' ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200' :
+                    item.type === 'podcast_episode' ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200' :
+                    'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200'
+                  }`}>
+                    {item.type === 'podcast_episode' ? 'episode' : item.type}
+                  </span>
+                  {item.rating && <StarDisplay rating={item.rating} size="md" />}
+                </div>
+                {item.external_url && (
+                  <a
+                    href={item.external_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                  >
+                    <span>Open in Spotify</span>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
+              </div>
+
+              {item.notes && <NoteSection notes={item.notes} className="" />}
             </div>
           ) : (
             /* Standard Layout - Side by side for non-video items */

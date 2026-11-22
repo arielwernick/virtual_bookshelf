@@ -168,3 +168,58 @@ describe('ItemModal', () => {
     });
   });
 });
+
+describe('ItemModal Spotify player', () => {
+  const spotifyItem = (overrides: Partial<Item> = {}) =>
+    createMockItem({
+      type: 'music',
+      title: 'Blue in Green',
+      creator: 'Miles Davis',
+      image_url: 'https://example.com/cover.jpg',
+      external_url: 'https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC',
+      notes: null,
+      rating: null,
+      ...overrides,
+    });
+  const renderComponent = (item: Item) => render(<ItemModal item={item} isOpen onClose={() => {}} />);
+
+  it('embeds the Spotify player for Spotify items', () => {
+    renderComponent(spotifyItem());
+    const player = screen.getByTestId('spotify-embed');
+    expect(player).toHaveAttribute(
+      'src',
+      'https://open.spotify.com/embed/track/4uLU6hMCjMI75M1A2tKUQC?utm_source=generator'
+    );
+    expect(player).toHaveAttribute('height', '152');
+    expect(screen.getByRole('link', { name: 'Open in Spotify' })).toHaveAttribute(
+      'href',
+      'https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC'
+    );
+  });
+
+  it('drops the cover and details the player already shows', () => {
+    renderComponent(spotifyItem());
+    expect(screen.queryByRole('img', { name: 'Blue in Green' })).not.toBeInTheDocument();
+    expect(screen.queryByText('by Miles Davis')).not.toBeInTheDocument();
+    expect(screen.queryByText('View on Spotify')).not.toBeInTheDocument();
+    // Outside the player's placeholder (which Spotify covers), the title is only in the header
+    const placeholder = screen.getByTestId('spotify-player-placeholder');
+    const titles = screen.getAllByText('Blue in Green').filter((el) => !placeholder.contains(el));
+    expect(titles).toHaveLength(1);
+  });
+
+  it('shows rating and notes below the player', () => {
+    renderComponent(spotifyItem({ rating: 4, notes: 'Best track on the album' }));
+    expect(screen.getByTestId('notes-content')).toHaveTextContent('Best track on the album');
+  });
+
+  it('labels podcast episodes as "episode"', () => {
+    renderComponent(spotifyItem({ type: 'podcast_episode', external_url: 'https://open.spotify.com/episode/4uLU6hMCjMI75M1A2tKUQC' }));
+    expect(screen.getByText('episode')).toBeInTheDocument();
+  });
+
+  it('does not embed a player for non-Spotify items', () => {
+    renderComponent(spotifyItem({ type: 'book', external_url: 'https://books.google.com/books?id=abc123' }));
+    expect(screen.queryByTestId('spotify-embed')).not.toBeInTheDocument();
+  });
+});

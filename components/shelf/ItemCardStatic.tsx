@@ -17,6 +17,8 @@ import { CoverPlaceholder } from './CoverPlaceholder';
 import { NoteMarker } from './NoteMarker';
 import { calculateJitter } from '@/lib/utils/imageUtils';
 import { extractVideoId } from '@/lib/api/youtube';
+import { getSpotifyEmbed } from '@/lib/utils/spotifyEmbed';
+import { SpotifyPlayBadge } from './SpotifyPlayBadge';
 
 interface ItemCardStaticProps {
   item: Item;
@@ -35,7 +37,8 @@ export function ItemCardStatic({ item, priority = false, ...props }: ItemCardSta
     : item.image_url;
   const adjustedRatioNum = baseRatioNum * (1 + jitter);
   const hasNotes = Boolean(item.notes);
-  const fallbackCover = <CoverPlaceholder item={item} clearNoteMarker={hasNotes} />;
+  const isPlayable = getSpotifyEmbed(item) !== null;
+  const fallbackCover = <CoverPlaceholder item={item} clearNoteMarker={hasNotes || isPlayable} />;
 
   // Video items get a crawlable link to their dedicated /v/[videoId] watch
   // page. A plain click still opens the modal (SharedShelfInteractive calls
@@ -89,6 +92,9 @@ export function ItemCardStatic({ item, priority = false, ...props }: ItemCardSta
             {item.type}
           </span>
         </div>
+
+        {/* Spotify ▶ - a click opens the item window with the player */}
+        {isPlayable && <SpotifyPlayBadge />}
 
         {/* Crawlable link to the dedicated watch page for video items.
             Overlay so it doesn't disturb card layout; a plain click is
