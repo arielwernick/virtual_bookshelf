@@ -202,7 +202,7 @@ export function ItemCard({ item }: ItemCardProps) {
         
         {/* Note teaser - the full note is in the HTML; the popup shows it in full */}
         {!editMode && hasNotes && (
-          <p className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-gray-100 dark:border-gray-800 font-serif italic text-xs sm:text-[13px] text-gray-700 dark:text-gray-300 line-clamp-2 leading-snug" data-testid="note-preview">
+          <p className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-gray-100 dark:border-gray-800 font-serif italic text-[9px] sm:text-[9.75px] text-gray-700 dark:text-gray-300 line-clamp-2 leading-snug" data-testid="note-preview">
             {item.notes}
           </p>
         )}
