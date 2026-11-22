@@ -13,7 +13,6 @@ sharing over work that adds new ways to be found.
 
 Trust and the basics.
 
-- Privacy and Terms pages: [#305](https://github.com/arielwernick/virtual_bookshelf/issues/305) (drafted; needs the owner's read and details; blocks the welcome email)
 - Sign-in on Better Auth: [#264](https://github.com/arielwernick/virtual_bookshelf/issues/264) to [#267](https://github.com/arielwernick/virtual_bookshelf/issues/267) are done and live. Left: password reset, verification and welcome emails ([#268](https://github.com/arielwernick/virtual_bookshelf/issues/268)), then removing the old sign-in code ([#269](https://github.com/arielwernick/virtual_bookshelf/issues/269))
 - Three shelf visibility levels: [#263](https://github.com/arielwernick/virtual_bookshelf/issues/263)
 - Talk to real users: what makes a shelf worth coming back to? (needs the owner; no code)
@@ -39,6 +38,8 @@ Worth doing once there are more shelves.
 
 - The Nov 2026 audit work, merged in one pull request on Nov 16: valid structured data ([#283](https://github.com/arielwernick/virtual_bookshelf/issues/283)), real 404s and sitemap cleanup ([#284](https://github.com/arielwernick/virtual_bookshelf/issues/284)), every public shelf as Markdown, JSON and JSON Feed ([#285](https://github.com/arielwernick/virtual_bookshelf/issues/285)), oEmbed ([#286](https://github.com/arielwernick/virtual_bookshelf/issues/286)), tracked "make your own" links ([#287](https://github.com/arielwernick/virtual_bookshelf/issues/287)), canonical identifiers on items ([#288](https://github.com/arielwernick/virtual_bookshelf/issues/288)), account export ([#289](https://github.com/arielwernick/virtual_bookshelf/issues/289)), the agent harness ([#290](https://github.com/arielwernick/virtual_bookshelf/issues/290)), the delivery process ([#291](https://github.com/arielwernick/virtual_bookshelf/issues/291)), keep adding and publish from the edit page ([#292](https://github.com/arielwernick/virtual_bookshelf/issues/292)), full notes on shelf pages ([#293](https://github.com/arielwernick/virtual_bookshelf/issues/293)), one URL rule for item writes ([#296](https://github.com/arielwernick/virtual_bookshelf/issues/296)) and mock mode for outside APIs ([#275](https://github.com/arielwernick/virtual_bookshelf/issues/275))
 - Paste a list, see it as a shelf, save it after sign-up: the first part of [#295](https://github.com/arielwernick/virtual_bookshelf/issues/295), with [#308](https://github.com/arielwernick/virtual_bookshelf/issues/308) and [#310](https://github.com/arielwernick/virtual_bookshelf/issues/310)
+- Privacy and Terms pages: [#305](https://github.com/arielwernick/virtual_bookshelf/issues/305)
+- Notes inside the item window with previous and next, placeholder covers for missing art, and a Spotify player for Spotify items
 - Sign-in on Better Auth and the Resend email helper: [#264](https://github.com/arielwernick/virtual_bookshelf/issues/264) to [#267](https://github.com/arielwernick/virtual_bookshelf/issues/267)
 
 ## Recommended against
