@@ -11,6 +11,7 @@ import { getImageFitMode, isAmazonHostedImage } from '@/lib/utils/imageUtils';
 import { StockDrawer } from '@/components/shelf/StockDrawer';
 import { getSpotifyEmbed } from '@/lib/utils/spotifyEmbed';
 import { SpotifyPlayer } from '@/components/shelf/SpotifyPlayer';
+import { BookFacts, BookPreview, useBookDetails } from '@/components/shelf/BookDetails';
 
 interface ItemModalProps {
   item: Item | null;
@@ -174,6 +175,11 @@ export function ItemModal({ item, isOpen, onClose, items, onNavigate }: ItemModa
     panelRef.current?.scrollTo?.({ top: 0 });
   }, [item?.id]);
 
+  // Book details (blurb, year, pages, preview) load when a book opens
+  const book = useBookDetails(isOpen ? item : null);
+  // Which item's Google preview is open; paging to another item closes it
+  const [previewFor, setPreviewFor] = useState<string | null>(null);
+
   if (!isOpen || !item) return null;
 
   // Check if this is a video item and extract video ID for embedding
@@ -181,6 +187,7 @@ export function ItemModal({ item, isOpen, onClose, items, onNavigate }: ItemModa
   const videoId = isVideo && item.external_url ? extractVideoId(item.external_url) : null;
   const isStock = item.type === 'stock';
   const spotifyEmbed = isStock || videoId ? null : getSpotifyEmbed(item);
+  const previewVolumeId = book.status === 'done' ? book.details.previewVolumeId : undefined;
 
   const navList = items && effectiveNotesOnly ? items.filter((i) => i.notes?.trim()) : items;
   const position = navList ? navList.findIndex((i) => i.id === item.id) : -1;
@@ -386,6 +393,7 @@ export function ItemModal({ item, isOpen, onClose, items, onNavigate }: ItemModa
             </div>
           ) : (
             /* Standard Layout - Side by side for non-video items */
+            <div>
             <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
               {/* Cover Image */}
               <div className="w-32 sm:w-48 md:w-64 flex-shrink-0 mx-auto md:mx-0">
@@ -458,6 +466,9 @@ export function ItemModal({ item, isOpen, onClose, items, onNavigate }: ItemModa
                   </div>
                 )}
 
+                <BookFacts key={item.id} state={book} />
+
+                <div className="flex flex-wrap items-center gap-2">
                 {item.external_url && (
                   <a
                     href={item.external_url}
@@ -475,7 +486,23 @@ export function ItemModal({ item, isOpen, onClose, items, onNavigate }: ItemModa
                     </svg>
                   </a>
                 )}
+
+                {previewVolumeId && previewFor !== item.id && (
+                  <button
+                    type="button"
+                    onClick={() => setPreviewFor(item.id)}
+                    className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-medium text-sm sm:text-base"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <span>Preview the book</span>
+                  </button>
+                )}
+                </div>
               </div>
+            </div>
+            {previewVolumeId && previewFor === item.id && <BookPreview volumeId={previewVolumeId} title={item.title} />}
             </div>
           )}
         </div>
