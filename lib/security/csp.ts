@@ -28,6 +28,8 @@ const DIRECTIVES: Record<string, string[]> = {
     'https://www.youtube.com',
     'https://www.youtube-nocookie.com',
     'https://open.spotify.com',
+    // Google Books' in-page preview in book windows
+    'https://books.google.com',
   ],
   // The main site is never framed. /embed/ has its own header.
   'frame-ancestors': ["'none'"],
