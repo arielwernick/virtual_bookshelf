@@ -36,9 +36,12 @@ describe('searchEpisodes', () => {
 
   function route(searchItems: unknown[], fullEpisodes: unknown | null) {
     fetchMock.mockImplementation((url: string) => {
-      if (url.includes('accounts.spotify.com')) return json({ access_token: 't', token_type: 'Bearer', expires_in: 3600 });
-      if (url.includes('/v1/search')) return json({ episodes: { items: searchItems } });
-      if (url.includes('/v1/episodes')) return fullEpisodes === null ? json({}, false) : json({ episodes: fullEpisodes });
+      const { host, pathname } = new URL(url);
+      if (host === 'accounts.spotify.com') return json({ access_token: 't', token_type: 'Bearer', expires_in: 3600 });
+      if (host === 'api.spotify.com' && pathname === '/v1/search') return json({ episodes: { items: searchItems } });
+      if (host === 'api.spotify.com' && pathname === '/v1/episodes') {
+        return fullEpisodes === null ? json({}, false) : json({ episodes: fullEpisodes });
+      }
       throw new Error(`unexpected ${url}`);
     });
   }
@@ -62,9 +65,11 @@ describe('searchEpisodes', () => {
       },
       expect.objectContaining({ id: EP2, creator: 'Acquired', externalUrl: `https://open.spotify.com/episode/${EP2}` }),
     ]);
-    const searchUrl = fetchMock.mock.calls.map(([u]) => u as string).find((u) => u.includes('/v1/search'));
-    expect(searchUrl).toContain('type=episode');
-    expect(searchUrl).toContain('market=US');
+    const searchUrl = fetchMock.mock.calls
+      .map(([u]) => new URL(u as string))
+      .find((u) => u.pathname === '/v1/search');
+    expect(searchUrl?.searchParams.get('type')).toBe('episode');
+    expect(searchUrl?.searchParams.get('market')).toBe('US');
   });
 
   it('still returns episodes when the show lookup fails', async () => {
@@ -77,7 +82,7 @@ describe('searchEpisodes', () => {
   it('returns nothing without a second request when search finds nothing', async () => {
     route([], []);
     expect(await searchEpisodes('nothing here')).toEqual([]);
-    expect(fetchMock.mock.calls.some(([u]) => (u as string).includes('/v1/episodes'))).toBe(false);
+    expect(fetchMock.mock.calls.some(([u]) => new URL(u as string).pathname === '/v1/episodes')).toBe(false);
   });
 
   it('returns fixed episodes in mock mode without fetching', async () => {
