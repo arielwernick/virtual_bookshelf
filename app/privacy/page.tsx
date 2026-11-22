@@ -9,7 +9,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Every statement here was checked against the code on November 16, 2026
+ * Every statement here was checked against the code on November 21, 2026,
+ * after the switch to Better Auth
  * (issue #305). If you change what the app stores, sets or sends, change this
  * page and LEGAL_LAST_UPDATED in the same pull request.
  */
@@ -38,17 +39,28 @@ export default function PrivacyPage() {
           <li>your username and email address</li>
           <li>your password, scrambled with bcrypt. We never store the password itself and cannot read it.</li>
         </ul>
-        <p>If you sign up with Google, we ask Google for your basic profile and store:</p>
+        <p>
+          If you sign up with Google, we ask Google for your email address and basic profile, and store:
+        </p>
         <ul>
-          <li>your email address and your Google account ID</li>
+          <li>your email address, and whether Google says it is verified</li>
+          <li>your Google account ID</li>
+          <li>
+            the name and profile picture address on your Google account. We do not show either of them anywhere
+            on the site today.
+          </li>
           <li>
             a username made from the part of your email before the @. Usernames are not shown on public shelf
             pages.
           </li>
+          <li>
+            the sign-in tokens Google hands back. They are refreshed each time you sign in with Google, and are
+            stored as Google sends them, without extra encryption. We do not use them to read anything from your
+            Google account.
+          </li>
         </ul>
         <p>
-          We do not store your Google name, your picture, or any Google access token. If you sign in with Google
-          using an email that already has an account here, the two are linked.
+          If you sign in with Google using an email that already has an account here, the two are linked.
         </p>
         <p>For every account we also store:</p>
         <ul>
@@ -56,6 +68,19 @@ export default function PrivacyPage() {
           <li>when you were last active. This is updated at most once an hour, when you open your dashboard.</li>
           <li>where you came from when you first visited. See the next section.</li>
         </ul>
+      </LegalSection>
+
+      <LegalSection id="sessions" title="Staying signed in">
+        <p>
+          Each time you sign in, we create a session and keep a record of it in our database. The record holds
+          your user ID, when the session started and expires, and the IP address and browser details (the
+          &quot;user agent&quot;) of the device you signed in from.
+        </p>
+        <p>
+          A session lasts 7 days and is extended when you come back, so you stay signed in as long as you visit
+          at least once a week. Signing out ends the session and deletes its record. Records of sessions that
+          simply expire are not cleaned up on a schedule yet.
+        </p>
       </LegalSection>
 
       <LegalSection id="referral" title="Where you came from">
@@ -97,13 +122,13 @@ export default function PrivacyPage() {
         <p>We set three cookies. None of them is an advertising cookie, and none follows you to other sites.</p>
         <ul>
           <li>
-            <strong><code>bookshelf_session</code></strong> keeps you signed in for 7 days. It holds your user
-            ID, username and email address. It is signed so it cannot be altered, but it is not encrypted.
-            Scripts on the page cannot read it.
+            <strong><code>better-auth.session_token</code></strong> keeps you signed in, as described under
+            &quot;Staying signed in&quot;. It holds a random session key and nothing about you. Scripts on the
+            page cannot read it. On the live site its name starts with <code>__Secure-</code>.
           </li>
           <li>
-            <strong><code>oauth_state</code></strong> lasts 10 minutes and protects Google sign-in from being
-            hijacked.
+            <strong><code>better-auth.state</code></strong> lasts 5 minutes while you sign in with Google, and
+            protects that sign-in from being hijacked.
           </li>
           <li>
             <strong><code>vb_attribution</code></strong> lasts 30 days and holds the details described under
@@ -111,15 +136,19 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          Signing out removes the session cookie from the browser you are using. It does not sign you out on
-          other devices: a session there keeps working until its 7 days run out.
+          We also use your browser&apos;s own storage for two small things that stay on your device:
         </p>
-        <p>
-          We also use your browser&apos;s own storage for small things that stay on your device. When you view a
-          public shelf, we leave a marker for that tab so a refresh is not counted as a second view; it is gone
-          when you close the tab. Unfinished work, such as a list you pasted before signing up, may be kept in
-          your browser for up to a day so you do not lose it.
-        </p>
+        <ul>
+          <li>
+            When you view a public shelf, a marker for that tab, so a refresh is not counted as a second view. It
+            is gone when you close the tab.
+          </li>
+          <li>
+            If you paste a list before signing up, the preview of it (the links, their titles and images, and the
+            shelf name you chose) is kept in your browser so it survives signing up. It is removed once the shelf
+            is created or you start over, and ignored after a day.
+          </li>
+        </ul>
       </LegalSection>
 
       <LegalSection id="views" title="View counts">
@@ -160,6 +189,14 @@ export default function PrivacyPage() {
           <li><strong>Neon</strong> hosts the database, which holds your account and your shelves.</li>
           <li><strong>Upstash</strong> receives IP addresses for rate limits, as described above.</li>
           <li><strong>Google</strong> handles sign-in, if you choose to sign in with Google.</li>
+          <li>
+            <strong>Cloudflare</strong> runs the site&apos;s domain name. If you write to our contact address, it
+            forwards your message to a Gmail inbox, which Google runs.
+          </li>
+          <li>
+            <strong>Resend</strong> is set up to send the site&apos;s email. It does not send anything to users
+            yet, so it has not received your address.
+          </li>
         </ul>
         <p>
           When you add something to a shelf, our server looks it up for you. These requests come from our server,
@@ -209,8 +246,9 @@ export default function PrivacyPage() {
           items it has.
         </p>
         <p>
-          We do not sell your data, and the site has no advertising. We do not send email today, not even a
-          welcome message. That also means there is no automatic password reset yet.
+          We do not sell your data, and the site has no advertising. We do not send you email yet, not even a
+          welcome message, so there is no automatic password reset yet. When that changes, this page will say
+          what we send and how to stop it.
         </p>
       </LegalSection>
 

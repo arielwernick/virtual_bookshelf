@@ -17,9 +17,9 @@ describe('TermsPage', () => {
 
     it('shows a machine-readable last updated date', () => {
       renderComponent();
-      const date = screen.getByText('November 16, 2026');
+      const date = screen.getByText('November 21, 2026');
       expect(date.tagName).toBe('TIME');
-      expect(date).toHaveAttribute('datetime', '2026-11-16');
+      expect(date).toHaveAttribute('datetime', '2026-11-21');
     });
 
     it.each([

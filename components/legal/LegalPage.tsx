@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { LegalLinks } from './LegalLinks';
 
 /** Shown on both pages. Change it whenever the wording changes. */
-export const LEGAL_LAST_UPDATED = { iso: '2026-11-16', label: 'November 16, 2026' };
+export const LEGAL_LAST_UPDATED = { iso: '2026-11-21', label: 'November 21, 2026' };
 
 const linkClass =
   'text-gray-900 dark:text-gray-100 underline underline-offset-2 hover:text-gray-600 dark:hover:text-gray-300';
