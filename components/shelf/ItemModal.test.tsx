@@ -202,8 +202,10 @@ describe('ItemModal Spotify player', () => {
     expect(screen.queryByRole('img', { name: 'Blue in Green' })).not.toBeInTheDocument();
     expect(screen.queryByText('by Miles Davis')).not.toBeInTheDocument();
     expect(screen.queryByText('View on Spotify')).not.toBeInTheDocument();
-    // Title stays in the dialog header only
-    expect(screen.getAllByText('Blue in Green')).toHaveLength(1);
+    // Outside the player's placeholder (which Spotify covers), the title is only in the header
+    const placeholder = screen.getByTestId('spotify-player-placeholder');
+    const titles = screen.getAllByText('Blue in Green').filter((el) => !placeholder.contains(el));
+    expect(titles).toHaveLength(1);
   });
 
   it('shows rating and notes below the player', () => {

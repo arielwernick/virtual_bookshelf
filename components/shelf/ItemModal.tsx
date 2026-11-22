@@ -10,6 +10,7 @@ import { getAspectRatio, getAspectRatioNumeric } from '@/lib/constants/aspectRat
 import { getImageFitMode, isAmazonHostedImage } from '@/lib/utils/imageUtils';
 import { StockDrawer } from '@/components/shelf/StockDrawer';
 import { getSpotifyEmbed } from '@/lib/utils/spotifyEmbed';
+import { SpotifyPlayer } from '@/components/shelf/SpotifyPlayer';
 
 interface ItemModalProps {
   item: Item | null;
@@ -346,13 +347,13 @@ export function ItemModal({ item, isOpen, onClose, items, onNavigate }: ItemModa
             /* Spotify Layout - the player already shows cover, title and creator,
                so only what Spotify doesn't know goes below it */
             <div className="space-y-4" data-testid="spotify-layout">
-              <iframe
-                src={spotifyEmbed.src}
-                title={`Spotify player: ${item.title}`}
-                height={spotifyEmbed.height}
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                className="w-full rounded-xl border-0 bg-gray-100 dark:bg-gray-800"
-                data-testid="spotify-embed"
+              <SpotifyPlayer
+                key={spotifyEmbed.src}
+                embed={spotifyEmbed}
+                title={item.title}
+                creator={item.creator}
+                imageUrl={item.image_url}
+                externalUrl={item.external_url}
               />
 
               <div className="flex flex-wrap items-center justify-between gap-3">
