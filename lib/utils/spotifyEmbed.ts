@@ -21,6 +21,9 @@ export function getSpotifyEmbed(item: Pick<Item, 'type' | 'external_url'>): Spot
 
   const [kind, id] = identity.sourceId.split(':');
   if (!kind || !id) return null;
+  // An episode item that links to its show (agents add these, since search
+  // only finds shows) would embed the show, which plays the newest episode.
+  if (item.type === 'podcast_episode' && kind !== 'episode') return null;
 
   return {
     src: `https://open.spotify.com/embed/${kind}/${id}?utm_source=generator`,

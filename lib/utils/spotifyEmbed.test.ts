@@ -35,6 +35,12 @@ describe('getSpotifyEmbed', () => {
     expect(embed('link', 'https://spotify.com/us/premium/')).toBeNull();
   });
 
+  it('returns null for an episode item that links to its show, not the episode', () => {
+    // The show embed would play the newest episode instead of the chosen one
+    expect(embed('podcast_episode', `https://open.spotify.com/show/${ID}`)).toBeNull();
+    expect(embed('podcast', `https://open.spotify.com/show/${ID}`)).not.toBeNull();
+  });
+
   it('returns null for stocks', () => {
     expect(embed('stock', `https://open.spotify.com/track/${ID}`)).toBeNull();
   });
