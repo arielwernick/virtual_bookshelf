@@ -87,6 +87,8 @@ export function SharedShelfInteractive({ items, children }: SharedShelfInteracti
         item={selectedItem}
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
+        items={items}
+        onNavigate={setSelectedItem}
       />
     </>
   );

@@ -169,6 +169,8 @@ export function EmbedShelf() {
         item={selectedItem}
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
+        items={shelfData.items}
+        onNavigate={setSelectedItem}
       />
       <div className="flex justify-end px-3 pt-1 pb-3 sm:px-4 sm:pb-4">
         <Link
