@@ -50,6 +50,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/embed-anywhere`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/books-and-podcasts`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${baseUrl}/best-virtual-bookshelf-apps`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${baseUrl}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/terms`, changeFrequency: 'yearly', priority: 0.3 },
     ...shelfUrls,
     ...videoUrls,
   ]

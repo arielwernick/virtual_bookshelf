@@ -245,6 +245,14 @@ export default function SignupClient() {
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
+
+          <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
+            By creating an account you agree to the{' '}
+            <Link href="/terms" className="underline hover:text-gray-700 dark:hover:text-gray-300">Terms</Link>
+            {' '}and{' '}
+            <Link href="/privacy" className="underline hover:text-gray-700 dark:hover:text-gray-300">Privacy</Link>
+            {' '}pages.
+          </p>
         </div>
 
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">

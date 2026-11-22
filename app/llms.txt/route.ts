@@ -79,6 +79,8 @@ Virtual Bookshelf has a connector (a Model Context Protocol server) so that sign
 - [Goodreads alternative](${baseUrl}/goodreads-alternative): For curating and sharing a shelf, not for tracking or reviews.
 - [Linktree alternative](${baseUrl}/linktree-alternative): Rich visual cards instead of a list of links.
 - [Bento.me alternative](${baseUrl}/bento-alternative): For people moving on after Bento.me shut down on February 13, 2026.
+- [Privacy](${baseUrl}/privacy): What the site collects, which cookies it sets, which outside services receive data, and how to export or delete data.
+- [Terms](${baseUrl}/terms): Acceptable use, content ownership, and what publishing a shelf means.
 
 ## What you can put on a shelf
 
