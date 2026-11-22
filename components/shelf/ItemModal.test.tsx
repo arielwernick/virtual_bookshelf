@@ -38,7 +38,29 @@ describe('ItemModal', () => {
         'https://open.spotify.com/embed/track/4uLU6hMCjMI75M1A2tKUQC?utm_source=generator'
       );
       expect(player).toHaveAttribute('height', '152');
-      expect(screen.getByText('View on Spotify')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Open in Spotify' })).toHaveAttribute(
+        'href',
+        'https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC'
+      );
+    });
+
+    it('drops the cover and details the player already shows', () => {
+      renderComponent(createMockItem());
+      expect(screen.queryByRole('img', { name: 'Blue in Green' })).not.toBeInTheDocument();
+      expect(screen.queryByText('by Miles Davis')).not.toBeInTheDocument();
+      expect(screen.queryByText('View on Spotify')).not.toBeInTheDocument();
+      // Title stays in the dialog header only
+      expect(screen.getAllByText('Blue in Green')).toHaveLength(1);
+    });
+
+    it('shows rating and notes below the player', () => {
+      renderComponent(createMockItem({ rating: 4, notes: 'Best track on the album' }));
+      expect(screen.getByTestId('notes-content')).toHaveTextContent('Best track on the album');
+    });
+
+    it('labels podcast episodes as "episode"', () => {
+      renderComponent(createMockItem({ type: 'podcast_episode', external_url: 'https://open.spotify.com/episode/4uLU6hMCjMI75M1A2tKUQC' }));
+      expect(screen.getByText('episode')).toBeInTheDocument();
     });
 
     it('does not embed a player for non-Spotify items', () => {
