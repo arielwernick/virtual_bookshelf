@@ -37,6 +37,12 @@ describe('sitemap', () => {
     expect(urls.some((url) => url.endsWith('/terms'))).toBe(true);
   });
 
+  it('lists the guides index and each guide', async () => {
+    const urls = (await sitemap()).map((entry) => entry.url);
+    expect(urls.some((url) => url.endsWith('/guides'))).toBe(true);
+    expect(urls.some((url) => url.endsWith('/guides/how-to-add-a-reading-list-to-your-resume'))).toBe(true);
+  });
+
   it('does not stamp the homepage with the current time', async () => {
     const [home] = await sitemap();
     expect(home.lastModified).toBeUndefined();

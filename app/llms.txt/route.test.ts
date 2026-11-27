@@ -16,6 +16,12 @@ describe('buildLlmsTxt', () => {
     expect(text).toContain(`- [Favorite Books](${BASE}/s/favorite-books-Xk9mP2vL/shelf.md): updated 2026-11-01`);
   });
 
+  it('lists guides when there are some', () => {
+    const guide = { slug: 'a-guide', question: 'How do you do it?', description: 'Like this.' };
+    expect(buildLlmsTxt(BASE, [], [guide])).toContain(`## Guides\n\n- [How do you do it?](${BASE}/guides/a-guide): Like this.`);
+    expect(buildLlmsTxt(BASE, [])).not.toContain('## Guides');
+  });
+
   it('omits the shelf section when there are none', () => {
     expect(buildLlmsTxt(BASE, [])).not.toContain('## Public shelves');
   });

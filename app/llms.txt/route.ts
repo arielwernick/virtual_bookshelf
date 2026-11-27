@@ -1,5 +1,6 @@
 import { getPublicShelves } from '@/lib/db/queries';
 import { buildShelfUrls, getBaseUrl } from '@/lib/shelf/publicShelf';
+import { getAllGuides } from '@/lib/utils/guides';
 import { createLogger } from '@/lib/utils/logger';
 
 const logger = createLogger('LlmsTxt');
@@ -19,7 +20,8 @@ function linkLabel(name: string): string {
 
 export function buildLlmsTxt(
   baseUrl: string,
-  shelves: { share_token: string; name: string; updated_at: Date }[]
+  shelves: { share_token: string; name: string; updated_at: Date }[],
+  guides: { slug: string; question: string; description: string }[] = []
 ): string {
   const shelfLines = shelves.slice(0, MAX_SHELVES).map((shelf) => {
     const { markdown } = buildShelfUrls(shelf.name, shelf.share_token, baseUrl);
@@ -35,6 +37,17 @@ export function buildLlmsTxt(
 Each link is the Markdown version of a shelf that its owner chose to publish. Notes on items are the curator's own words.
 
 ${shelfLines.join('\n')}
+`
+      : '';
+
+  const guideSection =
+    guides.length > 0
+      ? `## Guides
+
+${guides
+  .map((guide) => `- [${linkLabel(guide.question)}](${baseUrl}/guides/${guide.slug}): ${guide.description}`)
+  .join('\n')}
+
 `
       : '';
 
@@ -82,7 +95,7 @@ Virtual Bookshelf has a connector (a Model Context Protocol server) so that sign
 - [Privacy](${baseUrl}/privacy): What the site collects, which cookies it sets, which outside services receive data, and how to export or delete data.
 - [Terms](${baseUrl}/terms): Acceptable use, content ownership, and what publishing a shelf means.
 
-## What you can put on a shelf
+${guideSection}## What you can put on a shelf
 
 - Books: search by title; cover art is added automatically
 - Podcasts and individual podcast episodes
@@ -115,7 +128,7 @@ export async function GET() {
     logger.errorWithException('Could not list public shelves for llms.txt', error);
   }
 
-  return new Response(buildLlmsTxt(getBaseUrl(), shelves), {
+  return new Response(buildLlmsTxt(getBaseUrl(), shelves, getAllGuides()), {
     headers: {
       'content-type': 'text/plain; charset=utf-8',
       'cache-control': 'public, max-age=3600, must-revalidate',
