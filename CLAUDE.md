@@ -65,6 +65,7 @@ Run `npm run setup` first in any new checkout or worktree. Worktrees often have 
 - `lib/constants/errors.ts` — Centralized error message strings
 - `lib/shelf/publicShelf.ts` — The public shelf document. **Every** public, machine-readable view of a shelf is built from it through a field allowlist (`docs/spec/SHELF_FORMAT.md`)
 - `lib/utils/itemIdentity.ts` — Canonical identifiers for items (`source`, `source_id`), derived from URLs
+- `docs/architecture/` — Architecture home: `OVERVIEW.md` (system as it is today, update it with your change), `proposals/` (ideas being worked out); see its `README.md`
 - `docs/architecture/PATTERNS.md` — Detailed code patterns reference
 - `docs/architecture/ANTI_PATTERNS.md` — Patterns to avoid
 
