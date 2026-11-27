@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { GuideFooter } from '@/components/guides/GuideFooter';
 import { getAllGuides } from '@/lib/utils/guides';
 import { breadcrumbJsonLd } from '@/lib/utils/landingSchema';
 
@@ -58,6 +59,8 @@ export default function GuidesPage() {
           ))}
         </ul>
       </main>
+
+      <GuideFooter />
     </div>
   );
 }

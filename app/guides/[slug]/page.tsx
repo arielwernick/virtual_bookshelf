@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { GuideFooter } from '@/components/guides/GuideFooter';
 import { notFound } from 'next/navigation';
 import Markdown, { type Components } from 'react-markdown';
 import { getAllGuides, getGuide } from '@/lib/utils/guides';
@@ -117,6 +118,8 @@ export default async function GuidePage({ params }: PageProps) {
           </div>
         </section>
       </main>
+
+      <GuideFooter />
     </div>
   );
 }

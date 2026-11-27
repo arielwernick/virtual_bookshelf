@@ -64,6 +64,13 @@ describe('GuidePage', () => {
       expect(screen.getByTitle('A shelf')).toHaveAttribute('src', expect.stringContaining('/embed/abc123?theme=light'));
     });
 
+    it('links to Privacy and Terms in the footer', async () => {
+      await renderPage();
+
+      expect(screen.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/privacy');
+      expect(screen.getByRole('link', { name: 'Terms' })).toHaveAttribute('href', '/terms');
+    });
+
     it('links the CTA to signup', async () => {
       await renderPage();
 
