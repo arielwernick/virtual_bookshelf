@@ -2,7 +2,7 @@
 
 Now, next and later. Every line links to its issue. The detailed queue and the
 reasons behind it live in the project's planning doc; this file is the short
-public version. Last checked against `main` on Nov 21, 2026.
+public version. Last checked against `main` on Nov 27, 2026.
 
 The order follows one finding from the Nov 2026 audit: the plumbing is ahead
 of the content. A public shelf has a median of 6 items and most items have no
