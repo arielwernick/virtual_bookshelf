@@ -20,6 +20,11 @@ function requireString(data: Record<string, unknown>, field: string, slug: strin
  * the build instead of publishing an incomplete page.
  */
 export function parseGuide(slug: string, raw: string): Guide {
+  // The slug comes from the file name and ends up in URLs and links.
+  if (!SLUG_PATTERN.test(slug)) {
+    throw new Error(`Guide file name "${slug}.md" must be lowercase letters, numbers and hyphens`);
+  }
+
   const { data, content } = matter(raw);
 
   const updated = data.updated instanceof Date ? data.updated : new Date(String(data.updated));

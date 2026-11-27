@@ -53,6 +53,13 @@ describe('parseGuide', () => {
     expect(() => parseGuide('my-guide', raw)).toThrow('invalid shelf token');
   });
 
+  it.each(['Bad Slug', 'javascript:alert(1)', '../secret', 'UPPER', 'a"onmouseover=x'])(
+    'rejects a file name that is unsafe in a URL: %s',
+    (slug) => {
+      expect(() => parseGuide(slug, createGuideMarkdown())).toThrow(/file name/);
+    }
+  );
+
   it('rejects an empty body', () => {
     expect(() => parseGuide('my-guide', createGuideMarkdown({}, ''))).toThrow('no body');
   });

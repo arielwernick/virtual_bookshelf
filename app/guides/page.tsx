@@ -49,7 +49,7 @@ export default function GuidesPage() {
           {guides.map((guide) => (
             <li key={guide.slug}>
               <Link
-                href={`/guides/${guide.slug}`}
+                href={`/guides/${encodeURIComponent(guide.slug)}`}
                 className="block rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/50 p-6 transition hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md"
               >
                 <h2 className="font-semibold text-lg text-gray-900 dark:text-gray-100">{guide.question}</h2>
