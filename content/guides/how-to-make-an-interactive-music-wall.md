@@ -27,7 +27,7 @@ faq:
 2. **Create a shelf.** Sign up and name the shelf after the theme, such as "Album covers worth framing".
 3. **Add your albums.** Choose Music, search an album by name and pick the right one. The cover art and artist fill in for you. For a single track or a playlist, choose Link and paste its Spotify link; it plays the same way.
 4. **Put them in order.** Drag the covers around until the wall looks right. Alternating light and dark covers keeps it from looking lopsided.
-5. **Write a line on each.** Add a note saying why it's there, or when to play it. The note shows below the player when someone opens the album.
+5. **Add a note where you have something to say.** The year it came out, the story behind it, or why it's on your wall. One good line beats a paragraph, and an album with nothing to add can go without. The note shows below the player when someone opens the album.
 6. **Publish it.** Shelves start private. Open the share menu, publish the shelf, and copy the link.
 
 ## Put the wall on your own site
