@@ -1,4 +1,9 @@
-# Handoff: continuing the `next` branch
+# Handoff: the `next` branch (archived)
+
+> **Archived.** `next` was merged into `main` in #297 and the workflow is retired
+> ([decision 0004](../decisions/0004-retire-integration-branch.md)). The rules below
+> about `next` no longer apply: work now goes on a branch from `main` with one pull
+> request per issue (see `CLAUDE.md`). The open task list is kept for reference.
 
 Written Nov 11, 2026, for any agent picking this work up. Read this whole
 file before changing anything. It tells you what is done, what to do next in

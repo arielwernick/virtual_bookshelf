@@ -27,7 +27,7 @@ npm run test:run -- --grep "ItemCard"
 
 A change is done when `npm run verify` is green and its output is pasted in the PR (see `.github/pull_request_template.md`). CI runs the same command. For UI or route changes, also check the Vercel preview and say what you looked at. One branch and one PR per issue; the PR body says `Closes #N`.
 
-If you are continuing work on the `next` branch, read `docs/process/HANDOFF.md` first: it has the task queue in order and the exact commands to land a ticket.
+Branch from `main`. The old `next` integration branch is retired (`docs/decisions/0004-retire-integration-branch.md`). Previews share the Neon `dev` database; if your PR adds a migration or changes the schema, tick **Database change** in the PR description so its preview gets its own branch (`docs/process/PREVIEW_DATABASES.md`).
 
 Safety rules and what enforces each one are in `docs/AGENT_SAFETY.md`. If a rule blocks you, stop and ask; don't work around it.
 
@@ -41,7 +41,7 @@ Run `npm run setup` first in any new checkout or worktree. Worktrees often have 
 - **Public e2e** (`npm run e2e:public`) starts `npm run dev` (or reuses one on port 3000) and checks the signed-out pages. Point it at a deployment with `PLAYWRIGHT_BASE_URL`.
 - **Signed-in e2e** (`npm run e2e`) creates a test user and shelf in whatever database the dev server uses.
 - **Database:** `.env.local` points `DATABASE_URL` at a schema-only Neon `dev` branch, never production. Migrations, seeds and e2e seeding refuse the production database unless `MIGRATE_ALLOW_PROD=1`, `SEED_ALLOW_PROD=1` or `E2E_ALLOW_PROD=1` is set (`lib/db/prodGuard.ts`). Don't set these unless the user asks for a production change.
-- **Previews:** Vercel previews use their own Neon branch (`BOOKSHELF_DATABASE_URL`, see `lib/db/client.ts`). Vercel's Development environment points at `dev`, so `vercel env pull` is safe.
+- **Previews:** Vercel previews use the Neon `dev` branch, or their own branch for PRs marked as database changes (`BOOKSHELF_DATABASE_URL`, see `lib/db/client.ts` and `docs/process/PREVIEW_DATABASES.md`). Vercel's Development environment points at `dev`, so `vercel env pull` is safe.
 
 ## Architecture Overview
 

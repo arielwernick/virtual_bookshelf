@@ -37,9 +37,7 @@ Worth doing once there are more shelves.
 - Paste a list and get a shelf before signing up: [#295](https://github.com/arielwernick/virtual_bookshelf/issues/295)
 - An SEO agent, then a PM agent. Each gets written test cases before it is built, and drafts only
 
-## Landed on the `next` branch, waiting to be promoted
-
-See `docs/process/INTEGRATION_BRANCH.md` for how promotion works.
+## Shipped from the `next` branch (#297)
 
 - Valid structured data, notes as reviews: [#283](https://github.com/arielwernick/virtual_bookshelf/issues/283)
 - Real 404s, sitemap cleanup, robots: [#284](https://github.com/arielwernick/virtual_bookshelf/issues/284)

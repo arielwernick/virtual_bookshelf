@@ -18,6 +18,7 @@ npm run verify
 - [ ] `npm run verify` is green
 - [ ] Preview checked (UI or route changes)
 - [ ] Migration included: no / yes, number ___ (run `migrate:up` before deploy)
+- [ ] Database change: give this PR's preview its own Neon branch (tick for migrations or schema changes; every other preview uses `dev`)
 
 ## What I need from the reviewer
 <!-- The one decision this review has to make, or "nothing". -->

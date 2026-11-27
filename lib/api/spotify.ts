@@ -195,6 +195,79 @@ export async function searchPodcasts(query: string): Promise<SpotifyItem[]> {
   }));
 }
 
+/** A podcast episode from search, shaped for adding as a `podcast_episode` item. */
+export interface EpisodeSearchResult {
+  id: string;
+  title: string;
+  /** The show's name */
+  creator: string;
+  imageUrl: string;
+  externalUrl: string;
+  type: 'podcast_episode';
+}
+
+/**
+ * Search for individual podcast episodes across all shows. Spotify's search
+ * leaves out which show an episode belongs to, so one more request looks that
+ * up; if it fails, results come back without a show name.
+ */
+export async function searchEpisodes(query: string): Promise<EpisodeSearchResult[]> {
+  if (isMockMode()) {
+    return wantsNoResults(query)
+      ? []
+      : MOCK_EPISODES.map((episode) => ({
+          id: episode.id,
+          title: episode.title,
+          creator: episode.showName,
+          imageUrl: episode.imageUrl,
+          externalUrl: episode.externalUrl,
+          type: 'podcast_episode' as const,
+        }));
+  }
+
+  const token = await getAccessToken();
+  const headers = { 'Authorization': `Bearer ${token}` };
+
+  // Episode search needs a market with client-credentials tokens
+  const response = await fetch(
+    `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=episode&market=US&limit=10`,
+    { headers }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to search Spotify episodes');
+  }
+
+  const data = await response.json();
+  const episodes: SpotifyEpisode[] = (data.episodes?.items || []).filter(Boolean);
+  if (episodes.length === 0) return [];
+
+  const showNames = new Map<string, string>();
+  try {
+    const ids = episodes.map((episode) => episode.id).join(',');
+    const full = await fetch(`https://api.spotify.com/v1/episodes?ids=${ids}&market=US`, { headers });
+    if (full.ok) {
+      const fullData = await full.json();
+      for (const episode of (fullData.episodes || []) as (SpotifyEpisode | null)[]) {
+        if (episode?.show?.name) showNames.set(episode.id, episode.show.name);
+      }
+    } else {
+      logger.error('Failed to look up episode shows', { status: full.status });
+    }
+  } catch (error) {
+    logger.errorWithException('Failed to look up episode shows', error);
+  }
+
+  return episodes.map((episode) => ({
+    id: episode.id,
+    title: episode.name,
+    creator: showNames.get(episode.id) || '',
+    imageUrl: episode.images?.[0]?.url || '',
+    externalUrl: episode.external_urls.spotify,
+    type: 'podcast_episode' as const,
+  }));
+}
+
 /**
  * Look up one podcast show by id. Used for pasted show links, whose page
  * metadata describes the latest episode rather than the show itself.

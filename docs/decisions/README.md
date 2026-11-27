@@ -9,9 +9,10 @@ considered, and the consequences.
 
 | No. | Decision | Date |
 | --- | --- | --- |
-| [0001](0001-integration-branch.md) | Agents land ticketed work on `next`; the owner promotes to `main` | Nov 11, 2026 |
+| [0001](0001-integration-branch.md) | Agents land ticketed work on `next`; the owner promotes to `main` (replaced by 0004) | Nov 11, 2026 |
 | [0002](0002-public-shelf-document.md) | One public shelf document, many formats, built from a field allowlist | Nov 11, 2026 |
 | [0003](0003-item-identity.md) | Items carry a canonical identifier; matching is by identifier only | Nov 11, 2026 |
+| [0004](0004-retire-integration-branch.md) | Retire `next`; one pull request per issue into `main` (replaces 0001) | Nov 22, 2026 |
 
 Product decisions (positioning, visibility levels, privacy) are recorded in
 the project's planning doc, not here. These records cover engineering.
